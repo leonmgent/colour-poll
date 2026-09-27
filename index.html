@@ -666,9 +666,14 @@ function loadDeck(){
   if (Array.isArray(d) && d.length) return d.map(cleanSlide);
   return [cleanSlide({ id: 'default1', type: 'open', q: "What's your favourite colour?", max: 3, bg: 'glow' })];
 }
+const LOBBY_DEFAULT = { q: 'Join the quiz!', text: 'Scan the QR code or use the code at the top. Players appear here as they join.', bg: 'glow', fg: 'light', transition: 'fade' };
+function cleanLobby(l){
+  const c = cleanSlide({ ...LOBBY_DEFAULT, ...(l && typeof l === 'object' ? l : {}), id: '__lobby', type: 'text' });
+  return { id: '__lobby', type: 'text', q: c.q, text: c.text, bg: c.bg, image: c.image, dim: c.dim, fg: c.fg, transition: c.transition, qimage: '' };
+}
 function loadSettings(){
   const s = ls.get(SETTINGS_KEY) || {};
-  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat };
+  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat, lobby: cleanLobby(s.lobby) };
 }
 // What actually gets presented
 function playable(s, quiz){
@@ -766,8 +771,86 @@ function startAdmin(){
 
   const lookOf = s => ({ bg: s.bg, image: s.image, dim: s.dim, fg: s.fg, transition: s.transition });
 
+  function designPanel(s){
+    let mini;
+    const des = el('div', 'design');
+    const left = el('div', 'dcol');
+    left.append(el('div', 'dlabel', 'Background'));
+    const sws = el('div', 'swatches');
+    Object.entries(BACKGROUNDS).forEach(([k, p]) => {
+      const b = el('button', 'sw' + (!s.image && s.bg === k ? ' on' : '')); b.type = 'button'; b.title = p.name; b.style.background = p.css;
+      b.onclick = () => { s.bg = k; s.image = ''; s.fg = p.fg; save(); render(); };
+      sws.append(b);
+    });
+    const up = el('button', 'sw up' + (s.image ? ' on' : '')); up.type = 'button'; up.title = s.image ? 'Change background image' : 'Upload a background image';
+    if (s.image) up.style.backgroundImage = `url("${s.image}")`; else up.append(icon('image'));
+    up.onclick = () => { imageTarget = s; imageField = 'image'; $('imageFile').click(); };
+    sws.append(up);
+    left.append(sws);
+    if (s.image) {
+      const r = el('div', 'row');
+      const rng = el('input'); rng.type = 'range'; rng.min = 0; rng.max = 85; rng.value = s.dim;
+      const val = el('span', null, s.dim + '%');
+      rng.oninput = () => { s.dim = +rng.value; val.textContent = s.dim + '%'; paintLook(s, mini.bg, mini.dim, mini.layer); save(); };
+      const rm = el('button', 'linkbtn', 'Remove image'); rm.type = 'button'; rm.onclick = () => { s.image = ''; save(); render(); };
+      r.append('Darken image', rng, val, rm); left.append(r);
+    }
+    const r2 = el('div', 'row'); r2.append('Text colour');
+    r2.append(segCtl([['light','Light'],['dark','Dark']], s.fg, v => { s.fg = v; save(); paintLook(s, mini.bg, mini.dim, mini.layer); }));
+    left.append(r2);
+    const r3 = el('div', 'row'); r3.append('Transition in');
+    const tsel = el('select', 'sel');
+    Object.entries(TRANSITIONS).forEach(([k, label]) => { const o = el('option', null, label); o.value = k; if (k === s.transition) o.selected = true; tsel.append(o); });
+    tsel.onchange = () => { s.transition = tsel.value; save(); playPreview(); };
+    const pv = el('button', 'linkbtn', 'Preview'); pv.type = 'button'; pv.onclick = () => playPreview();
+    r3.append(tsel, pv); left.append(r3);
+    const all = el('button', 'linkbtn', 'Use this design on all slides'); all.type = 'button';
+    all.onclick = () => { const look = lookOf(s); deck.forEach(x => Object.assign(x, look)); if (!save()) return; all.textContent = 'Applied to all slides'; setTimeout(() => all.textContent = 'Use this design on all slides', 1500); };
+    left.append(all);
+
+    const right = el('div', 'mini-wrap');
+    right.append(el('div', 'dlabel', 'Preview'));
+    const box = el('div', 'mini');
+    const layer = el('div', 'layer'); const bgE = el('div', 'bg'); const dimE = el('div', 'dim');
+    const mq = el('div', 'mq', s.q || (s.type === 'text' ? 'Title' : 'Your question'));
+    const mt = el('div', 'mt', s.text);
+    layer.append(bgE, dimE, mq, mt);
+    if (s.qimage) { const mi = el('img', 'mi'); mi.src = s.qimage; mi.alt = ''; layer.append(mi); }
+    box.append(layer); right.append(box);
+    mini = { bg: bgE, dim: dimE, layer, mq, mt };
+    paintLook(s, bgE, dimE, layer);
+    function playPreview(){
+      const t = s.transition; if (t === 'none') return;
+      layer.className = 'layer'; void layer.offsetWidth; layer.classList.add('tr-in-' + t);
+    }
+    des.append(left, right);
+    return { des, mini };
+  }
+
+  function lobbyCard(){
+    const s = settings.lobby;
+    const card = el('div', 'scard'); card.style.borderColor = 'rgba(61,220,151,.35)';
+    const head = el('div', 'scard-head');
+    head.append(el('div', 'snum', '▶'));
+    const t = el('b', 'grow', 'Joining screen'); t.style.fontSize = '17px'; head.append(t);
+    const dBtn = el('button', 'iconbtn'); dBtn.type = 'button'; dBtn.title = 'Design: background, colours, transition'; dBtn.append(icon('brush'));
+    if (openDesign.has(s.id)) dBtn.style.color = 'var(--text)';
+    dBtn.onclick = () => { openDesign.has(s.id) ? openDesign.delete(s.id) : openDesign.add(s.id); render(); };
+    head.append(dBtn); card.append(head);
+    card.append(el('div', 'row', 'Shown first in quiz mode while people join. Everyone who joins floats around this screen with their name and animal. Press Next when you are ready to start.'));
+    const q = el('input', 'field q-input'); q.value = s.q; q.maxLength = 140; q.placeholder = 'Title (e.g. Join the quiz!)';
+    const tx = el('textarea', 'field'); tx.value = s.text; tx.maxLength = 400; tx.rows = 2; tx.placeholder = 'Text under the title (optional)';
+    card.append(q, tx);
+    let mini;
+    if (openDesign.has(s.id)) { const d = designPanel(s); mini = d.mini; card.append(d.des); }
+    q.oninput = () => { s.q = q.value; if (mini) mini.mq.textContent = s.q || 'Title'; save(); };
+    tx.oninput = () => { s.text = tx.value; if (mini) mini.mt.textContent = s.text; save(); };
+    return card;
+  }
+
   function render(focusSel){
     list.textContent = '';
+    if (settings.quiz) list.append(lobbyCard());
     deck.forEach((s, i) => {
       const card = el('div', 'scard');
       const head = el('div', 'scard-head');
@@ -869,60 +952,7 @@ function startAdmin(){
 
       // design panel
       let mini;
-      if (openDesign.has(s.id)) {
-        const des = el('div', 'design');
-        const left = el('div', 'dcol');
-        left.append(el('div', 'dlabel', 'Background'));
-        const sws = el('div', 'swatches');
-        Object.entries(BACKGROUNDS).forEach(([k, p]) => {
-          const b = el('button', 'sw' + (!s.image && s.bg === k ? ' on' : '')); b.type = 'button'; b.title = p.name; b.style.background = p.css;
-          b.onclick = () => { s.bg = k; s.image = ''; s.fg = p.fg; save(); render(); };
-          sws.append(b);
-        });
-        const up = el('button', 'sw up' + (s.image ? ' on' : '')); up.type = 'button'; up.title = s.image ? 'Change background image' : 'Upload a background image';
-        if (s.image) up.style.backgroundImage = `url("${s.image}")`; else up.append(icon('image'));
-        up.onclick = () => { imageTarget = s; imageField = 'image'; $('imageFile').click(); };
-        sws.append(up);
-        left.append(sws);
-        if (s.image) {
-          const r = el('div', 'row');
-          const rng = el('input'); rng.type = 'range'; rng.min = 0; rng.max = 85; rng.value = s.dim;
-          const val = el('span', null, s.dim + '%');
-          rng.oninput = () => { s.dim = +rng.value; val.textContent = s.dim + '%'; paintLook(s, mini.bg, mini.dim, mini.layer); save(); };
-          const rm = el('button', 'linkbtn', 'Remove image'); rm.type = 'button'; rm.onclick = () => { s.image = ''; save(); render(); };
-          r.append('Darken image', rng, val, rm); left.append(r);
-        }
-        const r2 = el('div', 'row'); r2.append('Text colour');
-        r2.append(segCtl([['light','Light'],['dark','Dark']], s.fg, v => { s.fg = v; save(); paintLook(s, mini.bg, mini.dim, mini.layer); }));
-        left.append(r2);
-        const r3 = el('div', 'row'); r3.append('Transition in');
-        const tsel = el('select', 'sel');
-        Object.entries(TRANSITIONS).forEach(([k, label]) => { const o = el('option', null, label); o.value = k; if (k === s.transition) o.selected = true; tsel.append(o); });
-        tsel.onchange = () => { s.transition = tsel.value; save(); playPreview(); };
-        const pv = el('button', 'linkbtn', 'Preview'); pv.type = 'button'; pv.onclick = () => playPreview();
-        r3.append(tsel, pv); left.append(r3);
-        const all = el('button', 'linkbtn', 'Use this design on all slides'); all.type = 'button';
-        all.onclick = () => { const look = lookOf(s); deck.forEach(x => Object.assign(x, look)); if (!save()) return; all.textContent = 'Applied to all slides'; setTimeout(() => all.textContent = 'Use this design on all slides', 1500); };
-        left.append(all);
-
-        const right = el('div', 'mini-wrap');
-        right.append(el('div', 'dlabel', 'Preview'));
-        const box = el('div', 'mini');
-        const layer = el('div', 'layer'); const bgE = el('div', 'bg'); const dimE = el('div', 'dim');
-        const mq = el('div', 'mq', s.q || (s.type === 'text' ? 'Title' : 'Your question'));
-        const mt = el('div', 'mt', s.text);
-        layer.append(bgE, dimE, mq, mt);
-        if (s.qimage) { const mi = el('img', 'mi'); mi.src = s.qimage; mi.alt = ''; layer.append(mi); }
-        box.append(layer); right.append(box);
-        mini = { bg: bgE, dim: dimE, layer, mq, mt };
-        paintLook(s, bgE, dimE, layer);
-        function playPreview(){
-          const t = s.transition; if (t === 'none') return;
-          layer.className = 'layer'; void layer.offsetWidth; layer.classList.add('tr-in-' + t);
-        }
-        des.append(left, right);
-        card.append(des);
-      }
+      if (openDesign.has(s.id)) { const d = designPanel(s); mini = d.mini; card.append(d.des); }
       q.oninput = () => { s.q = q.value; if (mini) mini.mq.textContent = s.q || 'Your question'; save(); };
       tx.oninput = () => { s.text = tx.value; if (mini) mini.mt.textContent = s.text; save(); };
       list.append(card);
@@ -948,7 +978,7 @@ function startAdmin(){
     render('[data-f="q' + (deck.length - 1) + '"]');
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
-  $('presentBtn').onclick = () => { save(); nav('host=1'); };
+  $('presentBtn').onclick = () => { save(); nav('host=1&start=1'); };
   $('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify({ settings, slides: deck }, null, 2)], { type: 'application/json' });
     const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'colour-poll-slides.json'; document.body.append(a); a.click(); a.remove();
@@ -963,7 +993,7 @@ function startAdmin(){
       deck = slides.slice(0,50).map(cleanSlide);
       if (d.settings) {
         if (['off','optional','required'].includes(d.settings.names)) settings.names = d.settings.names;
-        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat;
+        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat; settings.lobby = cleanLobby(d.settings.lobby);
       }
       save(); nav('admin=1');
     } catch { alert("That file doesn't look like exported slides."); }
@@ -980,8 +1010,8 @@ function startHost(){
   const namesMode = quiz ? 'required' : settings.names;
   const deck = loadDeck().map(s => playable(s, quiz));
   if (quiz) {
-    const first = deck[0];
-    deck.unshift({ ...first, id: '__lobby', type: 'lobby', q: 'Join the quiz!', text: 'Scan the QR code or use the code at the top. Players appear here as they join.', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: first.transition });
+    const L = settings.lobby;
+    deck.unshift({ ...L, id: '__lobby', type: 'lobby', q: L.q.trim(), text: L.text.trim(), qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, max: 1 });
     const last = deck[deck.length - 1];
     deck.push({ ...last, id: '__leaderboard', type: 'leaderboard', q: 'Leaderboard', text: '', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: 'zoom' });
   }
@@ -990,6 +1020,7 @@ function startHost(){
   const hTopic = NS + code + '/host', rTopic = NS + code + '/r', cTopic = NS + code + '/chat';
   const joinUrl = location.origin + location.pathname.replace(/index\.html$/,'') + '?code=' + code;
   let idx = Math.min(deck.length - 1, Math.max(0, ss.get('cp_hostIdx') || 0));
+  if (qp.has('start')) { idx = 0; const u = new URL(location.href); u.searchParams.delete('start'); history.replaceState(null, '', u); }
   const results = ss.get('cp_hostResults') || {};
   const players = ss.get('cp_players') || {};
   const kicked = new Set(ss.get('cp_kicked') || []);
