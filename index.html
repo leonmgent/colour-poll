@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Colour Poll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#0d0e1a; --surface:#171a2b; --surface2:#20243a; --line:#2c3150;
+    --text:#f4f4f8; --muted:#9aa0b8; --good:#3ddc97; --bad:#ff6b6b;
+    --rainbow:linear-gradient(90deg,#ff5f6d,#ffc371,#47e5bc,#4facfe,#a66cff);
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font-family:Outfit,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  button{font:inherit;cursor:pointer;border:0}
+  input{font:inherit}
+  .hidden{display:none!important}
+  .rainbow-text{background:var(--rainbow);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* ---------- Landing ---------- */
+  .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
+  .landing h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.02em}
+  .landing p.sub{color:var(--muted);font-size:18px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;width:100%;max-width:640px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;text-align:left}
+  .card h2{font-size:20px;font-weight:600}
+  .card p{color:var(--muted);font-size:14px}
+  .field{background:var(--bg);border:2px solid var(--line);border-radius:14px;color:var(--text);padding:14px 16px;font-size:22px;width:100%;outline:none;transition:border-color .2s}
+  .field:focus{border-color:#4facfe}
+  .code-field{letter-spacing:.3em;text-align:center;font-weight:600}
+  .btn{background:var(--text);color:var(--bg);border-radius:14px;padding:14px 18px;font-weight:600;font-size:17px;transition:transform .15s,opacity .2s}
+  .btn:active{transform:scale(.97)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.ghost{background:var(--surface2);color:var(--text)}
+  .btn.rain{background:var(--rainbow);color:#10111c}
+
+  /* ---------- Host ---------- */
+  .host{height:100vh;height:100dvh;display:flex;flex-direction:column}
+  .host-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .join-info{display:flex;align-items:center;gap:16px}
+  .join-info .qr{background:#fff;padding:6px;border-radius:10px;line-height:0}
+  .join-info .qr:empty{display:none}
+  .join-info .how{font-size:16px;color:var(--muted)}
+  .join-info .how b{color:var(--text)}
+  .join-info .code{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:.08em;line-height:1.1}
+  .host-actions{display:flex;gap:8px;align-items:center}
+  .host-actions .btn{font-size:14px;padding:10px 14px;border-radius:10px}
+  .status{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-right:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .dot.on{background:var(--good);box-shadow:0 0 0 4px rgba(61,220,151,.18)}
+  .dot.off{background:var(--bad)}
+  .question{text-align:center;font-size:clamp(28px,4.5vw,56px);font-weight:800;letter-spacing:-.02em;padding:24px 16px 0}
+  .stage{position:relative;flex:1;overflow:hidden}
+  .count{position:absolute;right:24px;bottom:18px;color:var(--muted);font-size:15px;z-index:5}
+  .count b{color:var(--text);font-size:22px}
+  .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px;gap:10px}
+  .empty i{width:8px;height:8px;border-radius:50%;background:var(--muted);animation:blink 1.4s infinite}
+  .empty i:nth-child(2){animation-delay:.2s}.empty i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+  .bubble{position:absolute;left:0;top:0;will-change:transform;cursor:pointer}
+  .bubble .inner{width:100%;height:100%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:inset 0 -8px 24px rgba(0,0,0,.18),inset 0 8px 18px rgba(255,255,255,.25),0 10px 30px rgba(0,0,0,.35);
+    animation:pop .7s cubic-bezier(.2,1.6,.4,1) both;transition:filter .2s}
+  .bubble:hover .inner{filter:brightness(1.08)}
+  .bubble.unknown .inner{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25);color:var(--text);backdrop-filter:blur(4px)}
+  .bubble .label{font-weight:800;line-height:1;text-align:center;padding:0 6%;overflow-wrap:normal;word-break:keep-all}
+  .bubble .n{font-weight:600;opacity:.75;margin-top:.25em}
+  .bubble.bump .inner{animation:bump .5s cubic-bezier(.2,1.8,.4,1)}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+  .ring{position:absolute;border-radius:50%;border:4px solid;pointer-events:none;animation:ring .9s ease-out forwards}
+  @keyframes ring{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+  .spark{position:absolute;width:10px;height:10px;border-radius:50%;pointer-events:none;animation:spark .8s ease-out forwards}
+  @keyframes spark{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+
+  /* ---------- Participant ---------- */
+  .join{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:24px 16px;gap:24px}
+  .join .brand{font-weight:800;font-size:20px}
+  .join .panel{width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px;margin-top:6vh}
+  .join h2{font-size:clamp(28px,7vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+  .join .hint{color:var(--muted);font-size:15px}
+  .swatch{height:10px;border-radius:99px;background:var(--rainbow);transition:background .3s}
+  .done{text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center}
+  .done .tick{width:88px;height:88px;border-radius:50%;background:var(--rainbow);display:flex;align-items:center;justify-content:center;animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+  .done .tick svg{width:44px;height:44px}
+  .msg{color:var(--muted);text-align:center}
+  .err{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<!-- ===== Landing ===== -->
+<section id="landing" class="landing hidden">
+  <div>
+    <h1><span class="rainbow-text">Colour Poll</span></h1>
+    <p class="sub">Live answers, straight onto the big screen.</p>
+  </div>
+  <div class="cards">
+    <form class="card" id="joinForm">
+      <h2>Join a session</h2>
+      <p>Enter the 6-digit code on the screen.</p>
+      <input class="field code-field" id="codeInput" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="000000">
+      <button class="btn rain" type="submit">Join</button>
+    </form>
+    <div class="card">
+      <h2>Host a session</h2>
+      <p>Show this on a projector or TV. You'll get a code for people to join with.</p>
+      <div style="flex:1"></div>
+      <button class="btn ghost" id="hostBtn">Start hosting</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Host ===== -->
+<section id="host" class="host hidden">
+  <div class="host-top">
+    <div class="join-info">
+      <div class="qr" id="qr"></div>
+      <div>
+        <div class="how" id="joinHow"></div>
+        <div class="code" id="hostCode"></div>
+      </div>
+    </div>
+    <div class="host-actions">
+      <span class="status"><span class="dot" id="hostDot"></span><span id="hostStatus">Connecting</span></span>
+      <button class="btn ghost" id="fullBtn">Fullscreen</button>
+      <button class="btn ghost" id="clearBtn">Clear</button>
+      <button class="btn ghost" id="endBtn">End</button>
+    </div>
+  </div>
+  <h1 class="question" id="hostQuestion"></h1>
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">Waiting for answers <i></i><i></i><i></i></div>
+    <div class="count"><b id="countNum">0</b> responses</div>
+  </div>
+</section>
+
+<!-- ===== Participant ===== -->
+<section id="join" class="join hidden">
+  <div class="brand rainbow-text">Colour Poll</div>
+  <div class="panel" id="joinPanel">
+    <p class="msg" id="joinMsg">Connecting…</p>
+  </div>
+  <form class="panel hidden" id="answerForm">
+    <h2 id="joinQuestion"></h2>
+    <div class="swatch" id="swatch"></div>
+    <input class="field" id="answerInput" maxlength="25" autocomplete="off" placeholder="Type your answer">
+    <button class="btn rain" type="submit" id="sendBtn" disabled>Send</button>
+    <p class="hint" id="leftHint"></p>
+  </form>
+  <div class="panel done hidden" id="donePanel">
+    <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#10111c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Sent!</h2>
+    <p class="hint">Look at the screen, your answer's up there.</p>
+    <button class="btn ghost" id="againBtn">Send another</button>
+  </div>
+</section>
+
+<script>
+/* ================= Settings ================= */
+const QUESTION = "What's your favourite colour?";
+const MAX_ANSWERS_PER_PERSON = 3;
+// Free public realtime servers. The host listens on all of them; phones send on whichever connects.
+const BROKERS = new URLSearchParams(location.search).get('broker')
+  ? [new URLSearchParams(location.search).get('broker')]
+  : ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
+const NS = 'colourpoll/v1/';
+
+/* ================= Helpers ================= */
+const $ = id => document.getElementById(id);
+const show = id => ['landing','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const ss = {
+  get(k){ try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } },
+  set(k,v){ try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k){ try { sessionStorage.removeItem(k); } catch {} }
+};
+const fmtCode = c => c.slice(0,3) + ' ' + c.slice(3);
+
+// Turn "Sky Blue" into a real CSS colour if it is one
+const probe = document.createElement('canvas').getContext('2d');
+function toColour(text){
+  const t = text.toLowerCase().trim();
+  for (const c of [t, t.replace(/[\s-]+/g,'')]) {
+    if (c && CSS.supports('color', c) && !/^(inherit|initial|unset|revert|currentcolor|transparent)$/.test(c)) {
+      probe.fillStyle = '#000'; probe.fillStyle = c;
+      const hex = probe.fillStyle;
+      if (!hex.startsWith('#')) return { bg: c, fg: '#fff' };
+      const [r,g,b] = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16) / 255)
+        .map(v => v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4));
+      const lum = .2126*r + .7152*g + .0722*b;
+      return { bg: hex, fg: lum > .35 ? '#10111c' : '#ffffff' };
+    }
+  }
+  return null;
+}
+
+function connectAll(onConnect, onMessage, onStatus){
+  if (!window.mqtt) { onStatus(-1); return []; }
+  const clients = BROKERS.map(url => {
+    const c = mqtt.connect(url, { clientId: 'cp_' + rid(), reconnectPeriod: 3000, connectTimeout: 8000, clean: true });
+    c.on('connect', () => { onConnect(c); report(); });
+    c.on('close', report); c.on('offline', report);
+    c.on('error', () => {});
+    c.on('message', (topic, payload, packet) => onMessage(topic, payload.toString(), packet, c));
+    return c;
+  });
+  function report(){ onStatus(clients.filter(c => c.connected).length); }
+  return clients;
+}
+
+/* ================= Router ================= */
+const params = new URLSearchParams(location.search);
+if (params.has('host')) startHost();
+else if (params.get('code')) startJoin(params.get('code').replace(/\D/g,''));
+else show('landing');
+
+$('joinForm').onsubmit = e => {
+  e.preventDefault();
+  const code = $('codeInput').value.replace(/\D/g,'');
+  if (code.length === 6) startJoin(code); else $('codeInput').focus();
+};
+$('hostBtn').onclick = startHost;
+
+/* ================= HOST ================= */
+function startHost(){
+  show('host');
+  let code = ss.get('cp_hostCode');
+  if (!code) { code = String(Math.floor(100000 + Math.random()*900000)); ss.set('cp_hostCode', code); }
+  const hTopic = NS + code + '/host', rTopic = NS + code + '/r';
+
+  $('hostQuestion').textContent = QUESTION;
+  $('hostCode').textContent = fmtCode(code);
+  const online = location.protocol.startsWith('http');
+  const base = location.origin + location.pathname;
+  if (online) {
+    $('joinHow').innerHTML = 'Go to <b></b> and use code';
+    $('joinHow').querySelector('b').textContent = location.host + location.pathname.replace(/index\.html$/,'');
+    if (window.QRCode) new QRCode($('qr'), { text: base + '?code=' + code, width: 96, height: 96, colorDark: '#0d0e1a', colorLight: '#ffffff' });
+  } else {
+    $('joinHow').textContent = 'Join code (open this page online so phones can reach it)';
+  }
+
+  // ---- bubbles ----
+  const stage = $('stage');
+  const nodes = new Map(); // key -> node
+  const seen = new Set();
+  let total = 0;
+  const saved = ss.get('cp_hostData') || { answers: [], hidden: [] };
+  const hidden = new Set(saved.hidden);
+
+  function persist(){ ss.set('cp_hostData', { answers: saved.answers, hidden: [...hidden] }); }
+
+  function addAnswer(text, animate = true){
+    text = text.replace(/\s+/g,' ').trim().slice(0,25);
+    if (!text) return;
+    const key = text.toLowerCase();
+    total++; $('countNum').textContent = total;
+    if (hidden.has(key)) return;
+    $('empty').classList.add('hidden');
+    let n = nodes.get(key);
+    if (n) {
+      n.count++;
+      n.nEl.textContent = '×' + n.count; n.nEl.classList.remove('hidden');
+      if (animate) { n.el.classList.remove('bump'); void n.el.offsetWidth; n.el.classList.add('bump'); burst(n); }
+      return;
+    }
+    const col = toColour(text);
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const el = document.createElement('div');
+    el.className = 'bubble' + (col ? '' : ' unknown');
+    el.title = 'Click to hide';
+    const inner = document.createElement('div'); inner.className = 'inner';
+    if (col) { inner.style.background = col.bg; inner.style.color = col.fg; }
+    const label = document.createElement('div'); label.className = 'label';
+    label.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+    const nEl = document.createElement('div'); nEl.className = 'n hidden';
+    inner.append(label, nEl); el.append(inner); stage.append(el);
+    n = { key, text, count: 1, el, label, nEl, color: col ? col.bg : 'rgba(255,255,255,.7)',
+          x: W/2 + (Math.random()-.5)*W*.6, y: H + 40, vx: 0, vy: -6 - Math.random()*4, r: 4,
+          phase: Math.random()*6.28 };
+    nodes.set(key, n);
+    el.onclick = () => { hidden.add(key); persist(); el.remove(); nodes.delete(key); if (!nodes.size) $('empty').classList.remove('hidden'); };
+    if (animate) setTimeout(() => burst(n), 250);
+  }
+
+  function burst(n){
+    const ring = document.createElement('div');
+    ring.className = 'ring';
+    const d = n.r*2;
+    Object.assign(ring.style, { width: d+'px', height: d+'px', left: (n.x-n.r)+'px', top: (n.y-n.r)+'px', borderColor: n.color });
+    stage.append(ring); ring.addEventListener('animationend', () => ring.remove());
+    for (let i = 0; i < 10; i++) {
+      const s = document.createElement('div'); s.className = 'spark';
+      const a = Math.random()*Math.PI*2, dist = n.r + 30 + Math.random()*50;
+      Object.assign(s.style, { left: n.x-5+'px', top: n.y-5+'px', background: n.color });
+      s.style.setProperty('--dx', Math.cos(a)*dist + 'px'); s.style.setProperty('--dy', Math.sin(a)*dist + 'px');
+      stage.append(s); s.addEventListener('animationend', () => s.remove());
+    }
+  }
+
+  const BASE = 58;
+  function tick(t){
+    const W = stage.clientWidth, H = stage.clientHeight, cx = W/2, cy = H/2;
+    const list = [...nodes.values()];
+    let area = 0;
+    for (const n of list) { n.base = BASE * (1 + .6*Math.sqrt(n.count-1)); area += Math.PI*n.base*n.base; }
+    const k = Math.min(1.8, Math.sqrt(.38*W*H / Math.max(area,1)));
+    for (const n of list) {
+      n.r += (n.base*k - n.r) * .1;
+      n.vx += (cx - n.x) * .0012; n.vy += (cy - n.y) * .003;
+    }
+    for (let i = 0; i < list.length; i++) for (let j = i+1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx,dy) || .01;
+      const min = a.r + b.r + 8;
+      if (d < min) {
+        const o = (min - d) / d * .5;
+        a.x -= dx*o*.5; a.y -= dy*o*.5; b.x += dx*o*.5; b.y += dy*o*.5;
+        a.vx -= dx*o*.05; a.vy -= dy*o*.05; b.vx += dx*o*.05; b.vy += dy*o*.05;
+      }
+    }
+    for (const n of list) {
+      n.vx *= .86; n.vy *= .86; n.x += n.vx; n.y += n.vy;
+      n.x = Math.max(n.r, Math.min(W - n.r, n.x));
+      n.y = Math.max(n.r, Math.min(H - n.r, n.y));
+      const bob = Math.sin(t/900 + n.phase) * 3;
+      const d = n.r*2;
+      n.el.style.width = n.el.style.height = d + 'px';
+      n.el.style.transform = `translate(${n.x-n.r}px,${n.y-n.r+bob}px)`;
+      const len = Math.max(n.text.length, 3);
+      n.label.style.fontSize = Math.min(n.r*.42, d*.78/(len*.62)) + 'px';
+      n.nEl.style.fontSize = Math.max(11, n.r*.2) + 'px';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // restore after a refresh
+  const restore = saved.answers.slice(); saved.answers = [];
+  requestAnimationFrame(() => restore.forEach(a => { saved.answers.push(a); addAnswer(a, false); }));
+
+  // ---- network ----
+  const hostMsg = JSON.stringify({ q: QUESTION, open: true });
+  const clients = connectAll(
+    c => { c.subscribe(rTopic, { qos: 1 }); c.publish(hTopic, hostMsg, { retain: true, qos: 1 }); },
+    (topic, msg) => {
+      if (topic !== rTopic) return;
+      let m; try { m = JSON.parse(msg); } catch { return; }
+      if (!m || typeof m.text !== 'string' || typeof m.id !== 'string' || seen.has(m.id)) return;
+      seen.add(m.id);
+      saved.answers.push(m.text.slice(0,25)); persist();
+      addAnswer(m.text);
+    },
+    n => {
+      $('hostDot').className = 'dot ' + (n > 0 ? 'on' : 'off');
+      $('hostStatus').textContent = n < 0 ? 'Offline (no internet?)' : n > 0 ? 'Live' : 'Reconnecting';
+    }
+  );
+
+  $('clearBtn').onclick = () => {
+    nodes.forEach(n => n.el.remove()); nodes.clear(); hidden.clear();
+    saved.answers = []; persist(); total = 0; $('countNum').textContent = 0;
+    $('empty').classList.remove('hidden');
+  };
+  $('endBtn').onclick = () => {
+    clients.forEach(c => c.connected && c.publish(hTopic, '', { retain: true, qos: 1 }));
+    ss.del('cp_hostCode'); ss.del('cp_hostData');
+    setTimeout(() => { location.href = location.pathname; }, 400);
+  };
+  $('fullBtn').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+}
+
+/* ================= PARTICIPANT ================= */
+function startJoin(code){
+  show('join');
+  const hTopic = NS + code + '/host', rTopic = NS + code + '/r';
+  let found = false, clients = [];
+  const sentKey = 'cp_sent_' + code;
+  let sent = ss.get(sentKey) || 0;
+
+  const msg = (t, err) => { $('joinMsg').textContent = t; $('joinMsg').classList.toggle('err', !!err); $('joinPanel').classList.remove('hidden'); };
+  msg('Joining ' + fmtCode(code) + '…');
+
+  const timeout = setTimeout(() => {
+    if (!found) {
+      msg("Can't find a session with code " + fmtCode(code) + '. Check the code on the screen.', true);
+      addBack();
+    }
+  }, 9000);
+
+  function addBack(){
+    if ($('backBtn')) return;
+    const b = document.createElement('button'); b.className = 'btn ghost'; b.id = 'backBtn'; b.textContent = 'Try another code';
+    b.onclick = () => location.href = location.pathname; $('joinPanel').append(b);
+  }
+
+  function renderForm(){
+    $('joinPanel').classList.add('hidden');
+    if (sent >= MAX_ANSWERS_PER_PERSON) {
+      $('answerForm').classList.add('hidden'); $('donePanel').classList.remove('hidden');
+      $('againBtn').classList.add('hidden');
+      return;
+    }
+    $('donePanel').classList.add('hidden'); $('answerForm').classList.remove('hidden');
+    const left = MAX_ANSWERS_PER_PERSON - sent;
+    $('leftHint').textContent = left === 1 ? 'You can send 1 answer.' : `You can send up to ${left} answers.`;
+    $('answerInput').focus();
+  }
+
+  $('answerInput').oninput = () => {
+    const v = $('answerInput').value.trim();
+    $('sendBtn').disabled = !v;
+    const col = v && toColour(v);
+    $('swatch').style.background = col ? col.bg : '';
+  };
+
+  $('answerForm').onsubmit = e => {
+    e.preventDefault();
+    const text = $('answerInput').value.replace(/\s+/g,' ').trim().slice(0,25);
+    const live = clients.filter(c => c.connected);
+    if (!text || !live.length) return;
+    const payload = JSON.stringify({ id: rid(), text });
+    live.forEach(c => c.publish(rTopic, payload, { qos: 1 }));
+    sent++; ss.set(sentKey, sent);
+    $('answerInput').value = ''; $('sendBtn').disabled = true; $('swatch').style.background = '';
+    $('answerForm').classList.add('hidden'); $('donePanel').classList.remove('hidden');
+    $('againBtn').classList.toggle('hidden', sent >= MAX_ANSWERS_PER_PERSON);
+  };
+  $('againBtn').onclick = renderForm;
+
+  clients = connectAll(
+    c => c.subscribe(hTopic, { qos: 1 }),
+    (topic, m) => {
+      if (topic !== hTopic) return;
+      if (!m) { found = true; clearTimeout(timeout);
+        $('answerForm').classList.add('hidden'); $('donePanel').classList.add('hidden');
+        msg('This session has ended. Thanks for taking part!'); return; }
+      let d; try { d = JSON.parse(m); } catch { return; }
+      if (!d || !d.open) return;
+      if (!found) {
+        found = true; clearTimeout(timeout);
+        $('joinQuestion').textContent = typeof d.q === 'string' ? d.q : QUESTION;
+        renderForm();
+      }
+    },
+    n => { if (n < 0) { clearTimeout(timeout); msg("Couldn't load. Check your internet connection.", true); } }
+  );
+}
+</script>
+</body>
+</html>
