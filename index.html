@@ -250,6 +250,19 @@
   @keyframes feedIn{from{opacity:0;transform:translateX(40px)}}
   @keyframes chatIn{from{opacity:0;transform:translateY(20px)}}
 
+  .pause-ov{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,6,12,.5);backdrop-filter:blur(10px);color:#fff;animation:fadeIn .3s ease}
+  .pause-ov svg{width:110px;height:110px;opacity:.95;animation:breathe 2s ease-in-out infinite}
+  .pause-ov h2{font-size:clamp(40px,6vw,80px);font-weight:800;letter-spacing:-.02em}
+  .pause-ov p{font-size:20px;opacity:.75}
+  @keyframes breathe{50%{transform:scale(.92);opacity:.7}}
+
+  /* lobby */
+  .pchip{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;gap:6px;will-change:transform;cursor:pointer}
+  .pchip .pin{display:flex;flex-direction:column;align-items:center;gap:6px;animation:pop .7s cubic-bezier(.2,1.6,.4,1) both}
+  .pchip .av{width:72px;height:72px;font-size:42px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 -6px 14px rgba(0,0,0,.08)}
+  .pchip .pn{background:rgba(10,11,20,.62);backdrop-filter:blur(6px);color:#fff;padding:4px 12px;border-radius:99px;font-weight:700;font-size:18px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,.1)}
+  .pchip:hover .pn{border-color:var(--bad)}
+
   /* leaderboard */
   .lb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:22px;padding:10px 20px 30px;overflow:hidden}
   .podium{display:flex;align-items:flex-end;justify-content:center;gap:clamp(10px,2vw,24px);flex:1;max-height:56%}
@@ -327,6 +340,7 @@
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
   <symbol id="i-brush" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3l3 3-9 9-3-3z"/><path d="M9 12c-3 0-5 2-5 5 0 1-1 2-2 2 2 2 7 2 9-1 1-2 0-4-2-6z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
@@ -396,7 +410,8 @@
         <span id="slideNum">1 / 1</span>
         <button class="iconbtn" id="nextBtn" title="Next (→)"><svg class="i"><use href="#i-right"/></svg></button>
       </div>
-      <button class="btn good sm hidden" id="revealBtn"><svg class="i"><use href="#i-eye"/></svg>Reveal answer</button>
+      <button class="btn ghost sm hidden" id="pauseBtn" title="Pause (P)"><svg class="i"><use href="#i-pause"/></svg><span>Pause</span></button>
+      <button class="btn good sm hidden" id="revealBtn" title="Reveal the answer now (R)"><svg class="i"><use href="#i-eye"/></svg><span>Reveal answer</span></button>
       <button class="btn ghost sm" id="copyBtn"><svg class="i"><use href="#i-link"/></svg><span>Copy link</span></button>
       <button class="btn ghost sm" id="chatBtn"><svg class="i"><use href="#i-chat"/></svg><span>Chat off</span></button>
       <button class="btn ghost sm" id="fullBtn">Fullscreen</button>
@@ -429,6 +444,7 @@
   </div>
   <div class="feed" id="feed"></div>
   <div class="hchat hidden" id="hchat"></div>
+  <div class="pause-ov hidden" id="pauseOv"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><h2>Paused</h2><p>Scores and timers are frozen. Press Resume or P to carry on.</p></div>
 </section>
 
 <!-- ===== Participant ===== -->
@@ -964,6 +980,8 @@ function startHost(){
   const namesMode = quiz ? 'required' : settings.names;
   const deck = loadDeck().map(s => playable(s, quiz));
   if (quiz) {
+    const first = deck[0];
+    deck.unshift({ ...first, id: '__lobby', type: 'lobby', q: 'Join the quiz!', text: 'Scan the QR code or use the code at the top. Players appear here as they join.', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: first.transition });
     const last = deck[deck.length - 1];
     deck.push({ ...last, id: '__leaderboard', type: 'leaderboard', q: 'Leaderboard', text: '', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: 'zoom' });
   }
@@ -974,11 +992,13 @@ function startHost(){
   let idx = Math.min(deck.length - 1, Math.max(0, ss.get('cp_hostIdx') || 0));
   const results = ss.get('cp_hostResults') || {};
   const players = ss.get('cp_players') || {};
+  const kicked = new Set(ss.get('cp_kicked') || []);
   let chat = ss.get('cp_chat') || [];
   let chatOn = ss.get('cp_chatOn') ?? settings.chat;
   const seen = new Set();
   let showNames = namesMode !== 'off' && ss.get('cp_showNames') !== false;
   let slideStart = Date.now(), timerEnd = 0, timeUp = false, timerInt = null, autoNext = null, lastPub = 0;
+  let paused = false, pausedAt = 0, timerDraw = null, timerWasRunning = false, autoNextDue = 0, autoNextLeft = 0;
   const persist = () => { ss.set('cp_hostResults', results); ss.set('cp_hostIdx', idx); ss.set('cp_players', players); };
 
   function res(s){
@@ -1002,8 +1022,10 @@ function startHost(){
   if (location.protocol.startsWith('http') && window.QRCode) new QRCode($('qr'), { text: joinUrl, width: 96, height: 96, colorDark: '#0d0e1a', colorLight: '#ffffff' });
   const setTop = () => $('host').style.setProperty('--top', $('hostTop').offsetHeight + 'px');
   new ResizeObserver(setTop).observe($('hostTop')); setTop();
-  const updatePlayers = () => { const n = Object.keys(players).length; $('playerCount').textContent = n ? n + (n === 1 ? ' player' : ' players') + ' joined' : ''; };
-  updatePlayers();
+  const updatePlayers = () => {
+    const n = Object.keys(players).length; $('playerCount').textContent = n ? n + (n === 1 ? ' player' : ' players') + ' joined' : '';
+    if (deck[idx] && deck[idx].type === 'lobby') { Object.entries(players).forEach(([pid, p]) => addChip(pid, p, true)); setCount(n); }
+  };
 
   // top bar buttons
   $('copyBtn').onclick = async () => {
@@ -1135,9 +1157,53 @@ function startHost(){
       n.nEl.style.fontSize = Math.max(11, n.r*.2) + 'px';
       n.who.style.fontSize = Math.max(10, n.r*.15) + 'px';
     }
+    chipTick(t);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+
+  /* ---- Lobby: floating players ---- */
+  let chips = new Map();
+  function clearChips(){ chips.forEach(c => c.el.remove()); chips = new Map(); }
+  function addChip(pid, p, animate){
+    let c = chips.get(pid);
+    if (c) { c.name.textContent = p.n || 'Player'; if (c.av !== p.av) { const a = avEl(p.av, p.n); c.avEl.replaceWith(a); c.avEl = a; c.av = p.av; } return; }
+    const W = stage.clientWidth || 800, H = stage.clientHeight || 400;
+    const e = el('div', 'pchip'); e.title = 'Click to remove this player';
+    const pin = el('div', 'pin'); const a = avEl(p.av, p.n); const nm = el('div', 'pn', p.n || 'Player');
+    pin.append(a, nm); e.append(pin); stage.append(e);
+    const ang = Math.random() * Math.PI * 2, sp = .5 + Math.random() * .6;
+    c = { el: e, avEl: a, name: nm, av: p.av, x: 80 + Math.random() * Math.max(1, W - 160), y: 70 + Math.random() * Math.max(1, H - 140), vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, phase: Math.random() * 6.28 };
+    chips.set(pid, c);
+    $('empty').classList.add('hidden');
+    e.onclick = () => {
+      kicked.add(pid); ss.set('cp_kicked', [...kicked]); delete players[pid]; persist();
+      e.remove(); chips.delete(pid); updatePlayers(); if (!chips.size) $('empty').classList.remove('hidden');
+    };
+    if (animate) setTimeout(() => burst(c.x, c.y, 40, AV_BG[(p.av ?? 0) % AV_BG.length]), 200);
+  }
+  function chipTick(t){
+    if (!chips.size) return;
+    const W = stage.clientWidth, H = stage.clientHeight, list = [...chips.values()];
+    const k = Math.max(.55, Math.min(1, 1 - (list.length - 16) * .012)), R = 62 * k;
+    for (const c of list) {
+      c.x += c.vx; c.y += c.vy;
+      if (c.x < R) { c.x = R; c.vx = Math.abs(c.vx); } if (c.x > W - R) { c.x = W - R; c.vx = -Math.abs(c.vx); }
+      if (c.y < R) { c.y = R; c.vy = Math.abs(c.vy); } if (c.y > H - R) { c.y = H - R; c.vy = -Math.abs(c.vy); }
+    }
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || .01, min = R * 2.1;
+      if (d < min) {
+        const o = (min - d) / d * .5; a.x -= dx*o*.5; a.y -= dy*o*.5; b.x += dx*o*.5; b.y += dy*o*.5;
+        const nx = dx / d, ny = dy / d, va = a.vx*nx + a.vy*ny, vb = b.vx*nx + b.vy*ny;
+        if (va - vb > 0) { a.vx += (vb - va) * nx; a.vy += (vb - va) * ny; b.vx += (va - vb) * nx; b.vy += (va - vb) * ny; }
+      }
+    }
+    for (const c of list) {
+      const bob = Math.sin(t / 700 + c.phase) * 4;
+      c.el.style.transform = `translate(${c.x}px,${c.y + bob}px) translate(-50%,-50%) scale(${k})`;
+    }
+  }
 
   /* ---- Bars ---- */
   let barEls = [];
@@ -1211,7 +1277,8 @@ function startHost(){
   }
 
   /* ---- Timer ---- */
-  function stopTimer(){ clearInterval(timerInt); timerInt = null; clearTimeout(autoNext); autoNext = null; $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden'); }
+  function stopTimer(){ clearInterval(timerInt); timerInt = null; clearTimeout(autoNext); autoNext = null; timerWasRunning = false; autoNextLeft = 0; $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden'); }
+  function scheduleNext(ms){ if (idx >= deck.length - 1) return; autoNextDue = Date.now() + ms; autoNext = setTimeout(() => { autoNext = null; goTo(idx + 1); }, ms); }
   const timeLeft = () => Math.max(0, (timerEnd - Date.now()) / 1000);
   function startTimer(s){
     stopTimer(); timeUp = false;
@@ -1229,16 +1296,17 @@ function startHost(){
         clearInterval(timerInt); timerInt = null; timeUp = true;
         $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden');
         if (s.scored) reveal(); else publishState();
-        if (idx < deck.length - 1) autoNext = setTimeout(() => goTo(idx + 1), s.scored ? 5000 : 1200);
+        scheduleNext(s.scored ? 5000 : 1200);
       }
     };
-    draw(); timerInt = setInterval(draw, 250);
+    timerDraw = draw; draw(); timerInt = setInterval(draw, 250);
   }
 
   /* ---- Reveal ---- */
   function reveal(){
     const s = cur(); if (!s.scored) return;
     const r = res(s); if (r.revealed) return;
+    if (paused) { paused = false; timerWasRunning = false; syncPauseUi(); }
     r.revealed = true; persist();
     if (timerInt) { clearInterval(timerInt); timerInt = null; timeUp = true; }
     $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden');
@@ -1248,6 +1316,30 @@ function startHost(){
     renderFeed(); publishState();
   }
   $('revealBtn').onclick = reveal;
+
+  /* ---- Pause ---- */
+  function syncPauseUi(){
+    $('pauseOv').classList.toggle('hidden', !paused);
+    $('pauseBtn').querySelector('span').textContent = paused ? 'Resume' : 'Pause';
+    $('pauseBtn').querySelector('use').setAttribute('href', paused ? '#i-play' : '#i-pause');
+    $('pauseBtn').classList.toggle('good', paused);
+  }
+  function setPaused(v){
+    if (v === paused) return;
+    if (v) {
+      paused = true; pausedAt = Date.now();
+      if (timerInt) { clearInterval(timerInt); timerInt = null; timerWasRunning = true; }
+      if (autoNext) { clearTimeout(autoNext); autoNext = null; autoNextLeft = Math.max(500, autoNextDue - Date.now()); }
+    } else {
+      const d = Date.now() - pausedAt;
+      slideStart += d; timerEnd += d; paused = false;
+      if (timerWasRunning && timerDraw) { timerWasRunning = false; timerInt = setInterval(timerDraw, 250); }
+      if (autoNextLeft) { const ms = autoNextLeft; autoNextLeft = 0; scheduleNext(ms); }
+    }
+    syncPauseUi(); publishState();
+  }
+  $('pauseBtn').classList.toggle('hidden', !quiz);
+  $('pauseBtn').onclick = () => setPaused(!paused);
 
   /* ---- Slides + transitions ---- */
   function renderSlide(){
@@ -1261,11 +1353,18 @@ function startHost(){
     $('slideNum').textContent = (idx + 1) + ' / ' + deck.length;
     $('prevBtn').disabled = idx === 0; $('nextBtn').disabled = idx === deck.length - 1;
     $('revealBtn').classList.toggle('hidden', !s.scored || !!r.revealed);
+    $('revealBtn').querySelector('span').textContent = s.timer ? 'Skip to answer' : 'Reveal answer';
     $('answerBanner').classList.toggle('hidden', !(s.scored && r.revealed && s.type === 'open'));
     if (s.scored && r.revealed && s.type === 'open') $('answerBanner').textContent = 'Answer: ' + answerText(s);
-    clearBubbles();
+    clearBubbles(); clearChips();
     $('lb').classList.add('hidden'); $('bars').classList.add('hidden'); $('countBox').classList.remove('hidden');
     if (s.type === 'text') { /* nothing */ }
+    else if (s.type === 'lobby') {
+      $('countWord').textContent = 'players'; $('empty').classList.remove('hidden');
+      $('empty').firstChild.textContent = 'Waiting for players ';
+      Object.entries(players).forEach(([pid, p]) => addChip(pid, p, false));
+      setCount(Object.keys(players).length);
+    }
     else if (s.type === 'leaderboard') {
       $('empty').classList.add('hidden'); $('countBox').classList.add('hidden'); $('lb').classList.remove('hidden'); buildLeaderboard();
     } else if (s.type === 'choice') {
@@ -1274,7 +1373,7 @@ function startHost(){
       barEls.forEach(b => { const h = b.bar.style.height; b.bar.style.height = '0'; requestAnimationFrame(() => requestAnimationFrame(() => b.bar.style.height = h)); });
     } else {
       $('countWord').textContent = 'responses';
-      $('empty').classList.remove('hidden');
+      $('empty').classList.remove('hidden'); $('empty').firstChild.textContent = 'Waiting for answers ';
       const hiddenSet = new Set(r.hidden);
       r.answers.forEach(a => addBubble(a, false, hiddenSet));
       setCount(r.answers.length);
@@ -1288,6 +1387,7 @@ function startHost(){
   async function goTo(n){
     if (busy || n < 0 || n >= deck.length || n === idx) return;
     stopTimer();
+    if (paused) { paused = false; syncPauseUi(); }
     const t = deck[n].transition, dir = n > idx ? 1 : -1;
     layer.style.setProperty('--dir', dir);
     if (t === 'none') { idx = n; renderSlide(); return; }
@@ -1307,6 +1407,7 @@ function startHost(){
     if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); goTo(idx + 1); }
     if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); goTo(idx - 1); }
     if (e.key === 'r' || e.key === 'R') reveal();
+    if (quiz && (e.key === 'p' || e.key === 'P')) setPaused(!paused);
   });
   $('namesBtn').onclick = () => {
     showNames = !showNames; ss.set('cp_showNames', showNames); syncNamesBtn();
@@ -1322,6 +1423,7 @@ function startHost(){
     const st = { open: true, names: namesMode, quiz, chat: chatOn,
       slide: { id: s.id, n: idx + 1, total: deck.length, q: s.q, text: s.text, type: s.type, options: s.options, max: s.max, scored: !!s.scored } };
     if (timerInt) st.left = Math.ceil(timeLeft() * 10) / 10;
+    if (paused) { st.paused = true; if (timerWasRunning) st.left = Math.ceil(Math.max(0, timerEnd - pausedAt) / 100) / 10; }
     if (timeUp) st.timeUp = true;
     if (s.scored && r.revealed) {
       const tot = {}; Object.keys(r.pts).forEach(pid => tot[pid] = players[pid]?.score ?? 0);
@@ -1346,6 +1448,7 @@ function startHost(){
       let m; try { m = JSON.parse(msg); } catch { return; }
       if (!m || typeof m.id !== 'string' || seen.has(m.id)) return;
       const name = cleanName(m.name), av = validAv(m.av), pid = typeof m.pid === 'string' ? m.pid.slice(0,40) : null;
+      if (pid && kicked.has(pid)) return;
       if (m.kind === 'hello') { seen.add(m.id); if (upsertPlayer(pid, name, av)) { persist(); updatePlayers(); } return; }
       if (m.kind === 'chat') {
         if (!chatOn || typeof m.msg !== 'string') return;
@@ -1353,6 +1456,7 @@ function startHost(){
         seen.add(m.id); chat.push({ id: m.id, n: name, av, m: text, pid }); chat = chat.slice(-60); ss.set('cp_chat', chat);
         renderChat(); publishChat(); return;
       }
+      if (paused) return;                                                    // frozen: nothing counts until resume
       const si = deck.findIndex(s => s.id === m.slide); if (si < 0) return;
       const s = deck[si];
       if (s.scored && (si !== idx || res(s).revealed || timeUp)) return;     // quiz: only live questions
@@ -1396,12 +1500,13 @@ function startHost(){
   $('endBtn').onclick = () => {
     if (!confirm('End the session? Everyone will be disconnected and results cleared.')) return;
     clients.forEach(c => { if (c.connected) { c.publish(hTopic, '', { retain: true, qos: 1 }); c.publish(cTopic, '', { retain: true, qos: 1 }); } });
-    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn'].forEach(k => ss.del(k));
+    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked'].forEach(k => ss.del(k));
     setTimeout(() => nav(''), 400);
   };
   $('fullBtn').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
 
   renderChat();
+  updatePlayers();
   renderSlide();
 }
 
@@ -1504,6 +1609,12 @@ function startJoin(code){
     $('scoreOpen').textContent = scoreTxt; $('scoreChoice').textContent = scoreTxt;
     const asText = prof.name ? 'Answering as ' + prof.name : '';
 
+    if (slide.type === 'lobby') {
+      $('lbAv').textContent = prof.av != null ? AVATARS[prof.av] : '★'; $('lbAv').style.background = prof.av != null ? AV_BG[prof.av % AV_BG.length] : 'var(--surface2)';
+      $('lbTitle').textContent = "You're in" + (prof.name ? ', ' + prof.name : '') + '!';
+      $('lbHint').textContent = 'Look for yourself floating on the big screen. The quiz starts soon.';
+      return only('lbView');
+    }
     if (slide.type === 'leaderboard') {
       const me = st.ranks && st.ranks[pid];
       $('lbAv').textContent = prof.av != null ? AVATARS[prof.av] : '★'; $('lbAv').style.background = prof.av != null ? AV_BG[prof.av % AV_BG.length] : 'var(--surface2)';
@@ -1515,6 +1626,8 @@ function startJoin(code){
       $('qnText').textContent = label; $('qText').textContent = slide.q; $('tText').textContent = slide.text;
       return only('textView');
     }
+    if (st.paused && (slide.type === 'open' || slide.type === 'choice') && !st.reveal)
+      return showDone('Paused', "The host has paused the quiz. Hang tight, your score won't be affected.", false, 'wait');
     if (slide.scored && st.reveal) {
       const p = st.reveal.pts ? st.reveal.pts[pid] : undefined;
       if (st.reveal.tot && st.reveal.tot[pid] != null) { myScore = st.reveal.tot[pid]; ss.set('cp_score_' + code, myScore); }
@@ -1610,14 +1723,14 @@ function startJoin(code){
       const firstState = !st;
       clearTimeout(timeout);
       const next = { id: s.id, n: +s.n || 1, total: +s.total || 1, q: String(s.q || ''), text: String(s.text || ''),
-                     type: ['choice','text','leaderboard'].includes(s.type) ? s.type : 'open', scored: !!s.scored,
+                     type: ['choice','text','leaderboard','lobby'].includes(s.type) ? s.type : 'open', scored: !!s.scored,
                      options: Array.isArray(s.options) ? s.options.map(String) : [], max: Math.min(5, Math.max(1, +s.max || 1)) };
       if (!slide || slide.id !== next.id) slide = next; else Object.assign(slide, next);
       st = { names: ['optional','required'].includes(d.names) ? d.names : 'off', quiz: !!d.quiz, chat: !!d.chat,
              left: typeof d.left === 'number' ? d.left : null, timeUp: !!d.timeUp, reveal: d.reveal && typeof d.reveal === 'object' ? d.reveal : null,
-             ranks: d.ranks && typeof d.ranks === 'object' ? d.ranks : null };
+             ranks: d.ranks && typeof d.ranks === 'object' ? d.ranks : null, paused: !!d.paused };
       if (firstState) hello();
-      const key = JSON.stringify([slide.id, slide.q, slide.text, slide.type, slide.options, st.names, st.quiz, st.timeUp, !!st.reveal, !!st.ranks]);
+      const key = JSON.stringify([slide.id, slide.q, slide.text, slide.type, slide.options, st.names, st.quiz, st.timeUp, !!st.reveal, !!st.ranks, st.paused]);
       const onProfile = !$('nameForm').classList.contains('hidden');
       if (key !== renderKey && !onProfile) { renderKey = key; render(); }
       else if (onProfile && !needProfile()) { renderKey = key; render(); }
