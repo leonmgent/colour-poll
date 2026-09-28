@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Colour Poll</title>
+<title>GentiMeter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js"></script>
@@ -259,6 +259,14 @@
   .lg .lp{font-weight:800;font-variant-numeric:tabular-nums}
   .lg .lc{grid-column:2/4;font-size:13px;opacity:.7;margin-top:-4px}
   .lg.wrong{opacity:.3} .lg.right b::before{content:'✓ ';color:var(--good)}
+  .word{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;line-height:1;cursor:pointer;will-change:transform;letter-spacing:-.01em;text-shadow:0 3px 14px rgba(0,0,0,.28)}
+  .word .wi{display:inline-block;animation:wordPop .75s cubic-bezier(.2,1.6,.4,1) both}
+  .word sup{font-size:.38em;opacity:.65;margin-left:.15em;font-weight:700}
+  .word.bump .wi{animation:bump .5s cubic-bezier(.2,1.8,.4,1)}
+  .word:hover{opacity:.75}
+  @keyframes wordPop{0%{transform:scale(0) rotate(-14deg);opacity:0}100%{transform:none;opacity:1}}
+  .mywords{display:flex;flex-wrap:wrap;gap:6px}
+  .mywords span{background:var(--surface2);border-radius:99px;padding:5px 11px;font-size:14px;font-weight:600;animation:pop .4s cubic-bezier(.2,1.6,.4,1) both}
   .feed,.hchat{position:absolute;display:flex;flex-direction:column;gap:8px;z-index:6}
   .feed{right:20px;top:calc(var(--top,130px) + 16px);width:min(300px,28vw);pointer-events:none;transition:opacity .3s}
   .hchat{left:20px;bottom:20px;width:min(340px,30vw)}
@@ -427,7 +435,7 @@
 <!-- ===== Landing ===== -->
 <section id="landing" class="landing hidden">
   <div>
-    <h1><span class="rainbow-text">Colour Poll</span></h1>
+    <h1><span class="rainbow-text">GentiMeter</span></h1>
     <p class="sub">Live answers, straight onto the big screen.</p>
   </div>
   <div class="cards">
@@ -529,7 +537,7 @@
 
 <!-- ===== Participant ===== -->
 <section id="join" class="join hidden">
-  <div class="join-top"><button class="homebtn" id="homeJoin" title="Home"><svg><use href="#i-home"/></svg></button><div class="brand rainbow-text">Colour Poll</div><span style="width:40px"></span></div>
+  <div class="join-top"><button class="homebtn" id="homeJoin" title="Home"><svg><use href="#i-home"/></svg></button><div class="brand rainbow-text">GentiMeter</div><span style="width:40px"></span></div>
   <div class="panel" id="joinPanel"><p class="msg" id="joinMsg">Connecting…</p></div>
 
   <form class="panel hidden" id="nameForm">
@@ -550,6 +558,17 @@
     <input class="field" id="answerInput" maxlength="25" autocomplete="off" placeholder="Type your answer">
     <button class="btn rain" type="submit" id="sendBtn" disabled>Send</button>
     <p class="hint" id="leftHint"></p>
+  </form>
+
+  <form class="panel hidden" id="wordsForm">
+    <div class="qn"><span id="qnWords"></span><span></span></div>
+    <div class="ptimer hidden"><i></i></div>
+    <h2 id="qWords"></h2>
+    <p class="ptext" id="tWords"></p>
+    <input class="field" id="wordInput" maxlength="60" autocomplete="off" placeholder="Type a word and hit Add">
+    <button class="btn rain" type="submit" id="wordBtn" disabled>Add</button>
+    <p class="hint" id="wordHint"></p>
+    <div class="mywords" id="myWords"></div>
   </form>
 
   <div class="panel hidden" id="choiceView">
@@ -642,6 +661,7 @@ const PALETTE = ['#ff5f6d','#ffc371','#47e5bc','#4facfe','#a66cff','#ff8fd6','#7
 const AVATARS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦉','🦄','🐙'];
 const AV_BG = ['#ffd6a5','#caffbf','#9bf6ff','#bdb2ff','#ffc6ff','#fdffb6','#ffadad','#a0c4ff','#b9fbc0','#f1c0e8'];
 const MAX_POINTS = 100, POINTS_LOST_PER_SECOND = 5;
+const WORD_LIMIT = 20;   // words per person on a Word dump slide
 // Point steal treasure: 2 good + 1 bad per player per question, shuffled on the host
 const CHEST_GOOD = [
   { id: 'jackpot',    w: 2, icon: '💰', title: 'Jackpot!',     desc: '+250 points' },
@@ -752,7 +772,7 @@ function cleanSlide(s){
   const options = (Array.isArray(s.options) ? s.options : []).slice(0,6).map(o => String(o || '').slice(0,40));
   return {
     id: typeof s.id === 'string' && s.id ? s.id.slice(0,40) : rid(),
-    type: ['open','choice','text'].includes(s.type) ? s.type : 'open',
+    type: ['open','choice','text','words'].includes(s.type) ? s.type : 'open',
     q: String(s.q || '').slice(0,140),
     text: String(s.text || '').slice(0,400),
     max: Math.min(5, Math.max(1, parseInt(s.max) || 3)),
@@ -968,7 +988,7 @@ function startAdmin(){
       const head = el('div', 'scard-head');
       head.append(el('div', 'snum', i + 1));
       const seg = el('div', 'seg grow');
-      [['open','Open answer'],['choice','Multiple choice'],['text','Text only']].forEach(([t, label]) => {
+      [['open','Open answer'],['choice','Multiple choice'],['words','Word dump'],['text','Text only']].forEach(([t, label]) => {
         const b = el('button', t === s.type ? 'on' : '', label); b.type = 'button';
         b.onclick = () => { if (s.type === t) return; s.type = t; if (t === 'choice' && s.options.length < 2) s.options = ['', '']; save(); render(); };
         seg.append(b);
@@ -1004,7 +1024,9 @@ function startAdmin(){
       }
       card.append(qir);
 
-      if (s.type === 'open') {
+      if (s.type === 'words') {
+        card.append(el('div', 'row', `People type any words that come to mind (up to ${WORD_LIMIT} each) and they pop up all over the screen. Repeated words get bigger.`));
+      } else if (s.type === 'open') {
         const row = el('label', 'row'); row.append('Answers per person');
         const sel = el('select');
         for (let n = 1; n <= 5; n++) { const o = el('option', null, n); o.value = n; if (n === s.max) o.selected = true; sel.append(o); }
@@ -1096,7 +1118,7 @@ function startAdmin(){
   $('presentBtn').onclick = () => { save(); nav('host=1&start=1'); };
   $('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify({ settings, slides: deck }, null, 2)], { type: 'application/json' });
-    const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'colour-poll-slides.json'; document.body.append(a); a.click(); a.remove();
+    const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'gentimeter-slides.json'; document.body.append(a); a.click(); a.remove();
   };
   $('importBtn').onclick = () => $('importFile').click();
   $('importFile').onchange = async () => {
@@ -1305,10 +1327,65 @@ function startHost(){
       n.nEl.style.fontSize = Math.max(11, n.r*.2) + 'px';
       n.who.style.fontSize = Math.max(10, n.r*.15) + 'px';
     }
-    chipTick(t);
+    chipTick(t); wordTick(t);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+
+  /* ---- Word dump: a floating word cloud ---- */
+  let words = new Map();
+  function clearWords(){ words.forEach(w => w.el.remove()); words = new Map(); }
+  function addWord(ans, animate, hiddenSet){
+    const text = ans.t, key = text.toLowerCase();
+    if (hiddenSet.has(key)) return;
+    $('empty').classList.add('hidden');
+    let w = words.get(key);
+    if (w) {
+      w.count++; w.sup.textContent = '×' + w.count;
+      if (animate) { w.el.classList.remove('bump'); void w.el.offsetWidth; w.el.classList.add('bump'); burst(w.x, w.y, Math.max(20, w.h / 2), w.color); }
+      return;
+    }
+    const col = (toColour(text) || hashColour(text)).bg;
+    const W = stage.clientWidth || 800, H = stage.clientHeight || 400;
+    const e = el('div', 'word'); e.title = 'Click to hide'; e.style.color = col;
+    const wi = el('span', 'wi', text); const sup = el('sup'); wi.append(sup); e.append(wi); stage.append(e);
+    const ang = Math.random() * Math.PI * 2, dist = Math.random() * .35;
+    w = { key, text, count: 1, el: e, sup, color: col, x: W / 2 + Math.cos(ang) * W * dist, y: H / 2 + Math.sin(ang) * H * dist,
+          vx: 0, vy: 0, fs: 4, mfs: 0, w: 10, h: 10, phase: Math.random() * 6.28 };
+    words.set(key, w);
+    e.onclick = () => {
+      hiddenSet.add(key); const r = res(cur()); r.hidden = [...hiddenSet]; persist();
+      e.remove(); words.delete(key); if (!words.size) $('empty').classList.remove('hidden'); renderFeed();
+    };
+    if (animate) setTimeout(() => burst(w.x, w.y, 26, col), 250);
+  }
+  function wordTick(t){
+    if (!words.size) return;
+    const W = stage.clientWidth, H = stage.clientHeight, cx = W / 2, cy = H / 2, list = [...words.values()];
+    let area = 0;
+    for (const w of list) { w.base = 1 + .75 * Math.sqrt(w.count - 1); area += Math.pow(w.base, 2) * (w.text.length * .6 + .6) * 1.25; }
+    const k = Math.max(12, Math.min(64, Math.sqrt(.26 * W * H / Math.max(area, 1))));
+    for (const w of list) {
+      const target = Math.min(k * w.base, H * .28);
+      w.fs += (target - w.fs) * .12;
+      if (Math.abs(w.fs - w.mfs) > .6) { w.el.style.fontSize = w.fs + 'px'; w.mfs = w.fs; w.w = w.el.offsetWidth; w.h = w.el.offsetHeight; }
+      w.vx += (cx - w.x) * .0004; w.vy += (cy - w.y) * .0009;
+    }
+    for (let it = 0; it < 4; it++) for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j], dx = b.x - a.x, dy = b.y - a.y;
+      const ox = (a.w + b.w) / 2 + 14 - Math.abs(dx), oy = (a.h + b.h) / 2 + 6 - Math.abs(dy);
+      if (ox > 0 && oy > 0) {
+        if (ox / (a.w + b.w) < oy / (a.h + b.h)) { const p = ox / 2 * (dx < 0 ? -1 : 1); a.x -= p; b.x += p; a.vx *= .5; b.vx *= .5; }
+        else { const p = oy / 2 * (dy < 0 ? -1 : 1); a.y -= p; b.y += p; a.vy *= .5; b.vy *= .5; }
+      }
+    }
+    for (const w of list) {
+      w.vx *= .85; w.vy *= .85; w.x += w.vx; w.y += w.vy;
+      w.x = Math.max(w.w / 2 + 12, Math.min(W - w.w / 2 - 12, w.x)); w.y = Math.max(w.h / 2 + 6, Math.min(H - w.h / 2 - 6, w.y));
+      const bob = Math.sin(t / 1100 + w.phase) * 3;
+      w.el.style.transform = `translate(${w.x - w.w / 2}px,${w.y - w.h / 2 + bob}px)`;
+    }
+  }
 
   /* ---- Lobby: floating players ---- */
   let chips = new Map();
@@ -1713,7 +1790,7 @@ function startHost(){
     $('revealBtn').querySelector('span').textContent = s.timer ? 'Skip to answer' : 'Reveal answer';
     $('answerBanner').classList.toggle('hidden', !(s.scored && r.revealed && s.type === 'open'));
     if (s.scored && r.revealed && s.type === 'open') $('answerBanner').textContent = 'Answer: ' + answerText(s);
-    clearBubbles(); clearChips();
+    clearBubbles(); clearChips(); clearWords();
     $('lb').classList.add('hidden'); $('bars').classList.add('hidden'); $('chart').classList.add('hidden'); $('countBox').classList.remove('hidden');
     if (s.type === 'text') { /* nothing */ }
     else if (s.type === 'lobby') {
@@ -1727,6 +1804,12 @@ function startHost(){
     } else if (s.type === 'choice') {
       $('empty').classList.add('hidden'); $('countWord').textContent = 'votes';
       buildChart(s);
+    } else if (s.type === 'words') {
+      $('countWord').textContent = 'words';
+      $('empty').classList.remove('hidden'); $('empty').firstChild.textContent = 'Waiting for words ';
+      const hiddenSet = new Set(r.hidden);
+      r.answers.forEach(a => addWord(a, false, hiddenSet));
+      setCount(r.answers.length);
     } else {
       $('countWord').textContent = 'responses';
       $('empty').classList.remove('hidden'); $('empty').firstChild.textContent = 'Waiting for answers ';
@@ -1825,7 +1908,7 @@ function startHost(){
       const r = res(s);
       if (s.scored && pid && r.pts[pid] != null) return;                    // one answer per quiz question
       let value;
-      if (s.type === 'open') {
+      if (s.type === 'open' || s.type === 'words') {
         if (typeof m.text !== 'string') return;
         value = m.text.replace(/\s+/g,' ').trim().slice(0,25); if (!value) return;
       } else if (s.type === 'choice') {
@@ -1839,7 +1922,11 @@ function startHost(){
         r.pts[pid] = pts; players[pid].score += pts;
         if (ok) (r.ok = r.ok || {})[pid] = true;
       }
-      if (s.type === 'open') {
+      if (s.type === 'words') {
+        if (pid && r.answers.filter(a => a.pid === pid).length >= WORD_LIMIT) return;
+        const ans = { t: value, n: name, av, pid }; r.answers.push(ans); persist();
+        if (si === idx) { addWord(ans, true, new Set(r.hidden)); setCount(r.answers.length); renderFeed(); }
+      } else if (s.type === 'open') {
         const ans = { t: value, n: name, av, pid }; r.answers.push(ans); persist();
         if (si === idx) { addBubble(ans, true, new Set(r.hidden)); setCount(r.answers.length); renderFeed(); }
       } else {
@@ -1881,7 +1968,7 @@ function startJoin(code){
   const profKey = 'cp_prof_' + code;
   const prof = ss.get(profKey) || { done: false, name: '', av: null };
   let pid = ss.get('cp_pid_' + code); if (!pid) { pid = rid(); ss.set('cp_pid_' + code, pid); }
-  const views = ['joinPanel','nameForm','openForm','choiceView','textView','lbView','donePanel'];
+  const views = ['joinPanel','nameForm','openForm','wordsForm','choiceView','textView','lbView','donePanel'];
   const only = id => views.forEach(v => $(v).classList.toggle('hidden', v !== id));
   const msg = (t, err) => { $('joinMsg').textContent = t; $('joinMsg').classList.toggle('err', !!err); only('joinPanel'); };
   const sentKey = () => 'cp_sent_' + code + '_' + slide.id;
@@ -1990,7 +2077,7 @@ function startJoin(code){
       $('qnText').textContent = label; $('qText').textContent = slide.q; $('tText').textContent = slide.text;
       return only('textView');
     }
-    if (st.paused && (slide.type === 'open' || slide.type === 'choice') && !st.reveal)
+    if (st.paused && ['open','choice','words'].includes(slide.type) && !st.reveal)
       return showDone('Paused', "The host has paused the quiz. Hang tight, your score won't be affected.", false, 'wait');
     if (slide.scored && st.reveal) {
       const p = st.reveal.pts ? st.reveal.pts[pid] : undefined;
@@ -2002,6 +2089,10 @@ function startJoin(code){
       return;
     }
     if (st.timeUp) return showDone("Time's up!", 'Watch the screen. The next slide will appear here automatically.', false, 'wait');
+    if (slide.type === 'words') {
+      $('qnWords').textContent = label; $('qWords').textContent = slide.q; $('tWords').textContent = slide.text;
+      renderMyWords(); only('wordsForm'); $('wordInput').focus(); syncTimer(); return;
+    }
     if (slide.type === 'choice') {
       if (sentCount() >= 1) return showDone(slide.scored ? 'Locked in!' : 'Vote sent!', slide.scored ? 'Wait for the answer to be revealed.' : 'Watch the screen. The next question will appear here automatically.', false);
       $('qnChoice').textContent = label; $('qChoice').textContent = slide.q; $('tChoice').textContent = slide.text;
@@ -2095,6 +2186,24 @@ function startJoin(code){
   // re-offer a pending target pick after a refresh
   Object.values(chestMem).forEach(m => { if (m && !m.done && m.needTarget) showTargets(m); });
 
+  /* ---- Word dump ---- */
+  const myWordsKey = () => 'cp_words_' + code + '_' + slide.id;
+  function renderMyWords(){
+    const mine = ss.get(myWordsKey()) || [], left = WORD_LIMIT - mine.length;
+    const box = $('myWords'); box.textContent = ''; mine.forEach(w => box.append(el('span', null, w)));
+    $('wordHint').textContent = left > 0 ? `Add as many as you like (${left} left). Tip: separate words with commas.` : "That's the lot! Watch them float around the screen.";
+    $('wordInput').disabled = left <= 0; $('wordBtn').disabled = left <= 0 || !$('wordInput').value.trim();
+  }
+  $('wordInput').oninput = () => { $('wordBtn').disabled = !$('wordInput').value.trim(); };
+  $('wordsForm').onsubmit = e => {
+    e.preventDefault();
+    const mine = ss.get(myWordsKey()) || [];
+    const parts = $('wordInput').value.split(',').map(w => w.replace(/\s+/g,' ').trim().slice(0,25)).filter(Boolean).slice(0, WORD_LIMIT - mine.length);
+    if (!parts.length) return;
+    for (const w of parts) { if (!send({ slide: slide.id, text: w })) return; mine.push(w); }
+    ss.set(myWordsKey(), mine); $('wordInput').value = ''; renderMyWords(); $('wordInput').focus();
+  };
+
   $('answerInput').oninput = () => {
     const v = $('answerInput').value.trim();
     $('sendBtn').disabled = !v;
@@ -2161,7 +2270,7 @@ function startJoin(code){
       const firstState = !st;
       clearTimeout(timeout);
       const next = { id: s.id, n: +s.n || 1, total: +s.total || 1, q: String(s.q || ''), text: String(s.text || ''),
-                     type: ['choice','text','leaderboard','lobby'].includes(s.type) ? s.type : 'open', scored: !!s.scored,
+                     type: ['choice','text','leaderboard','lobby','words'].includes(s.type) ? s.type : 'open', scored: !!s.scored,
                      options: Array.isArray(s.options) ? s.options.map(String) : [], max: Math.min(5, Math.max(1, +s.max || 1)) };
       if (!slide || slide.id !== next.id) slide = next; else Object.assign(slide, next);
       st = { names: ['optional','required'].includes(d.names) ? d.names : 'off', quiz: !!d.quiz, chat: !!d.chat,
