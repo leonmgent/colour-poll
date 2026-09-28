@@ -391,6 +391,26 @@
   .me-av{width:96px;height:96px;font-size:56px;margin:0 auto}
   .msg{color:var(--muted);text-align:center}
   .err{color:var(--bad)}
+  /* music */
+  .musicbox{padding:16px 18px;gap:14px}
+  .mhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .mhead b{font-size:17px} .mhead span{color:var(--muted);font-size:14px}
+  .songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+  .song{position:relative;border:2px solid var(--line);border-radius:14px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:3px;cursor:pointer;background:var(--bg);text-align:left;transition:border-color .15s,background .15s}
+  .song:hover{border-color:#3d4468}
+  .song.on{border-color:var(--focus);background:#131c33}
+  .song .si{font-size:24px;line-height:1}
+  .song b{font-size:15px}
+  .song small{color:var(--muted);font-size:12.5px;line-height:1.25;overflow-wrap:anywhere}
+  .song .pv{position:absolute;top:9px;right:9px;width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text)}
+  .song .pv:hover{background:var(--focus);color:#0d0e1a}
+  .song .pv.playing{background:var(--good);color:#0b2a1d;animation:livepulse 1.4s infinite}
+  .song .pv svg{width:14px;height:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:7px 12px;border-radius:99px;border:2px solid var(--line);font-weight:600;font-size:14px;color:var(--muted);transition:all .15s}
+  .chip.on{border-color:var(--good);color:var(--text);background:rgba(61,220,151,.1)}
+  .chip.on::before{content:'✓ ';color:var(--good)}
+
   /* broadcast */
   .btn.live{background:var(--bad);color:#fff;animation:livepulse 1.6s ease-in-out infinite}
   @keyframes livepulse{50%{box-shadow:0 0 0 6px rgba(255,107,107,.25)}}
@@ -440,6 +460,7 @@
   <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
   <symbol id="i-mega" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6a8 8 0 0 1 0 12"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
@@ -491,6 +512,8 @@
     </div>
   </div>
   <div class="slides"><div class="settings" id="settingsBox"></div></div>
+  <div class="slides"><div class="settings musicbox" id="musicBox"></div></div>
+  <input type="file" id="audioFile" accept="audio/*" class="hidden">
   <div class="slides" id="slideList"></div>
   <div class="slides"><button class="add-slide" id="addSlide"><svg class="i"><use href="#i-plus"/></svg>Add slide</button></div>
   <p class="admin-note">Slides save automatically in this browser. Use Export to keep a backup or move them to another computer.</p>
@@ -528,6 +551,7 @@
       </div>
       <button class="btn ghost sm" id="copyBtn"><svg class="i"><use href="#i-link"/></svg><span>Copy link</span></button>
       <button class="btn ghost sm" id="chatBtn"><svg class="i"><use href="#i-chat"/></svg><span>Chat off</span></button>
+      <button class="btn ghost sm hidden" id="musicBtn" title="Background music"><svg class="i"><use href="#i-music"/></svg><span>Music</span></button>
       <button class="btn ghost sm" id="fullBtn">Fullscreen</button>
       <div class="menu">
         <button class="btn ghost sm" id="moreBtn" title="More"><svg class="i"><use href="#i-more"/></svg></button>
@@ -833,7 +857,7 @@ function cleanLobby(l){
 }
 function loadSettings(){
   const s = ls.get(SETTINGS_KEY) || {};
-  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat, steal: !!s.steal, lobby: cleanLobby(s.lobby) };
+  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat, steal: !!s.steal, lobby: cleanLobby(s.lobby), music: cleanMusic(s.music) };
 }
 // What actually gets presented
 function playable(s, quiz){
@@ -884,6 +908,168 @@ function connectAll(onConnect, onMessage, onStatus){
   });
   function report(){ onStatus(clients.filter(c => c.connected).length); }
   return clients;
+}
+
+/* ================= Background music ================= */
+// Five original loops, generated live in the browser (no files, no copyright issues)
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const MUSIC_TRACKS = {
+  lofi: { name: 'Chill Lo-fi', icon: '🎧', desc: 'Laid-back beats for chatting', bpm: 78, swing: .2,
+    chords: [[65,69,72,76],[64,67,71,74],[62,65,69,72],[60,64,67,71]], bass: [41,40,38,36],
+    play(st, t, ch, b, T){
+      if (st === 0 || st === 10) T.kick(t, .8);
+      if (st === 4 || st === 12) T.snare(t, .28);
+      if (st % 2 === 0) T.hat(t, st % 4 === 2 ? .09 : .05);
+      if (st === 0) ch.forEach((n, i) => T.tone('triangle', n, t + i * .015, T.beat * 3.4, .06, { attack: .02, release: .9, lp: 1600 }));
+      if (st === 8 || st === 14) T.tone('sine', ch[(st / 2) % ch.length] + 12, t, T.beat * .9, .045, { release: .4 });
+      if (st === 0 || st === 7 || st === 10) T.tone('sine', b, t, T.beat * 1.1, .26, { attack: .01, release: .2 });
+    } },
+  pop: { name: 'Upbeat Pop', icon: '🎉', desc: 'Bright and bouncy', bpm: 118, swing: 0,
+    chords: [[60,64,67],[55,59,62],[57,60,64],[53,57,60]], bass: [36,43,45,41],
+    play(st, t, ch, b, T){
+      if (st % 4 === 0) T.kick(t, .85);
+      if (st === 4 || st === 12) T.snare(t, .4);
+      if (st % 4 === 2) T.hat(t, .12, true); else T.hat(t, .04);
+      if (st % 2 === 0) T.tone('square', ch[(st / 2) % ch.length] + 12, t, T.step * .8, .035, { release: .06, lp: 3200 });
+      if (st % 4 === 0) T.tone('triangle', b, t, T.step * 1.6, .22, { release: .05 });
+      if (st % 4 === 2) T.tone('triangle', b + 12, t, T.step * 1.2, .16, { release: .05 });
+      if (st === 0) ch.forEach(n => T.tone('sawtooth', n, t, T.beat * 3.8, .025, { attack: .08, release: .4, lp: 1400 }));
+    } },
+  tension: { name: 'Quiz Tension', icon: '⏱️', desc: 'Ticking, thinking music', bpm: 100, swing: 0,
+    chords: [[57,60,64],[53,57,60],[50,53,57],[52,56,59]], bass: [33,29,26,28],
+    play(st, t, ch, b, T){
+      T.hat(t, st % 4 === 0 ? .1 : .045);
+      if (st === 0 || st === 8) T.kick(t, .7);
+      if (st % 2 === 0) T.tone('sawtooth', b + (st % 8 === 6 ? 12 : 0), t, T.step * 1.4, .12, { release: .05, lp: 700 });
+      if (st % 4 === 0) T.tone('square', 93, t, .02, .03, { release: .02 });
+      if (st === 0) ch.forEach(n => T.tone('triangle', n, t, T.beat * 3.8, .04, { attack: .3, release: .5, lp: 1200 }));
+      if (st === 12) T.tone('sine', ch[2] + 12, t, T.beat * 1.2, .05, { release: .5 });
+    } },
+  arcade: { name: 'Retro Arcade', icon: '👾', desc: '8-bit game show energy', bpm: 140, swing: 0,
+    chords: [[60,64,67],[57,60,64],[53,57,60],[55,59,62]], bass: [48,45,41,43],
+    melody: [76,null,79,76,72,null,74,76, 77,null,76,74,72,null,null,null, 72,null,76,72,69,null,72,74, 76,null,74,72,69,null,null,null,
+             69,null,72,69,65,null,69,72, 74,null,72,69,65,null,67,69, 71,null,74,71,67,null,71,74, 79,null,77,76,74,null,72,null],
+    play(st, t, ch, b, T, bar){
+      if (st === 0 || st === 8 || st === 11) T.kick(t, .6);
+      if (st === 4 || st === 12) T.snare(t, .3);
+      if (st % 2 === 0) T.hat(t, .05);
+      if (st % 2 === 0) T.tone('triangle', st % 4 === 0 ? b - 12 : b - 5, t, T.step * 1.6, .22, { release: .03 });
+      const m = this.melody[(bar % 4) * 16 + st];
+      if (m) T.tone('square', m, t, T.step * 1.7, .045, { release: .05 });
+    } },
+  ambient: { name: 'Ambient Dream', icon: '🌙', desc: 'Calm, floaty and gentle', bpm: 60, swing: 0,
+    chords: [[48,55,62,64],[45,52,59,60],[41,48,55,57],[43,50,57,62]], bass: [36,33,29,31],
+    play(st, t, ch, b, T){
+      if (st === 0) ch.forEach((n, i) => { T.tone('sine', n + 12, t + i * .05, T.beat * 3.9, .05, { attack: 1.2, release: 1.6 }); T.tone('triangle', n, t, T.beat * 3.9, .03, { attack: 1.5, release: 1.6, lp: 900, detune: 6 }); });
+      if (st === 0) T.tone('sine', b, t, T.beat * 3.9, .1, { attack: .8, release: 1.2 });
+      if (st % 4 === 2 && Math.random() < .55) { const sc = [72, 74, 76, 79, 81, 84]; T.tone('sine', sc[Math.floor(Math.random() * sc.length)], t, .08, .05, { release: 1.8 }); }
+    } }
+};
+function createSynth(){
+  let ctx = null, master = null, bus = null, noise = null, timer = null, track = null, step = 0, bar = 0, next = 0, vol = .4;
+  function ensure(){
+    if (ctx) return ctx;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0;
+    const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+    bus = ctx.createGain(); bus.gain.value = .9; bus.connect(master);
+    noise = ctx.createBuffer(1, ctx.sampleRate * .5, ctx.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return ctx;
+  }
+  const T = {
+    beat: .5, step: .125,
+    tone(type, midi, t, dur, v, o = {}){
+      const osc = ctx.createOscillator(), g = ctx.createGain(), a = o.attack ?? .005, r = o.release ?? .08, hold = Math.max(a, dur);
+      osc.type = type; osc.frequency.value = mtof(midi); if (o.detune) osc.detune.value = o.detune;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.setValueAtTime(v, t + hold); g.gain.exponentialRampToValueAtTime(.0001, t + hold + r);
+      let node = osc; if (o.lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; osc.connect(f); node = f; }
+      node.connect(g); g.connect(bus); osc.start(t); osc.stop(t + hold + r + .05);
+    },
+    kick(t, v){
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12);
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + .28);
+      o.connect(g); g.connect(bus); o.start(t); o.stop(t + .3);
+    },
+    noiseHit(t, v, type, freq, len){
+      const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = noise; f.type = type; f.frequency.value = freq;
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + len);
+      s.connect(f); f.connect(g); g.connect(bus); s.start(t); s.stop(t + len + .02);
+    },
+    snare(t, v){ this.noiseHit(t, v, 'bandpass', 1800, .16); this.tone('triangle', 52, t, .02, v * .5, { release: .08 }); },
+    hat(t, v, open){ this.noiseHit(t, v, 'highpass', 7000, open ? .18 : .045); }
+  };
+  function schedule(){
+    while (next < ctx.currentTime + .15) {
+      const tr = MUSIC_TRACKS[track]; if (!tr) return;
+      const s16 = 60 / tr.bpm / 4, sw = step % 2 === 1 ? s16 * tr.swing : 0;
+      T.beat = 60 / tr.bpm; T.step = s16;
+      tr.play.call(tr, step, next + sw, tr.chords[bar % 4], tr.bass[bar % 4], T, bar);
+      next += s16; step++; if (step === 16) { step = 0; bar++; }
+    }
+  }
+  return {
+    get ctx(){ return ctx; },
+    play(id, v){
+      ensure(); vol = v;
+      if (track !== id) { track = id; step = 0; bar = 0; next = ctx.currentTime + .08; }
+      master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(vol, ctx.currentTime + 1);
+      if (!timer) timer = setInterval(schedule, 25);
+      return ctx.state === 'running';
+    },
+    setVolume(v){ vol = v; if (ctx && timer) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime); master.gain.linearRampToValueAtTime(vol, ctx.currentTime + .3); } },
+    stop(){
+      if (!ctx || !timer) { track = null; return; }
+      master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0, ctx.currentTime + .8);
+      clearInterval(timer); timer = null; track = null;
+    },
+    async unlock(){ ensure(); if (ctx.state !== 'running') { try { await ctx.resume(); } catch {} } return ctx.state === 'running'; }
+  };
+}
+// Uploaded songs are kept in the browser's IndexedDB (too big for normal storage)
+function idbOpen(){ return new Promise((res, rej) => { const r = indexedDB.open('gentimeter', 1); r.onupgradeneeded = () => r.result.createObjectStore('files'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbPut(k, v){ const db = await idbOpen(); return new Promise((res, rej) => { const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+async function idbGet(k){ const db = await idbOpen(); return new Promise((res, rej) => { const q = db.transaction('files').objectStore('files').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+function createMusicPlayer(){
+  const synth = createSynth();
+  let audio = null, current = null, vol = .4, fade = null;
+  const fadeAudio = (to, then) => {
+    clearInterval(fade); if (!audio) return;
+    fade = setInterval(() => { const d = to - audio.volume; if (Math.abs(d) < .03) { audio.volume = Math.max(0, Math.min(1, to)); clearInterval(fade); then && then(); } else audio.volume = Math.max(0, Math.min(1, audio.volume + Math.sign(d) * .03)); }, 40);
+  };
+  return {
+    // returns false if the browser is blocking sound until the page is clicked
+    async play(id, v){
+      vol = v;
+      if (current === id) { if (id === 'custom') fadeAudio(vol); else synth.setVolume(vol); return id === 'custom' ? !audio.paused : synth.ctx.state === 'running'; }
+      this.stop(); current = id;
+      if (id === 'custom') {
+        if (!audio) { const blob = await idbGet('custom').catch(() => null); if (!blob) { current = null; return true; } audio = new Audio(URL.createObjectURL(blob)); audio.loop = true; }
+        audio.volume = 0;
+        try { await audio.play(); fadeAudio(vol); return true; } catch { current = null; return false; }
+      }
+      return synth.play(id, vol);
+    },
+    stop(){
+      if (current === 'custom' && audio) { const a = audio; fadeAudio(0, () => a.pause()); }
+      else synth.stop();
+      current = null;
+    },
+    get current(){ return current; },
+    async unlock(){ return synth.unlock(); },
+    resetCustom(){ if (audio) { audio.pause(); URL.revokeObjectURL(audio.src); audio = null; } if (current === 'custom') current = null; }
+  };
+}
+const MUSIC_SCENES = [['lobby', 'Joining screen'], ['question', 'Questions'], ['text', 'Text slides'], ['leaderboard', 'Leaderboard']];
+const sceneOf = s => s.type === 'lobby' ? 'lobby' : s.type === 'leaderboard' ? 'leaderboard' : s.type === 'text' ? 'text' : 'question';
+function cleanMusic(m){
+  m = m && typeof m === 'object' ? m : {};
+  const scenes = {}; MUSIC_SCENES.forEach(([k]) => scenes[k] = m.scenes && typeof m.scenes[k] === 'boolean' ? m.scenes[k] : true);
+  return { track: m.track === 'custom' || MUSIC_TRACKS[m.track] ? m.track : 'off', volume: Math.min(100, Math.max(0, parseInt(m.volume ?? 40) || 0)), scenes, customName: String(m.customName || '').slice(0, 80) };
 }
 
 /* ================= Results report (PDF) ================= */
@@ -1412,7 +1598,7 @@ function startAdmin(){
   function renderSettings(){
     const box = $('settingsBox'); box.textContent = '';
     const row = (title, ctl, hint) => { const r = el('div', 'setrow'); r.append(el('b', null, title), ctl, el('span', 'hint', hint)); box.append(r); };
-    row('Quiz mode', segCtl([[false,'Off'],[true,'On']], settings.quiz, v => { settings.quiz = v; save(); renderSettings(); render(); }),
+    row('Quiz mode', segCtl([[false,'Off'],[true,'On']], settings.quiz, v => { settings.quiz = v; save(); renderSettings(); renderMusic(); render(); }),
       settings.quiz ? `Mark correct answers on your questions. Right answers score ${MAX_POINTS} points, minus ${POINTS_LOST_PER_SECOND} for every second taken. Players pick an animal avatar, and a leaderboard is added at the end automatically.`
                     : 'Turn on to score answers, add timers, and finish with a leaderboard.');
     row('Participant names', segCtl([['off','Off'],['optional','Optional'],['required','Required']], settings.quiz ? 'required' : settings.names, v => { settings.names = v; save(); }, settings.quiz),
@@ -1424,6 +1610,63 @@ function startAdmin(){
   }
 
   const lookOf = s => ({ bg: s.bg, image: s.image, dim: s.dim, fg: s.fg, transition: s.transition });
+
+  /* ---- background music ---- */
+  const preview = createMusicPlayer(); let previewing = null;
+  function stopPreview(){ preview.stop(); previewing = null; }
+  function renderMusic(){
+    const M = settings.music, box = $('musicBox'); box.textContent = '';
+    const head = el('div', 'mhead'); head.append(el('b', null, 'Background music'), el('span', null, 'Plays on the big screen only. Press ▶ to preview.')); box.append(head);
+    const grid = el('div', 'songs');
+    const tiles = [['off', { icon: '🔇', name: 'No music', desc: 'Silence' }], ...Object.entries(MUSIC_TRACKS), ['custom', { icon: '📁', name: 'Your own song', desc: M.customName ? M.customName : 'Upload an MP3 or other audio file' }]];
+    tiles.forEach(([id, t]) => {
+      const card = el('div', 'song' + (M.track === id ? ' on' : '')); card.tabIndex = 0; card.dataset.song = id;
+      card.append(el('span', 'si', t.icon), el('b', null, t.name), el('small', null, t.desc));
+      card.onclick = () => {
+        if (id === 'custom' && !M.customName) return $('audioFile').click();
+        M.track = id; save(); if (previewing && previewing !== id) stopPreview(); renderMusic();
+      };
+      if (id !== 'off' && (id !== 'custom' || M.customName)) {
+        const pv = el('button', 'pv' + (previewing === id ? ' playing' : '')); pv.type = 'button'; pv.title = previewing === id ? 'Stop preview' : 'Preview';
+        pv.append(icon(previewing === id ? 'pause' : 'play'));
+        pv.onclick = async e => {
+          e.stopPropagation();
+          if (previewing === id) { stopPreview(); return renderMusic(); }
+          stopPreview(); await preview.unlock(); previewing = id; renderMusic();
+          const ok = await preview.play(id, Math.max(.05, M.volume / 100)); if (!ok) { previewing = null; renderMusic(); }
+        };
+        card.append(pv);
+      }
+      if (id === 'custom' && M.customName) {
+        const ch = el('button', 'linkbtn', 'Change file'); ch.type = 'button'; ch.style.fontSize = '13px'; ch.style.padding = '2px 0';
+        ch.onclick = e => { e.stopPropagation(); $('audioFile').click(); }; card.append(ch);
+      }
+      grid.append(card);
+    });
+    box.append(grid);
+    const vr = el('div', 'row'); vr.append('Volume');
+    const rng = el('input'); rng.type = 'range'; rng.min = 0; rng.max = 100; rng.value = M.volume; rng.id = 'musicVol';
+    const val = el('b', null, M.volume + '%'); val.style.color = 'var(--text)'; val.style.minWidth = '48px';
+    rng.oninput = () => { M.volume = +rng.value; val.textContent = M.volume + '%'; if (previewing) preview.play(previewing, Math.max(.02, M.volume / 100)); save(); };
+    vr.append(rng, val); box.append(vr);
+    const sr = el('div', 'row'); sr.append('Play during');
+    const chips = el('div', 'chips');
+    MUSIC_SCENES.forEach(([k, label]) => {
+      if ((k === 'lobby' || k === 'leaderboard') && !settings.quiz) return;
+      const c = el('button', 'chip' + (M.scenes[k] ? ' on' : ''), label); c.type = 'button';
+      c.onclick = () => { M.scenes[k] = !M.scenes[k]; save(); renderMusic(); };
+      chips.append(c);
+    });
+    sr.append(chips); box.append(sr);
+  }
+  $('audioFile').onchange = async () => {
+    const f = $('audioFile').files[0]; $('audioFile').value = ''; if (!f) return;
+    if (f.size > 40 * 1024 * 1024) return alert('That file is too big. Please use a song under 40 MB.');
+    try {
+      await idbPut('custom', f); stopPreview(); preview.resetCustom();
+      settings.music.customName = f.name; settings.music.track = 'custom'; save(); renderMusic();
+    } catch { alert("Couldn't save that song in this browser."); }
+  };
 
   function designPanel(s){
     let mini;
@@ -1637,7 +1880,7 @@ function startAdmin(){
     render('[data-f="q' + (deck.length - 1) + '"]');
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
-  $('presentBtn').onclick = () => { save(); nav('host=1&start=1'); };
+  $('presentBtn').onclick = () => { save(); stopPreview(); nav('host=1&start=1'); };
   if (ss.get('cp_hostCode')) { $('adminReportBtn').classList.remove('hidden'); $('adminReportBtn').onclick = () => exportResults($('adminReportBtn')); }
   $('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify({ settings, slides: deck }, null, 2)], { type: 'application/json' });
@@ -1653,12 +1896,13 @@ function startAdmin(){
       deck = slides.slice(0,50).map(cleanSlide);
       if (d.settings) {
         if (['off','optional','required'].includes(d.settings.names)) settings.names = d.settings.names;
-        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat; settings.steal = !!d.settings.steal; settings.lobby = cleanLobby(d.settings.lobby);
+        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat; settings.steal = !!d.settings.steal; settings.lobby = cleanLobby(d.settings.lobby); settings.music = cleanMusic({ ...d.settings.music, track: d.settings.music && d.settings.music.track === 'custom' ? 'off' : (d.settings.music || {}).track });
       }
       save(); nav('admin=1');
     } catch { alert("That file doesn't look like exported slides."); }
   };
   renderSettings();
+  renderMusic();
   render();
 }
 
@@ -2197,7 +2441,7 @@ function startHost(){
       if (timerWasRunning && timerDraw) { timerWasRunning = false; timerInt = setInterval(timerDraw, 250); }
       if (autoNextLeft) { const ms = autoNextLeft; autoNextLeft = 0; scheduleNext(ms); }
     }
-    syncPauseUi(); publishState();
+    syncPauseUi(); publishState(); syncMusic();
   }
   $('pauseBtn').classList.toggle('hidden', !quiz);
 
@@ -2313,6 +2557,32 @@ function startHost(){
   }
   $('pauseBtn').onclick = () => setPaused(!paused);
 
+  /* ---- Background music ---- */
+  const player = createMusicPlayer(), M = settings.music;
+  let musicMuted = !!ss.get('cp_musicMute'), musicBlocked = false;
+  $('musicBtn').classList.toggle('hidden', M.track === 'off');
+  function syncMusicBtn(){
+    const sp = $('musicBtn').querySelector('span');
+    sp.textContent = musicBlocked && !musicMuted ? 'Click to start music' : musicMuted ? 'Music off' : 'Music on';
+    $('musicBtn').classList.toggle('good', !musicMuted && !musicBlocked); $('musicBtn').classList.toggle('ghost', musicMuted || musicBlocked);
+  }
+  async function syncMusic(){
+    if (M.track === 'off') return;
+    const s = cur(), want = !musicMuted && M.scenes[sceneOf(s)] !== false;
+    if (!want) { player.stop(); musicBlocked = false; return syncMusicBtn(); }
+    const ok = await player.play(M.track, (M.volume / 100) * (paused ? .35 : 1));
+    musicBlocked = !ok; syncMusicBtn();
+  }
+  // browsers only allow sound after the page has been clicked or a key pressed
+  const unlockMusic = async () => { await player.unlock(); if (musicBlocked) { player.stop(); syncMusic(); } };
+  document.addEventListener('pointerdown', unlockMusic); document.addEventListener('keydown', unlockMusic);
+  $('musicBtn').onclick = async () => {
+    await player.unlock();
+    if (musicBlocked && !musicMuted) { player.stop(); return syncMusic(); }
+    musicMuted = !musicMuted; ss.set('cp_musicMute', musicMuted); syncMusic();
+  };
+  syncMusicBtn();
+
   /* ---- Slides + transitions ---- */
   function renderSlide(){
     const s = cur(), r = res(s);
@@ -2356,7 +2626,7 @@ function startHost(){
       setCount(r.answers.length);
     }
     slideStart = Date.now();
-    renderFeed(); persist(); renderTreasureNote();
+    renderFeed(); persist(); renderTreasureNote(); syncMusic();
     startTimer(s);
     publishState();
   }
