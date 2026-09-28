@@ -232,6 +232,33 @@
   .blabel{font-size:clamp(15px,1.6vw,22px);font-weight:600;text-align:center;line-height:1.2}
   .bwho{font-size:13px;opacity:.7;text-align:center;min-height:1.2em;line-height:1.2}
 
+  .chart{position:absolute;inset:16px 5% 60px}
+  .chart.hbars{display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2vh,20px);max-width:1100px;margin:0 auto}
+  .hrow{display:grid;grid-template-columns:minmax(120px,24%) 1fr 120px;align-items:center;gap:16px;transition:opacity .5s}
+  .hrow .hl{font-weight:700;font-size:clamp(16px,1.7vw,24px);text-align:right;line-height:1.15}
+  .hrow .hl small{display:block;font-size:13px;opacity:.7;font-weight:600}
+  .htrack{height:clamp(28px,5vh,52px);background:rgba(255,255,255,.08);border-radius:12px;overflow:hidden}
+  .hfill{height:100%;width:0;border-radius:12px;transition:width .8s cubic-bezier(.2,1.2,.4,1);box-shadow:inset 0 6px 14px rgba(255,255,255,.22)}
+  .hrow .hv{font-size:clamp(18px,2vw,28px);font-weight:800}
+  .hrow .hv small{font-size:.55em;opacity:.7;margin-left:6px}
+  .hrow.wrong{opacity:.28} .hrow.right .hfill{box-shadow:0 0 0 4px var(--good)} .hrow.right .hl::before{content:'✓ ';color:var(--good)}
+  .hfill.bump,.slice.bump{animation:barbump .45s ease}
+  .chart.pie-wrap{display:flex;align-items:center;justify-content:center;gap:clamp(20px,5vw,80px)}
+  .piebox{position:relative;height:min(100%,62vh);aspect-ratio:1}
+  .piebox svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 16px 30px rgba(0,0,0,.35))}
+  .slice{fill:none;transition:stroke-dasharray 1s cubic-bezier(.3,1,.35,1),stroke-dashoffset 1s cubic-bezier(.3,1,.35,1),opacity .5s}
+  .slice.wrong{opacity:.22}
+  .plabel{position:absolute;transform:translate(-50%,-50%);font-weight:800;font-size:clamp(16px,2vw,28px);color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.55);transition:left 1s cubic-bezier(.3,1,.35,1),top 1s cubic-bezier(.3,1,.35,1),opacity .4s;pointer-events:none;white-space:nowrap}
+  .pcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+  .pcenter b{font-size:clamp(34px,5vw,72px);font-weight:800;line-height:1}
+  .pcenter span{opacity:.7;font-weight:600}
+  .legend{display:flex;flex-direction:column;gap:12px;min-width:220px;max-width:36%}
+  .lg{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:6px 12px;font-size:clamp(16px,1.7vw,24px);transition:opacity .5s}
+  .lg i{width:18px;height:18px;border-radius:5px}
+  .lg b{font-weight:700;line-height:1.15}
+  .lg .lp{font-weight:800;font-variant-numeric:tabular-nums}
+  .lg .lc{grid-column:2/4;font-size:13px;opacity:.7;margin-top:-4px}
+  .lg.wrong{opacity:.3} .lg.right b::before{content:'✓ ';color:var(--good)}
   .feed,.hchat{position:absolute;display:flex;flex-direction:column;gap:8px;z-index:6}
   .feed{right:20px;top:calc(var(--top,130px) + 16px);width:min(300px,28vw);pointer-events:none;transition:opacity .3s}
   .hchat{left:20px;bottom:20px;width:min(340px,30vw)}
@@ -489,6 +516,7 @@
     <div class="stage" id="stage">
       <div class="empty" id="empty">Waiting for answers <i></i><i></i><i></i></div>
       <div class="bars hidden" id="bars"></div>
+      <div class="chart hidden" id="chart"></div>
       <div class="lb hidden" id="lb"></div>
       <div class="count" id="countBox"><b id="countNum">0</b> <span id="countWord">responses</span></div>
     </div>
@@ -716,7 +744,7 @@ function paintLook(s, bgEl, dimEl, layerEl){
 /* ================= Slides (deck) ================= */
 const validImg = v => typeof v === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,/.test(v) && v.length < 4e6 ? v : '';
 function newSlide(type = 'open', look){
-  return { id: rid(), type, q: '', text: '', max: 3, options: type === 'choice' ? ['', ''] : [], correct: [], accept: '', timer: 0, qimage: '',
+  return { id: rid(), type, q: '', text: '', max: 3, options: type === 'choice' ? ['', ''] : [], correct: [], accept: '', chart: 'bars', timer: 0, qimage: '',
            bg: 'midnight', image: '', dim: 40, fg: 'light', transition: 'fade', ...(look || {}) };
 }
 function cleanSlide(s){
@@ -731,6 +759,7 @@ function cleanSlide(s){
     options,
     correct: (Array.isArray(s.correct) ? s.correct : []).filter(i => Number.isInteger(i) && i >= 0 && i < options.length),
     accept: String(s.accept || '').slice(0,200),
+    chart: ['bars','hbars','pie','donut'].includes(s.chart) ? s.chart : 'bars',
     timer: Math.min(120, Math.max(0, parseInt(s.timer) || 0)),
     qimage: validImg(s.qimage),
     bg: BACKGROUNDS[s.bg] ? s.bg : 'midnight',
@@ -1002,6 +1031,9 @@ function startAdmin(){
           r.append(x); opts.append(r);
         });
         card.append(opts);
+        const cr = el('div', 'row'); cr.append('Show results as');
+        cr.append(segCtl([['bars','Bar chart'],['hbars','Sideways bars'],['pie','Pie chart'],['donut','Donut']], s.chart, v => { s.chart = v; save(); }));
+        card.append(cr);
         if (s.options.length < 6) {
           const add = el('button', 'linkbtn', '+ Add option'); add.type = 'button';
           add.onclick = () => { s.options.push(''); save(); render('[data-f="o' + i + '_' + (s.options.length - 1) + '"]'); };
@@ -1140,6 +1172,7 @@ function startHost(){
   const updatePlayers = () => {
     const n = Object.keys(players).length; $('playerCount').textContent = n ? n + (n === 1 ? ' player' : ' players') + ' joined' : '';
     if (deck[idx] && deck[idx].type === 'lobby') { Object.entries(players).forEach(([pid, p]) => addChip(pid, p, true)); setCount(n); }
+    if (deck[idx] && deck[idx].type === 'choice' && pieEls) updatePie(deck[idx]);
   };
 
   // top bar buttons
@@ -1347,6 +1380,104 @@ function startHost(){
     setCount(total);
   }
 
+  /* ---- Other chart types: sideways bars, pie, donut ---- */
+  let hEls = [], pieEls = null;
+  function animNum(elm, to, suffix){
+    const from = elm._v || 0; elm._v = to; const t0 = performance.now(), dur = 900;
+    cancelAnimationFrame(elm._raf);
+    const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); elm.textContent = Math.round(from + (to - from) * e) + suffix; if (k < 1) elm._raf = requestAnimationFrame(step); };
+    elm._raf = requestAnimationFrame(step);
+  }
+  function revealCls(s, i, node){ const r = res(s); if (r.revealed && s.scored) { node.classList.toggle('right', s.correct.includes(i)); node.classList.toggle('wrong', !s.correct.includes(i)); } }
+  function buildHbars(s){
+    const box = $('chart'); box.className = 'chart hbars'; box.textContent = ''; hEls = [];
+    s.options.forEach((o, i) => {
+      const col = colourFor(o, i);
+      const row = el('div', 'hrow'); const hl = el('div', 'hl', o); const who = el('small', 'cwho'); who.classList.toggle('hidden', !showNames); hl.append(who);
+      const tr = el('div', 'htrack'), fill = el('div', 'hfill'); fill.style.background = col.bg; tr.append(fill);
+      const hv = el('div', 'hv'); const n = el('span', null, '0'), pc = el('small', null, '0%'); hv.append(n, pc);
+      row.append(hl, tr, hv); box.append(row); hEls.push({ row, fill, n, pc, who });
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => updateHbars(s)));
+  }
+  function updateHbars(s, bumped){
+    const r = res(s), votes = r.votes, total = votes.reduce((a, b) => a + b, 0), top = Math.max(1, ...votes);
+    hEls.forEach((h, i) => {
+      h.fill.style.width = (votes[i] / top * 100) + '%';
+      h.n.textContent = votes[i]; animNum(h.pc, total ? Math.round(votes[i] / total * 100) : 0, '%');
+      h.who.textContent = namesList(r.log.filter(x => x.c === i).map(x => x.n));
+      revealCls(s, i, h.row);
+      if (i === bumped) { h.fill.classList.remove('bump'); void h.fill.offsetWidth; h.fill.classList.add('bump'); }
+    });
+    setCount(total);
+  }
+  function buildPie(s, donut){
+    const box = $('chart'); box.className = 'chart pie-wrap'; box.textContent = '';
+    const NS_ = 'http://www.w3.org/2000/svg', R = donut ? 38 : 25, SW = donut ? 20 : 50, C = 2 * Math.PI * R;
+    const pb = el('div', 'piebox'); const svg = document.createElementNS(NS_, 'svg'); svg.setAttribute('viewBox', '0 0 100 100');
+    const g = document.createElementNS(NS_, 'g'); g.setAttribute('transform', 'rotate(-90 50 50)'); svg.append(g);
+    const track = document.createElementNS(NS_, 'circle'); Object.entries({ cx: 50, cy: 50, r: R, fill: 'none', stroke: 'rgba(255,255,255,.08)', 'stroke-width': SW }).forEach(([k, v]) => track.setAttribute(k, v)); g.append(track);
+    const legend = el('div', 'legend');
+    const slices = [], labels = [], rows = [];
+    s.options.forEach((o, i) => {
+      const col = colourFor(o, i);
+      const c = document.createElementNS(NS_, 'circle'); c.setAttribute('class', 'slice');
+      Object.entries({ cx: 50, cy: 50, r: R, stroke: col.bg, 'stroke-width': SW }).forEach(([k, v]) => c.setAttribute(k, v));
+      c.style.strokeDasharray = `0 ${C}`; c.style.strokeDashoffset = '0'; g.append(c); slices.push(c);
+      const lab = el('div', 'plabel', '0%'); lab.style.left = '50%'; lab.style.top = '50%'; lab.style.opacity = 0; pb.append(lab); labels.push(lab);
+      const row = el('div', 'lg'); const sw = el('i'); sw.style.background = col.bg; const lp = el('span', 'lp', '0%'); const lc = el('span', 'lc cwho');
+      row.append(sw, el('b', null, o), lp, lc); legend.append(row); rows.push({ row, lp, lc });
+    });
+    pb.prepend(svg);
+    let center = null, centerSub = null;
+    if (donut) { const pc = el('div', 'pcenter'); center = el('b', null, '0'); centerSub = el('span', null, 'votes'); pc.append(center, centerSub); pb.append(pc); }
+    const waitRow = el('div', 'lc'); waitRow.style.cssText = 'font-size:15px;opacity:.7;margin-top:4px'; legend.append(waitRow);
+    box.append(pb, legend);
+    pieEls = { slices, labels, rows, R, C, donut, center, centerSub, waitRow };
+    requestAnimationFrame(() => requestAnimationFrame(() => updatePie(s)));
+  }
+  function updatePie(s, bumped){
+    if (!pieEls) return;
+    const r = res(s), votes = r.votes, total = votes.reduce((a, b) => a + b, 0);
+    const { slices, labels, rows, C, donut, center, centerSub, waitRow } = pieEls;
+    // Percentages are out of everyone who has joined, so each new vote adds its slice onto the pie
+    const denom = Math.max(total, Object.keys(players).length), waiting = denom - total;
+    waitRow.textContent = waiting > 0 ? `${waiting} still to vote` : total ? 'Everyone has voted' : '';
+    if (centerSub) centerSub.textContent = waiting > 0 ? `of ${denom} voted` : 'votes';
+    let acc = 0;
+    slices.forEach((c, i) => {
+      const frac = denom ? votes[i] / denom : 0, len = frac * C;
+      c.style.strokeDasharray = `${Math.max(0, len - (frac > 0 && frac < 1 ? .5 : 0))} ${C}`;
+      c.style.strokeDashoffset = `${-acc * C}`;
+      const mid = (acc + frac / 2) * Math.PI * 2 - Math.PI / 2, rl = donut ? 38 : 31;
+      labels[i].style.left = (50 + rl * Math.cos(mid)) + '%'; labels[i].style.top = (50 + rl * Math.sin(mid)) + '%';
+      labels[i].style.opacity = frac >= .06 ? 1 : 0;
+      const pct = Math.round(frac * 100);
+      animNum(labels[i], pct, '%'); animNum(rows[i].lp, pct, '%');
+      const names = showNames ? namesList(r.log.filter(x => x.c === i).map(x => x.n)) : '';
+      rows[i].lc.textContent = votes[i] + (votes[i] === 1 ? ' vote' : ' votes') + (names ? ' · ' + names : '');
+      revealCls(s, i, rows[i].row); if (r.revealed && s.scored) c.classList.toggle('wrong', !s.correct.includes(i));
+      if (i === bumped) { c.classList.remove('bump'); void c.getBoundingClientRect(); c.classList.add('bump'); }
+      acc += frac;
+    });
+    if (center) animNum(center, total, '');
+    setCount(total);
+  }
+  function buildChart(s){
+    const t = s.chart || 'bars';
+    $('bars').classList.toggle('hidden', t !== 'bars'); $('chart').classList.toggle('hidden', t === 'bars');
+    barEls = []; hEls = []; pieEls = null;
+    if (t === 'bars') {
+      buildBars(s);
+      barEls.forEach(b => { const h = b.bar.style.height; b.bar.style.height = '0'; requestAnimationFrame(() => requestAnimationFrame(() => b.bar.style.height = h)); });
+    } else if (t === 'hbars') buildHbars(s);
+    else buildPie(s, t === 'donut');
+  }
+  function updateChart(s, bumped){
+    const t = s.chart || 'bars';
+    if (t === 'bars') updateBars(s, bumped); else if (t === 'hbars') updateHbars(s, bumped); else updatePie(s, bumped);
+  }
+
   /* ---- Leaderboard ---- */
   const ranking = () => Object.entries(players).map(([pid, p]) => ({ pid, ...p })).sort((a, b) => b.score - a.score || (a.n || '').localeCompare(b.n || ''));
   function buildLeaderboard(){
@@ -1426,7 +1557,7 @@ function startHost(){
     if (timerInt) { clearInterval(timerInt); timerInt = null; timeUp = true; }
     $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden');
     $('revealBtn').classList.add('hidden');
-    if (s.type === 'choice') updateBars(s);
+    if (s.type === 'choice') updateChart(s);
     else { nodes.forEach(markBubble); $('answerBanner').textContent = 'Answer: ' + answerText(s); $('answerBanner').classList.remove('hidden'); }
     renderFeed(); renderTreasureNote(); publishState();
   }
@@ -1472,7 +1603,7 @@ function startHost(){
   let treasureNote = null;
   function renderTreasureNote(){
     const s = cur(), show = stealOn && s.scored && res(s).revealed;
-    if (show && !treasureNote) { treasureNote = el('div', 'toast info'); treasureNote.textContent = 'Treasure time! Open a chest on your phone'; $('toasts').prepend(treasureNote); }
+    if (show && !treasureNote) { treasureNote = el('div', 'toast info'); treasureNote.textContent = 'Treasure time! Correct answers can open a chest'; $('toasts').prepend(treasureNote); }
     if (!show && treasureNote) { treasureNote.remove(); treasureNote = null; }
   }
   const pickWeighted = (pool, not) => { const c = pool.filter(x => !not.includes(x.id)); let r = Math.random() * c.reduce((a, x) => a + x.w, 0); for (const x of c) { r -= x.w; if (r <= 0) return x; } return c[c.length - 1]; };
@@ -1544,7 +1675,7 @@ function startHost(){
     if (!stealOn || !players[pid]) return;
     const si = deck.findIndex(s => s.id === m.slide); if (si < 0) return;
     const s = deck[si], r = res(s);
-    if (!s.scored || !r.revealed) return;
+    if (!s.scored || !r.revealed || !(r.ok && r.ok[pid])) return;       // only correct answers get a chest
     r.chests = r.chests || {};
     let c = r.chests[pid];
     if (m.kind === 'chest') {
@@ -1583,7 +1714,7 @@ function startHost(){
     $('answerBanner').classList.toggle('hidden', !(s.scored && r.revealed && s.type === 'open'));
     if (s.scored && r.revealed && s.type === 'open') $('answerBanner').textContent = 'Answer: ' + answerText(s);
     clearBubbles(); clearChips();
-    $('lb').classList.add('hidden'); $('bars').classList.add('hidden'); $('countBox').classList.remove('hidden');
+    $('lb').classList.add('hidden'); $('bars').classList.add('hidden'); $('chart').classList.add('hidden'); $('countBox').classList.remove('hidden');
     if (s.type === 'text') { /* nothing */ }
     else if (s.type === 'lobby') {
       $('countWord').textContent = 'players'; $('empty').classList.remove('hidden');
@@ -1594,9 +1725,8 @@ function startHost(){
     else if (s.type === 'leaderboard') {
       $('empty').classList.add('hidden'); $('countBox').classList.add('hidden'); $('lb').classList.remove('hidden'); buildLeaderboard();
     } else if (s.type === 'choice') {
-      $('empty').classList.add('hidden'); $('bars').classList.remove('hidden'); $('countWord').textContent = 'votes';
-      buildBars(s);
-      barEls.forEach(b => { const h = b.bar.style.height; b.bar.style.height = '0'; requestAnimationFrame(() => requestAnimationFrame(() => b.bar.style.height = h)); });
+      $('empty').classList.add('hidden'); $('countWord').textContent = 'votes';
+      buildChart(s);
     } else {
       $('countWord').textContent = 'responses';
       $('empty').classList.remove('hidden'); $('empty').firstChild.textContent = 'Waiting for answers ';
@@ -1639,6 +1769,8 @@ function startHost(){
     showNames = !showNames; ss.set('cp_showNames', showNames); syncNamesBtn();
     nodes.forEach(n => n.who.classList.toggle('hidden', !showNames));
     barEls.forEach(b => b.who.classList.toggle('hidden', !showNames));
+    hEls.forEach(h => h.who.classList.toggle('hidden', !showNames));
+    if (pieEls && cur().type === 'choice') updatePie(cur());
     renderFeed();
   };
 
@@ -1653,7 +1785,7 @@ function startHost(){
     if (timeUp) st.timeUp = true;
     if (s.scored && r.revealed) {
       const tot = {}; Object.keys(r.pts).forEach(pid => tot[pid] = players[pid]?.score ?? 0);
-      st.reveal = { answer: answerText(s), pts: r.pts, tot };
+      st.reveal = { answer: answerText(s), pts: r.pts, tot, ok: r.ok || {} };
     }
     if (s.scored && r.revealed && stealOn) st.chests = true;
     if (st.reveal) Object.keys(players).forEach(pid => st.reveal.tot[pid] = players[pid].score);
@@ -1702,15 +1834,17 @@ function startHost(){
       seen.add(m.id);
       if (s.scored && pid) {
         const secs = Math.floor((Date.now() - slideStart) / 1000);
-        const pts = isCorrect(s, value) ? Math.max(0, MAX_POINTS - POINTS_LOST_PER_SECOND * secs) : 0;
+        const ok = isCorrect(s, value);
+        const pts = ok ? Math.max(0, MAX_POINTS - POINTS_LOST_PER_SECOND * secs) : 0;
         r.pts[pid] = pts; players[pid].score += pts;
+        if (ok) (r.ok = r.ok || {})[pid] = true;
       }
       if (s.type === 'open') {
         const ans = { t: value, n: name, av, pid }; r.answers.push(ans); persist();
         if (si === idx) { addBubble(ans, true, new Set(r.hidden)); setCount(r.answers.length); renderFeed(); }
       } else {
         r.votes[value]++; r.log.push({ n: name, av, c: value, pid }); persist();
-        if (si === idx) { updateBars(s, value); renderFeed(); }
+        if (si === idx) { updateChart(s, value); renderFeed(); }
       }
       updatePlayers();
     },
@@ -1864,7 +1998,7 @@ function startJoin(code){
       if (p == null) showDone("Time's up!", `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
       else if (p > 0) showDone('Correct!', `+${p} points · ${myScore} total`, false, 'good');
       else showDone('Not quite', `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
-      if (st.chests) renderChests();
+      if (st.chests) { if (st.reveal.ok && st.reveal.ok[pid]) renderChests(); else noChest(); }
       return;
     }
     if (st.timeUp) return showDone("Time's up!", 'Watch the screen. The next slide will appear here automatically.', false, 'wait');
@@ -1924,6 +2058,13 @@ function startJoin(code){
     $('chestResult').className = 'chest-result ' + (o.good ? 'good' : 'bad');
     $('crTitle').textContent = o.icon + ' ' + o.title; $('crText').textContent = (mem.text || o.desc) + ` You have ${myScore} points.`;
     $('chestResult').classList.remove('hidden');
+  }
+  function noChest(){
+    $('chestBox').classList.remove('hidden'); $('chests').textContent = ''; $('chestResult').classList.add('hidden');
+    $('chestTitle').textContent = 'No treasure this time';
+    $('chestHint').textContent = 'Only players who got it right can open a treasure chest. Get the next one right!';
+    const holder = el('div'); holder.innerHTML = CHEST_SVG; const svg = holder.firstElementChild; svg.style.cssText = 'width:74px;height:64px;opacity:.35;filter:grayscale(1)';
+    $('chests').append(el('div'), svg);
   }
   function showTargets(mem){
     if (!mem || mem.done || !mem.needTarget || !Array.isArray(mem.targets)) { $('targetSheet').classList.add('hidden'); return; }
