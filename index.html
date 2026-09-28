@@ -343,6 +343,25 @@
     .mmbar .wb-people{display:none}
     .mmtxt{font-size:16px}
   }
+  /* ---------- Analytics ---------- */
+  .folder.an-f .back,.folder.an-f .back::before{background:#1d4ed8}
+  .folder.an-f .cover{background:linear-gradient(155deg,#47e5bc,#4facfe 55%,#6366f1)}
+  .anlist{display:flex;flex-direction:column;gap:8px}
+  .anrow{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px 12px;animation:rise .3s ease both}
+  .andot{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex:none}
+  .aninfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .aninfo b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aninfo span{color:var(--muted);font-size:14px}
+  .anrow .sel{max-width:150px}
+  .anmanual{display:flex;flex-direction:column;gap:12px;background:var(--bg);border-radius:14px;padding:14px}
+  .anmrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .anmrow .field{flex:1;min-width:160px}
+  .anmrow .pmdate{flex:0 0 auto;min-width:0}
+  .anfields{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .anfield{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:700}
+  .anhelp{display:flex;flex-direction:column;gap:8px;margin-top:10px;color:var(--muted);font-size:15px;line-height:1.45}
+  .anhelp b{color:var(--text)}
+  @media (max-width:640px){ .anrow{flex-wrap:wrap} .anrow .sel{max-width:none;flex:1} }
 
   /* ---------- Landing ---------- */
   .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
@@ -784,7 +803,7 @@
       <div class="back"></div>
       <div class="paper paper2"></div>
       <div class="paper"><i style="height:45%;background:#ff5f6d"></i><i style="height:80%;background:#ffc371"></i><i style="height:60%;background:#47e5bc"></i><i style="height:95%;background:#4facfe"></i></div>
-      <div class="cover"><span class="fi">📊</span><b>Engagement</b><small>Polls, quizzes &amp; whiteboards</small></div>
+      <div class="cover"><span class="fi">📊</span><b>Engagement</b><small>Polls, whiteboards &amp; analytics</small></div>
     </button>
     <button class="folder pm-f" id="pmFolder" type="button" aria-label="Open PM Tools" style="animation-delay:.08s">
       <div class="back"></div>
@@ -856,7 +875,13 @@
       <div class="paper notes"><i style="left:14px;top:14px;background:#fff27a;transform:rotate(-6deg)"></i><i style="left:70px;top:22px;background:#ff9ecd;transform:rotate(5deg)"></i><i style="left:128px;top:12px;background:#9ed8ff;transform:rotate(-3deg)"></i><i style="left:180px;top:24px;background:#b4f0a4;transform:rotate(4deg)"></i></div>
       <div class="cover"><span class="fi">🖍️</span><b>Whiteboard</b><small>Draw, write &amp; stick notes together</small></div>
     </button>
-    <div class="folder soon" aria-hidden="true" style="animation-delay:.16s">
+    <button class="folder an-f" id="anFolder" type="button" aria-label="Open Analytics" style="animation-delay:.16s">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper"><i style="height:30%;background:#47e5bc"></i><i style="height:55%;background:#4facfe"></i><i style="height:42%;background:#6366f1"></i><i style="height:85%;background:#ff5f6d"></i></div>
+      <div class="cover"><span class="fi">📈</span><b>Analytics</b><small>Social stats into an easy PDF</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.24s">
       <div class="back"></div>
       <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More engagement tools on the way</small></div>
     </div>
@@ -1024,6 +1049,56 @@
       <h2 id="mmConfH"></h2>
       <p id="mmConfP"></p>
       <div class="wb-row"><button class="btn ghost" id="mmConfNo" type="button">Cancel</button><button class="btn" id="mmConfYes" type="button" style="background:var(--bad);color:#fff"></button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Engagement: Analytics ===== -->
+<section id="an" class="pmtools hidden">
+  <button class="backbtn" id="backEng2" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Engagement</button>
+  <div class="pmwrap">
+    <div class="pmhero">
+      <div class="crumb rainbow-text">GentiMeter · Engagement</div>
+      <h1><span class="rainbow-text">Analytics</span></h1>
+      <p class="sub">Turn your LinkedIn, Instagram or Viva Engage stats into an easy-to-read PDF.</p>
+    </div>
+    <div class="pmcard">
+      <div class="pmt"><span class="pmnum">1</span><h2>Your analytics</h2></div>
+      <label class="pmdrop" id="anDrop">
+        <input type="file" id="anFile" accept=".xlsx,.xls,.xlsm,.csv" multiple class="hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        <b>Drop your analytics files here or click to choose</b>
+        <span>The .xlsx or .csv from the Export button. You can add a few at once. Files are read on your computer and never uploaded.</span>
+      </label>
+      <p class="hint hidden" id="anMsg"></p>
+      <div class="anlist" id="anList"></div>
+      <button class="linkbtn" id="anManToggle" type="button">No export file? Type the numbers in instead</button>
+      <div class="anmanual hidden" id="anManual">
+        <div class="anmrow"><select class="sel" id="anManPlat" aria-label="Platform"></select><input class="field sm" id="anManName" maxlength="120" placeholder="Post name (e.g. Launch video)"><input class="field sm pmdate" id="anManDate" type="date" aria-label="Date posted"></div>
+        <div class="anfields" id="anFields"></div>
+        <div class="anmrow"><button class="btn ghost sm" id="anManAdd" type="button"><svg class="i"><use href="#i-plus"/></svg>Add this post</button><span class="hint" id="anManMsg">Leave blank anything you don't have.</span></div>
+      </div>
+      <details class="pmcols"><summary>How do I get my analytics file?</summary>
+        <div class="anhelp">
+          <p><b>LinkedIn post:</b> open the post, tap <i>View analytics</i>, then <i>Export</i>.</p>
+          <p><b>LinkedIn profile or page:</b> go to your <i>Analytics</i> (or the page's Analytics tab) and press <i>Export</i>.</p>
+          <p><b>Instagram / Facebook:</b> in Meta Business Suite go to <i>Insights</i> and use <i>Export data</i>. The Instagram app itself has no export, so type the numbers in instead.</p>
+          <p><b>Viva Engage community:</b> open the community's <i>Analytics</i> dashboard and press <i>Export</i> to get a .csv.</p>
+          <p>Any other spreadsheet of social stats works too. The tool looks for things like impressions, reach, likes, comments, shares and dates.</p>
+        </div>
+      </details>
+    </div>
+    <div class="pmcard hidden" id="anStep2">
+      <div class="pmt"><span class="pmnum">2</span><h2>Your report</h2></div>
+      <input class="field sm" id="anTitle" maxlength="80" value="Social media report" placeholder="Report title">
+      <input class="field sm" id="anBy" maxlength="60" placeholder="Prepared by (optional)">
+      <label class="row" style="cursor:pointer"><input type="checkbox" id="anGloss" checked style="width:20px;height:20px;accent-color:#3ddc97"> Add a page explaining what the words mean</label>
+    </div>
+    <div class="pmcard hidden" id="anStep3">
+      <div class="pmt"><span class="pmnum">3</span><h2>Preview</h2></div>
+      <p class="pmcount" id="anCount"></p>
+      <div class="pmprev" id="anPreview"></div>
+      <button class="btn rain genbtn" id="anDl" type="button" disabled>⬇ Download PDF</button>
     </div>
   </div>
 </section>
@@ -1350,7 +1425,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['hub','enghome','landing','wbhome','board','mmhome','mins','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','enghome','landing','wbhome','board','an','mmhome','mins','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -4367,6 +4442,721 @@ function startMins(code){
   window.__mm = { notes, meta: () => meta };
 }
 
+
+/* ================= Analytics ================= */
+const AN_PLATFORMS = {
+  linkedin:  { name: 'LinkedIn',    col: '#0a66c2', icon: 'in' },
+  instagram: { name: 'Instagram',   col: '#e1306c', icon: 'IG' },
+  facebook:  { name: 'Facebook',    col: '#1877f2', icon: 'f' },
+  viva:      { name: 'Viva Engage', col: '#5b5fc7', icon: 'VE' },
+  tiktok:    { name: 'TikTok',      col: '#111118', icon: 'TT' },
+  x:         { name: 'X (Twitter)', col: '#111118', icon: 'X' },
+  youtube:   { name: 'YouTube',     col: '#ff0033', icon: 'YT' },
+  other:     { name: 'Social media',col: '#8b5cf6', icon: '★' }
+};
+// [key, test, friendly name, kind, plain-English meaning]
+const AN_METRICS = [
+  ['engrate', /engagement rate|eng\.? rate|interaction rate/, 'Engagement rate', 'rate', 'Out of everyone who saw it, the share who reacted, commented, shared or clicked.'],
+  ['ctr', /\bctr\b|click.?through/, 'Click-through rate', 'rate', 'Out of everyone who saw it, the share who clicked.'],
+  ['resprate', /response rate|answer rate|reply rate/, 'Response rate', 'rate', 'How often questions or posts got a reply.'],
+  ['imprPaid', /impression.*(sponsor|paid|boost|promot)/, 'Paid impressions', 'count', 'Times it was shown because of paid promotion.'],
+  ['reach', /reach|unique (viewers|visitors|impressions)|unique views/, 'People reached', 'count', 'How many different people saw it. Each person is only counted once.'],
+  ['impr', /impression/, 'Impressions', 'count', "How many times it appeared on someone's screen. The same person can count more than once."],
+  ['profile', /profile (view|visit)|viewers? of your profile|profile viewers/, 'Profile visits', 'count', 'People who went on to look at your profile after seeing it.'],
+  ['watch', /watch time|duration|time watched|average (view|watch)/, 'Watch time', 'other', 'How long people spent watching.'],
+  ['followersTotal', /total (followers|members|subscribers)|^followers$|^members$|member count|follower count/, 'Total followers', 'total', 'Everyone following you (or in the community) at the end of the period.'],
+  ['follows', /new followers|followers gained|follows?\b|new members|members (gained|added|joined)|subscribers? gained|^subscribers?$/, 'New followers', 'count', 'People who started following you because of this.'],
+  ['active', /people engaged|members engaged|engaged (members|people|users)|active (members|people|users)|people reached/, 'People who took part', 'count', 'Different people who did something: posted, replied or reacted.'],
+  ['views', /views?\b|plays?\b|viewers?\b|opens?\b|seen by/, 'Views', 'count', 'How many times it was viewed or played.'],
+  ['react', /reaction|likes?\b|like count|hearts?|kudos|praise/, 'Reactions', 'count', 'Likes and other quick reactions. Easy to give, so they show people noticed it.'],
+  ['comments', /comment|repl(y|ies)|responses?\b/, 'Comments', 'count', 'People who took the time to write something back. A strong sign it got people talking.'],
+  ['shares', /repost|shares?\b|shared|retweet|forward/, 'Shares', 'count', 'People who passed it on to their own network. The best way to reach new people.'],
+  ['sends', /\bsends?\b|\bsent\b/, 'Sends', 'count', 'People who sent it privately to someone else.'],
+  ['saves', /saves?\b|saved|bookmark/, 'Saves', 'count', 'People who kept it to look at again later. Shows it was genuinely useful.'],
+  ['clicks', /click/, 'Clicks', 'count', 'Clicks on the post, its links or your name.'],
+  ['engagements', /engagement|interaction/, 'Engagements', 'count', 'All the ways people interacted added together: reactions, comments, shares and clicks.'],
+  ['posts', /^posts?$|total posts|posts published|messages posted|^messages$|conversations|threads started|^posts (made|created)/, 'Posts', 'count', 'How many posts were made.']
+];
+const AN_INTERACT = ['react', 'comments', 'shares', 'sends', 'saves', 'clicks'];
+const AN_INT_COL = { react: '#4facfe', comments: '#a66cff', shares: '#3ddc97', sends: '#47e5bc', saves: '#ffc371', clicks: '#ff5f6d' };
+function anMetric(label){
+  const s = String(label || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  for (const [key, re, name, kind, explain] of AN_METRICS) if (re.test(s)) return { key, name, kind, explain };
+  return null;
+}
+function anNum(v){
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return isFinite(v) ? { n: v, pct: false } : null;
+  if (v instanceof Date) return null;
+  let s = String(v).trim().replace(/[,\s£$€]/g, '');
+  if (!s || /^[-–—]$|^n\/?a$/i.test(s)) return null;
+  let pct = false, mult = 1;
+  if (s.endsWith('%')) { pct = true; s = s.slice(0, -1); }
+  const m = s.match(/^([+-]?\d*\.?\d+)([kmb])?$/i);
+  if (!m) return null;
+  if (m[2]) mult = { k: 1e3, m: 1e6, b: 1e9 }[m[2].toLowerCase()];
+  return { n: parseFloat(m[1]) * mult / (pct ? 100 : 1), pct };
+}
+function anDate(v, hint, order){
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === 'number') return hint && v > 30000 && v < 80000 ? new Date(Math.round((v - 25569) * 864e5)) : null;
+  if (typeof v !== 'string') return null;
+  const s = v.trim(); if (!s || s.length > 40 || !/\d/.test(s)) return null;
+  let m = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})(?:[ ,T]+(\d{1,2}):(\d{2}))?/);
+  if (m) { let a = +m[1], b = +m[2]; const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; let d = a, mo = b; if ((b > 12 && a <= 12) || (order === 'mdy' && a <= 12 && b <= 31)) { d = b; mo = a; } const r = new Date(y, mo - 1, d, +(m[4] || 0), +(m[5] || 0)); return isNaN(r) ? null : r; }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+  if (/^[a-z]{3,9},? \d{1,2}|^\d{1,2} [a-z]{3,9}|^[a-z]{3,9} \d{1,2},? \d{4}/i.test(s)) { const d = new Date(s.replace(/(\d)(st|nd|rd|th)/, '$1')); return isNaN(d) || !/\d{4}/.test(s) ? null : d; }
+  return null;
+}
+const anEmpty = v => v == null || (typeof v === 'string' && !v.trim());
+function anRange(v, fallback){
+  if (typeof v !== 'string') return null;
+  const m = v.match(/(\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}|\d{4}-\d{1,2}-\d{1,2})\s*(?:-|–|—|to)\s*(\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}|\d{4}-\d{1,2}-\d{1,2})/);
+  if (!m) return null; const o = anDateOrder([m[1], m[2]], fallback), a = anDate(m[1], true, o), b = anDate(m[2], true, o);
+  return a && b ? [a, b] : null;
+}
+const anIsUrl = v => typeof v === 'string' && /^https?:\/\//i.test(v.trim());
+
+/* ---- turn a grid (rows of cells) into blocks separated by blank rows / blank columns ---- */
+// Works out if a column of dates is written day/month or month/day (LinkedIn and Meta use month/day)
+function anDateOrder(vals, fallback = 'dmy'){
+  let dmy = 0, mdy = 0; const pairs = [];
+  vals.forEach(v => { const m = typeof v === 'string' && v.trim().match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})/); if (!m) return; if (+m[1] > 12) dmy++; if (+m[2] > 12) mdy++; pairs.push([+m[1], +m[2], +m[3]]); });
+  if (mdy > dmy) return 'mdy'; if (dmy > mdy) return 'dmy';
+  if (pairs.length >= 3) { const span = f => { const t = pairs.map(f).filter(x => !isNaN(x)); return Math.max(...t) - Math.min(...t); }; if (span(([a, b, y]) => new Date(y, a - 1, b).getTime()) < span(([a, b, y]) => new Date(y, b - 1, a).getTime())) return 'mdy'; }
+  return fallback;
+}
+function anBlocks(grid){
+  const blocks = []; let band = [];
+  const flush = () => {
+    if (!band.length) return;
+    const width = Math.max(...band.map(r => r.length)); let c = 0;
+    while (c < width) {
+      while (c < width && band.every(r => anEmpty(r[c]))) c++;
+      if (c >= width) break;
+      let c2 = c; while (c2 < width && !band.every(r => anEmpty(r[c2]))) c2++;
+      blocks.push(band.map(r => { const x = r.slice(c, c2); while (x.length < c2 - c) x.push(null); return x; }));
+      c = c2;
+    }
+    band = [];
+  };
+  grid.forEach(r => { if (!r || r.every(anEmpty)) flush(); else band.push(r); });
+  flush();
+  return blocks;
+}
+
+/* ---- read one block and add what it finds to the source ---- */
+function anReadBlock(rows, sheetTitle, src){
+  rows = rows.map(r => r.map(v => typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : v));
+  let title = '';
+  const filled = r => r.filter(v => !anEmpty(v)).length;
+  while (rows.length > 1 && filled(rows[0]) === 1 && typeof rows[0].find(v => !anEmpty(v)) === 'string' && filled(rows[1]) >= 1) {
+    const t = rows[0].find(v => !anEmpty(v)); if (!title && String(t).length < 90) title = String(t); rows.shift();
+  }
+  // a long sentence on its own (LinkedIn puts notes like this above the table)
+  rows = rows.filter(r => !(filled(r) === 1 && typeof r.find(v => !anEmpty(v)) === 'string' && String(r.find(v => !anEmpty(v))).length > 90));
+  if (!rows.length) return;
+  const W = Math.max(...rows.map(r => { let n = r.length; while (n && anEmpty(r[n - 1])) n--; return n; }));
+  const blockTitle = title || sheetTitle;
+  const isText = v => typeof v === 'string' && v.trim() && !anNum(v) && !anDate(v);
+
+  // Key / value pairs (e.g. "Impressions | 12,400")
+  if (W === 2) {
+    const head = rows[0], data = rows.slice(1);
+    const headerLike = isText(head[0]) && isText(head[1]);
+    const dateRows = data.filter(r => anDate(r[0], /date|day/i.test(head[0]))).length;
+    const metricLabels = rows.filter(r => typeof r[0] === 'string' && anMetric(r[0]) && (anNum(r[1]) || anEmpty(r[1]))).length;
+    if (headerLike && data.length && dateRows >= data.length * .6) return anReadTable(rows, blockTitle, src);
+    if (metricLabels >= 1 && metricLabels >= rows.filter(r => anNum(r[1])).length * .4) {
+      rows.forEach(r => {
+        if (typeof r[0] !== 'string' || !r[0].trim()) return;
+        const num = anNum(r[1]), rg = anRange(r[1], src.order), d = rg ? rg[0] : anDate(r[1], /date|time|publish/i.test(r[0]), src.order);
+        const m = anMetric(r[0]);
+        if (rg) { src.kv.push({ label: r[0], m: null, v: null, date: rg[0], date2: rg[1], text: '' }); return; }
+        if (!num && !d && (anEmpty(r[1]) || (headerLike && r === head))) return;
+        src.kv.push({ label: r[0], m, v: num ? num.n : null, pct: num ? num.pct : false, date: !num ? d : null, text: !num && !d && !anEmpty(r[1]) ? String(r[1]).slice(0, 200) : '' });
+      });
+      return;
+    }
+    // a simple ranked list (e.g. "Job title | 23%")
+    const items = data.filter(r => !anEmpty(r[0]) && anNum(r[1])).map(r => [String(r[0]).slice(0, 80), anNum(r[1])]);
+    if (headerLike && items.length >= 2) { anAddDemo(src, blockTitle !== sheetTitle ? blockTitle : String(head[0]), items, /percent|%|share/i.test(head[1] || '')); return; }
+    // labels with text or dates next to them (e.g. "Post URL | https://…", "Post Date | Sep 10, 2026")
+    if (rows.every(r => typeof r[0] === 'string' && r[0].length <= 60) && rows.filter(r => anNum(r[1])).length <= rows.length / 2 && rows.length <= 40) {
+      rows.forEach(r => { const num = anNum(r[1]), rg = anRange(r[1], src.order), d = rg ? rg[0] : anDate(r[1], /date|time|publish|posted/i.test(r[0]), src.order); if (anEmpty(r[1])) return; if (rg) { src.kv.push({ label: r[0], m: null, v: null, date: rg[0], date2: rg[1], text: '' }); return; } src.kv.push({ label: r[0], m: anMetric(r[0]), v: num ? num.n : null, pct: num ? num.pct : false, date: !num ? d : null, text: !num && !d ? String(r[1]).slice(0, 200) : '' }); });
+      return;
+    }
+    if (!headerLike) {
+      const items2 = rows.filter(r => !anEmpty(r[0]) && anNum(r[1])).map(r => [String(r[0]).slice(0, 80), anNum(r[1])]);
+      if (items2.length >= 2) { anAddDemo(src, blockTitle, items2, false); return; }
+    }
+  }
+  if (rows.length >= 2) anReadTable(rows, blockTitle, src);
+}
+function anAddDemo(src, cat, items, pctHead){
+  const pct = pctHead || items.every(([, x]) => x.pct) || (items.every(([, x]) => x.n <= 1) && items.reduce((a, [, x]) => a + x.n, 0) <= 1.05);
+  src.demos.push({ cat: String(cat || 'Audience').slice(0, 60), pct, items: items.map(([n, x]) => [n, x.n]).sort((a, b) => b[1] - a[1]) });
+}
+function anReadTable(rows, title, src){
+  const head = rows[0].map(h => anEmpty(h) ? '' : String(h instanceof Date ? h.toLocaleDateString('en-GB') : h).trim());
+  const data = rows.slice(1).filter(r => r.some(v => !anEmpty(v)));
+  if (!data.length || head.filter(Boolean).length < 2) { if (data.length) src.tables.push({ title, head, rows: data.slice(0, 40) }); return; }
+  const cols = head.map((h, i) => {
+    const vals = data.map(r => r[i]), filled = vals.filter(v => !anEmpty(v));
+    const hintDate = /date|day|time|publish|created|posted|week|month/i.test(h), order = anDateOrder(filled, src.order);
+    const nDate = filled.filter(v => anDate(v, hintDate, order)).length, nNum = filled.filter(v => anNum(v)).length, nUrl = filled.filter(anIsUrl).length;
+    const type = !filled.length ? 'empty' : nDate >= filled.length * .7 && (hintDate || !nNum || filled.some(v => v instanceof Date || typeof v === 'string')) ? 'date' : nNum >= filled.length * .7 && !/\bid\b|^id$|account id|post id/i.test(h) ? 'num' : nUrl >= filled.length * .5 ? 'url' : 'text';
+    const uniq = new Set(filled.map(String)).size;
+    return { i, h, type, uniq, order, filled: filled.length, m: type === 'num' ? anMetric(h) : null };
+  });
+  const nums = cols.filter(c => c.type === 'num'), texts = cols.filter(c => c.type === 'text'), dateC = cols.find(c => c.type === 'date');
+  const urlC = cols.find(c => c.type === 'url') || cols.find(c => /link|url|permalink/i.test(c.h) && c.type !== 'num');
+  const notId = c => !/\bid\b|^id$|type|format|account|username|campaign|audience|posted by|author/i.test(c.h);
+  const titleC = texts.find(c => /title|caption|description|message|content|text|headline/i.test(c.h) && notId(c) && c.uniq > 1) || texts.find(c => /post|name|conversation|topic/i.test(c.h) && notId(c) && c.uniq > 1) || null;
+  // Demographics like  Category | Value | Percentage
+  const catC = texts.find(c => /categor|type of|demograph|dimension|segment|group/i.test(c.h) || (c.uniq <= 12 && c.uniq < data.length / 2 && c.filled === data.length));
+  const valC = catC && texts.find(c => c !== catC);
+  if (catC && valC && nums.length >= 1 && !dateC && !urlC && !(titleC && titleC !== valC && titleC !== catC)) {
+    const numC = nums.find(c => /percent|%|share/i.test(c.h)) || nums[0];
+    const groups = new Map();
+    data.forEach(r => { const g = String(r[catC.i] || '').trim(), x = anNum(r[numC.i]); if (!g || anEmpty(r[valC.i]) || !x) return; if (!groups.has(g)) groups.set(g, []); groups.get(g).push([String(r[valC.i]).slice(0, 80), x]); });
+    if (groups.size) { groups.forEach((items, g) => anAddDemo(src, g, items, /percent|%|share/i.test(numC.h))); return; }
+  }
+  if (!nums.length) { src.tables.push({ title, head, rows: data.slice(0, 40) }); return; }
+  // Posts: there's a link or a title for each row
+  if ((urlC || titleC) && (urlC ? cols[urlC.i] : titleC).uniq >= Math.min(data.length, 2) * .8) {
+    const typeC = texts.find(c => c !== titleC && /type|format|media/i.test(c.h) && c.uniq <= 10);
+    const list = data.map(r => {
+      const vals = {};
+      nums.forEach(c => { const x = anNum(r[c.i]); if (x) vals[c.m ? c.m.key : 'x:' + c.h] = x.n; });
+      const url = urlC ? String(r[urlC.i] || '').trim() : '';
+      let t = titleC ? String(r[titleC.i] || '').replace(/\s+/g, ' ').trim() : '';
+      return { title: t, url, date: dateC ? anDate(r[dateC.i], true, dateC.order) : null, type: typeC ? String(r[typeC.i] || '').trim() : '', vals };
+    }).filter(p => (p.title || p.url) && Object.keys(p.vals).length);
+    if (list.length) {
+      nums.forEach(c => { const k = c.m ? c.m.key : 'x:' + c.h; if (!src.postCols.some(x => x.k === k)) src.postCols.push({ k, label: c.m ? c.m.name : c.h, m: c.m }); });
+      list.forEach(p => {
+        const key = p.url || p.title;
+        const same = src.posts.find(q => (q.url || q.title) === key);
+        if (same) { Object.assign(same.vals, p.vals); same.date = same.date || p.date; same.title = same.title || p.title; same.type = same.type || p.type; }
+        else src.posts.push(p);
+      });
+      return;
+    }
+  }
+  // Time series: a date on each row
+  if (dateC) {
+    const pts = data.map(r => ({ d: anDate(r[dateC.i], true, dateC.order), r })).filter(p => p.d).sort((a, b) => a.d - b.d);
+    if (pts.length >= 2) {
+      src.series.push({ title, dates: pts.map(p => p.d), cols: nums.map(c => ({ label: c.m ? c.m.name : c.h, raw: c.h, m: c.m, vals: pts.map(p => { const x = anNum(p.r[c.i]); return x ? x.n : null; }) })) });
+      return;
+    }
+  }
+  // A ranked list with a text label and numbers
+  const labC = texts[0];
+  if (labC && nums.length === 1) { const items = data.filter(r => !anEmpty(r[labC.i]) && anNum(r[nums[0].i])).map(r => [String(r[labC.i]).slice(0, 80), anNum(r[nums[0].i])]); if (items.length >= 2) { anAddDemo(src, title !== labC.h ? title + ' · ' + labC.h : labC.h, items, /percent|%|share/i.test(nums[0].h)); return; } }
+  src.tables.push({ title, head, rows: data.slice(0, 40) });
+}
+function anDetectPlatform(name, wb){
+  let hay = String(name || '').toLowerCase() + ' ';
+  try { wb.SheetNames.forEach(n => { hay += n.toLowerCase() + ' '; XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: '' }).slice(0, 40).forEach(r => { hay += r.slice(0, 20).join(' ').toLowerCase().slice(0, 600) + ' '; }); }); } catch {}
+  if (/linkedin|members reached|reposts|impressions \(organic\)|lnkd\.in/.test(hay)) return 'linkedin';
+  if (/instagram|insta_|\/reel\/|account username.*(reel|ig)/.test(hay)) return 'instagram';
+  if (/viva engage|yammer|vivaengage|people engaged|messages posted|community (analytics|insights)/.test(hay)) return 'viva';
+  if (/facebook|fb\.com/.test(hay)) return 'facebook';
+  if (/tiktok/.test(hay)) return 'tiktok';
+  if (/youtube|youtu\.be|subscribers/.test(hay)) return 'youtube';
+  if (/twitter|tweet|x\.com\//.test(hay)) return 'x';
+  return 'other';
+}
+function anNewSource(name, platform){ return { id: rid(), name, platform, kv: [], series: [], posts: [], postCols: [], demos: [], tables: [] }; }
+function anReadWorkbook(name, wb){
+  const src = anNewSource(name, anDetectPlatform(name, wb));
+  src.order = ['linkedin', 'instagram', 'facebook', 'tiktok', 'x', 'youtube'].includes(src.platform) ? 'mdy' : 'dmy';
+  wb.SheetNames.forEach(sn => {
+    const grid = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null });
+    const title = wb.SheetNames.length > 1 ? sn.replace(/_/g, ' ').replace(/\b([A-Z])([A-Z]+)\b/g, (m, a, b) => a + b.toLowerCase()) : '';
+    anBlocks(grid).forEach(b => { try { anReadBlock(b, title, src); } catch (e) { console.warn(e); } });
+  });
+  return src;
+}
+
+/* ---- totals + plain-English findings ---- */
+const anFmt = n => n == null || !isFinite(n) ? '–' : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : Math.abs(n) >= 1e5 ? Math.round(n / 1e3) + 'K' : Number.isInteger(Math.round(n * 10) / 10) || Math.abs(n) >= 100 ? Math.round(n).toLocaleString('en-GB') : (Math.round(n * 10) / 10).toLocaleString('en-GB');
+const anPct = r => r == null || !isFinite(r) ? '–' : (r * 100 >= 10 ? Math.round(r * 100) : Math.round(r * 1000) / 10) + '%';
+const anOneIn = r => !r || !isFinite(r) ? '' : r >= .5 ? anPct(r) : '1 in ' + Math.max(2, Math.round(1 / r)).toLocaleString('en-GB');
+function anTotals(src){
+  const T = {}, how = {};
+  const put = (k, v, h) => { if (v == null || !isFinite(v) || T[k] != null) return; T[k] = v; how[k] = h; };
+  src.kv.forEach(e => { if (e.m && e.v != null) put(e.m.key, e.m.kind === 'rate' && e.v > 1 ? e.v / 100 : e.v, 'kv'); });
+  const pref = c => /total/i.test(c.raw || c.label) ? 0 : /organic/i.test(c.raw || c.label) ? 1 : 2;
+  src.series.forEach(s => s.cols.slice().sort((a, b) => pref(a) - pref(b)).forEach(c => {
+    if (!c.m) return; const v = c.vals.filter(x => x != null); if (!v.length) return;
+    let x = c.m.kind === 'rate' ? v.reduce((a, b) => a + b, 0) / v.length : c.m.kind === 'total' ? v[v.length - 1] : v.reduce((a, b) => a + b, 0);
+    if (c.m.kind === 'rate' && x > 1) x /= 100;
+    put(c.m.key, x, 'series');
+  }));
+  src.postCols.forEach(pc => {
+    if (!pc.m) return; const v = src.posts.map(p => p.vals[pc.k]).filter(x => x != null); if (!v.length) return;
+    let x = pc.m.kind === 'rate' ? v.reduce((a, b) => a + b, 0) / v.length : pc.m.kind === 'total' ? Math.max(...v) : v.reduce((a, b) => a + b, 0);
+    if (pc.m.kind === 'rate' && x > 1) x /= 100;
+    put(pc.m.key, x, 'posts');
+  });
+  const ints = AN_INTERACT.filter(k => T[k] != null);
+  T.interactions = T.engagements != null ? T.engagements : ints.length ? ints.reduce((a, k) => a + T[k], 0) : null;
+  const seen = T.impr || T.views || T.reach;
+  if (T.engrate == null && T.interactions != null && seen) T.engrateCalc = T.interactions / seen;
+  if (src.posts.length) T.postCount = src.posts.length;
+  // dates covered
+  const ds = [...src.series.flatMap(s => s.dates), ...src.posts.map(p => p.date).filter(Boolean), ...src.kv.map(e => e.date).filter(Boolean), ...src.kv.map(e => e.date2).filter(Boolean)].filter(d => d instanceof Date && !isNaN(d));
+  if (ds.length) { T.from = new Date(Math.min(...ds)); T.to = new Date(Math.max(...ds)); }
+  return { T, how };
+}
+const anMain = src => { const { T } = anTotals(src); return ['impr', 'views', 'reach', 'engagements', 'active'].find(k => T[k] != null) || null; };
+function anSeriesMain(s){ const order = ['impr', 'views', 'reach', 'engagements', 'active', 'react', 'follows', 'posts']; const pref = c => /total/i.test(c.raw) ? 0 : /organic/i.test(c.raw) ? 1 : 2; for (const k of order) { const c = s.cols.filter(c => c.m && c.m.key === k && c.vals.some(v => v)).sort((a, b) => pref(a) - pref(b))[0]; if (c) return c; } return s.cols.find(c => c.vals.some(v => v)) || null; }
+function anPostMain(src){ const order = ['impr', 'views', 'reach', 'engagements', 'react', 'comments']; for (const k of order) if (src.posts.some(p => p.vals[k] != null)) return k; return src.postCols[0] ? src.postCols[0].k : null; }
+const anLabel = (src, k) => { const m = AN_METRICS.find(x => x[0] === k); if (m) return m[2]; const pc = src.postCols.find(p => p.k === k); return pc ? pc.label : k.replace(/^x:/, ''); };
+const anWeekday = d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()];
+function anFindings(src){
+  const { T } = anTotals(src), out = [], P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other;
+  const seen = T.impr != null ? 'impr' : T.views != null ? 'views' : null;
+  if (seen && T.reach) { const f = T[seen] / T.reach; out.push(`It was ${seen === 'impr' ? 'shown' : 'viewed'} ${anFmt(T[seen])} times to about ${anFmt(T.reach)} different people${f >= 1.15 ? `, so on average each person saw it ${f.toFixed(1)} times` : ''}.`); }
+  else if (seen) out.push(`It was ${seen === 'impr' ? 'shown on screen' : 'viewed'} ${anFmt(T[seen])} times.`);
+  else if (T.reach) out.push(`It reached ${anFmt(T.reach)} different people.`);
+  const er = T.engrate != null ? T.engrate : T.engrateCalc;
+  if (er != null && isFinite(er)) out.push(`${anOneIn(er).replace(/^1 in/, '1 in every')} ${er >= .5 ? 'of people who saw it' : 'people who saw it'} reacted, commented, shared or clicked. That's a ${anPct(er)} engagement rate.`);
+  const ints = AN_INTERACT.filter(k => T[k]).map(k => [k, T[k]]).sort((a, b) => b[1] - a[1]);
+  const intSum = ints.reduce((a, e) => a + e[1], 0);
+  if (ints.length >= 2 && intSum) {
+    const [k0, v0] = ints[0]; out.push(`${anLabel(src, k0)} were the most common way people responded (${anPct(v0 / intSum)} of all interactions).`);
+    if (T.comments && k0 !== 'comments') out.push(`${anFmt(T.comments)} ${T.comments === 1 ? 'comment' : 'comments'}: people who took the time to write something are the strongest sign it got them thinking.`);
+  }
+  if (T.shares && (T.reach || T.impr)) out.push(`It was shared ${anFmt(T.shares)} ${T.shares === 1 ? 'time' : 'times'}, about ${anOneIn(T.shares / (T.reach || T.impr))} ${T.reach ? 'people reached' : 'views'}. Each share puts it in front of a new audience.`);
+  if (T.follows) out.push(`You gained ${anFmt(T.follows)} new ${src.platform === 'viva' ? 'members' : 'followers'}${T.followersTotal ? `, taking you to ${anFmt(T.followersTotal)}` : ''}.`);
+  else if (T.followersTotal) out.push(`You have ${anFmt(T.followersTotal)} ${src.platform === 'viva' ? 'members' : 'followers'}.`);
+  if (T.profile) out.push(`${anFmt(T.profile)} ${T.profile === 1 ? 'person' : 'people'} went on to look at your profile.`);
+  // trend over time
+  src.series.forEach(s => {
+    const c = anSeriesMain(s); if (!c || s.dates.length < 4) return;
+    const v = c.vals.map(x => x || 0), h = Math.floor(v.length / 2), a = v.slice(0, h).reduce((x, y) => x + y, 0), b = v.slice(v.length - h).reduce((x, y) => x + y, 0);
+    let best = 0; v.forEach((x, i) => { if (x > v[best]) best = i; });
+    if (a > 0) { const ch = (b - a) / a; out.push(Math.abs(ch) < .05 ? `${c.label} stayed steady across the period.` : `${c.label} ${ch > 0 ? 'went up' : 'went down'} ${anPct(Math.abs(ch))} in the second half of the period compared with the first half.`); }
+    if (v[best] > 0) out.push(`Your best day was ${s.dates[best].toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} with ${anFmt(v[best])} ${c.label.toLowerCase()}.`);
+    if (s.dates.length >= 14) {
+      const wd = {}; s.dates.forEach((d, i) => { const k = d.getDay(); wd[k] = wd[k] || [0, 0]; wd[k][0] += v[i]; wd[k][1]++; });
+      const bestD = Object.entries(wd).sort((x, y) => y[1][0] / y[1][1] - x[1][0] / x[1][1])[0];
+      if (bestD) out.push(`${anWeekday(new Date(2024, 0, 7 + +bestD[0]))}s were your strongest day of the week on average.`);
+    }
+  });
+  // posts
+  const pk = anPostMain(src);
+  if (src.posts.length >= 2 && pk) {
+    const list = src.posts.filter(p => p.vals[pk] != null).sort((a, b) => b.vals[pk] - a.vals[pk]);
+    const avg = list.reduce((a, p) => a + p.vals[pk], 0) / list.length;
+    if (list.length >= 2 && avg) { const t = list[0]; const name = anPostName(t); out.push(`Your best post was "${name}" with ${anFmt(t.vals[pk])} ${anLabel(src, pk).toLowerCase()}${t.vals[pk] / avg >= 1.4 ? `, ${(t.vals[pk] / avg).toFixed(1)}× your average` : ''}.`); }
+    const types = {}; list.forEach(p => { if (!p.type) return; types[p.type] = types[p.type] || []; types[p.type].push(p.vals[pk]); });
+    const tl = Object.entries(types).filter(([, v]) => v.length).map(([t, v]) => [t, v.reduce((a, b) => a + b, 0) / v.length]).sort((a, b) => b[1] - a[1]);
+    if (tl.length >= 2 && tl[1][1]) out.push(`${tl[0][0]} posts did best, averaging ${anFmt(tl[0][1])} ${anLabel(src, pk).toLowerCase()} (${(tl[0][1] / tl[1][1]).toFixed(1)}× more than ${tl[1][0].toLowerCase()} posts).`);
+    const dated = list.filter(p => p.date);
+    if (dated.length >= 6) {
+      const wd = {}; dated.forEach(p => { const k = p.date.getDay(); wd[k] = wd[k] || []; wd[k].push(p.vals[pk]); });
+      const bw = Object.entries(wd).filter(([, v]) => v.length >= 2).map(([k, v]) => [k, v.reduce((a, b) => a + b, 0) / v.length]).sort((a, b) => b[1] - a[1])[0];
+      if (bw) out.push(`Posts published on a ${anWeekday(new Date(2024, 0, 7 + +bw[0]))} tended to do best.`);
+    }
+  }
+  // audience
+  src.demos.slice(0, 3).forEach(d => { const [n, v] = d.items[0] || []; if (n) out.push(`Biggest group by ${d.cat.toLowerCase()}: ${n}${d.pct ? ` (${anPct(v)})` : ` (${anFmt(v)})`}.`); });
+  if (!out.length) out.push(`We found ${src.kv.length + src.series.length + src.posts.length + src.demos.length} sets of numbers in this ${P.name} file. They're all shown on the pages that follow.`);
+  return out;
+}
+const anPostName = p => { const t = (p.title || '').replace(/https?:\/\/\S+/g, '').trim(); if (t) return t.length > 70 ? t.slice(0, 67).trim() + '…' : t; if (p.date) return 'Post from ' + p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); const u = String(p.url || '').replace(/^https?:\/\/(www\.)?/, ''); return u.length > 60 ? u.slice(0, 57) + '…' : u || 'Untitled post'; };
+
+/* ---- the PDF pages ---- */
+async function buildAnPages(sources, opts){
+  try { await Promise.all([document.fonts.load(RF(40, 800)), document.fonts.load(RF(40, 600)), document.fonts.load(RF(40, 700))]); } catch {}
+  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee', SOFT = '#f5f6fa';
+  const pages = []; let ctx, y, curTitle = '', curSub = '';
+  const made = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  function newPage(title, sub, src){
+    const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
+    const g = ctx.createLinearGradient(0, 0, PW, 0); RAINBOW.forEach((c, i) => g.addColorStop(i / 4, c)); ctx.fillStyle = g; ctx.fillRect(0, 0, PW, 12);
+    ctx.font = RF(30, 800); const tw = ctx.measureText('GentiMeter').width;
+    const g2 = ctx.createLinearGradient(M, 0, M + tw, 0); RAINBOW.forEach((c, i) => g2.addColorStop(i / 4, c));
+    ctx.fillStyle = g2; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('GentiMeter', M, 40);
+    textBlock(ctx, `Analytics  ·  ${opts.title}${opts.by ? '  ·  ' + opts.by : ''}`, M + tw + 24, 48, 1100, 20, 600, MUTED, { max: 1 });
+    textBlock(ctx, 'Created by Leon Gent', PW - M, 48, 400, 18, 600, '#b3b7c8', { align: 'right' });
+    curTitle = title; curSub = sub || ''; y = 100;
+    if (src) { const P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other; ctx.font = RF(20, 800); const cw = ctx.measureText(P.name).width + 60; rrect(ctx, M, y + 6, cw, 40, 20); ctx.fillStyle = P.col; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('● ' + P.name, M + 18, y + 27); textBlock(ctx, title, M + cw + 18, y, PW - 2 * M - cw - 18, 44, 800, INK, { max: 1 }); y += 64; }
+    else if (title) y = textBlock(ctx, title, M, y, PW - 2 * M, 44, 800, INK, { max: 1 }) + 14;
+    if (sub) y = textBlock(ctx, sub, M, y - 6, PW - 2 * M, 21, 600, MUTED, { max: 1 }) + 22;
+    pages.push(cv);
+  }
+  const range = T => T.from ? (T.from.toDateString() === T.to.toDateString() ? T.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : `${T.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: T.from.getFullYear() === T.to.getFullYear() ? undefined : 'numeric' })} – ${T.to.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`) : '';
+  const card = (x, yy, w, h, fill = SOFT) => { rrect(ctx, x, yy, w, h, 20); ctx.fillStyle = fill; ctx.fill(); };
+  const niceMax = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+  function tilesRow(list, h = 196){
+    const n = list.length, gap = 20, tw = (PW - 2 * M - gap * (n - 1)) / n;
+    list.forEach((t, i) => {
+      const x = M + i * (tw + gap); card(x, y, tw, h); ctx.fillStyle = t.col || RAINBOW[i % 5]; rrect(ctx, x, y, 8, h, 4); ctx.fill();
+      textBlock(ctx, t.num, x + 28, y + 20, tw - 40, n > 4 ? 50 : 56, 800, INK, { max: 1 });
+      textBlock(ctx, t.lab, x + 28, y + 90, tw - 40, 21, 800, INK, { max: 1 });
+      textBlock(ctx, t.exp, x + 28, y + 120, tw - 40, 16, 600, MUTED, { max: 3, lh: 1.25 });
+    });
+    y += h + 30;
+  }
+  function lineChart(x, yy, w, h, dates, vals, col, label){
+    const max = niceMax(Math.max(...vals.map(v => v || 0))), L = x + 70, R = x + w - 10, T = yy + 10, B = yy + h - 40;
+    ctx.font = RF(15, 600); ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) { const gy = B - (B - T) * i / 4; ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, gy); ctx.lineTo(R, gy); ctx.stroke(); ctx.fillStyle = MUTED; ctx.fillText(anFmt(max * i / 4), L - 10, gy); }
+    const n = vals.length, px = i => n === 1 ? (L + R) / 2 : L + (R - L) * i / (n - 1), py = v => B - (B - T) * (v || 0) / max;
+    const grad = ctx.createLinearGradient(0, T, 0, B); grad.addColorStop(0, col + '55'); grad.addColorStop(1, col + '05');
+    ctx.beginPath(); vals.forEach((v, i) => i ? ctx.lineTo(px(i), py(v)) : ctx.moveTo(px(i), py(v))); ctx.lineTo(px(n - 1), B); ctx.lineTo(px(0), B); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath(); vals.forEach((v, i) => i ? ctx.lineTo(px(i), py(v)) : ctx.moveTo(px(i), py(v))); ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
+    if (n <= 45) vals.forEach((v, i) => { ctx.beginPath(); ctx.arc(px(i), py(v), 4.5, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke(); });
+    let bi = 0; vals.forEach((v, i) => { if ((v || 0) > (vals[bi] || 0)) bi = i; });
+    if (vals[bi] > 0) {
+      const bx = px(bi), by = py(vals[bi]); ctx.beginPath(); ctx.arc(bx, by, 9, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+      const txt = `Best: ${anFmt(vals[bi])} on ${dates[bi].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`; ctx.font = RF(16, 800); const tw = ctx.measureText(txt).width + 24;
+      const tx = Math.min(Math.max(bx - tw / 2, L), R - tw), ty = Math.max(T - 4, by - 48); rrect(ctx, tx, ty, tw, 32, 10); ctx.fillStyle = INK; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(txt, tx + tw / 2, ty + 16);
+    }
+    ctx.font = RF(15, 600); ctx.fillStyle = MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const step = Math.max(1, Math.ceil(n / Math.floor((R - L) / 110)));
+    for (let i = 0; i < n; i += step) ctx.fillText(dates[i].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), px(i), B + 12);
+  }
+  function hbarsAt(x, yy, w, items, col, pct, max = 6){
+    const top = Math.max(...items.map(e => e[1]), 1e-9), lw = Math.min(330, w * .45), bw = w - lw - 110;
+    items.slice(0, max).forEach(([name, v], i) => {
+      ctx.font = RF(18, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, name, lw - 14), x, yy + 17);
+      rrect(ctx, x + lw, yy + 5, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+      rrect(ctx, x + lw, yy + 5, Math.max(8, bw * v / top), 24, 8); ctx.fillStyle = typeof col === 'function' ? col(i) : col; ctx.fill();
+      ctx.font = RF(18, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(pct ? anPct(v) : anFmt(v), x + w, yy + 17);
+      yy += 38;
+    });
+    return yy;
+  }
+
+  const sums = sources.map(s => ({ s, ...anTotals(s), F: anFindings(s) }));
+
+  /* ===== combined overview when there's more than one file ===== */
+  if (sources.length > 1) {
+    newPage(opts.title, `${sources.length} sources  ·  made ${made}`);
+    const grand = {}; sums.forEach(({ T }) => ['impr', 'reach', 'views', 'interactions', 'follows'].forEach(k => { if (T[k] != null) grand[k] = (grand[k] || 0) + T[k]; }));
+    const gt = [['impr', 'Impressions', 'Times your content was shown, across everything.'], ['reach', 'People reached', 'Different people who saw it (added up per source).'], ['views', 'Views', 'Views and plays, across everything.'], ['interactions', 'Interactions', 'Reactions, comments, shares and clicks added up.'], ['follows', 'New followers', 'New followers or members, across everything.']].filter(([k]) => grand[k] != null);
+    if (gt.length) tilesRow(gt.map(([k, lab, exp], i) => ({ num: anFmt(grand[k]), lab, exp, col: RAINBOW[i % 5] })));
+    y = textBlock(ctx, 'Side by side', M, y, 600, 28, 800, INK) + 16;
+    const cols = [['impr', 'Impressions'], ['reach', 'Reached'], ['views', 'Views'], ['interactions', 'Interactions'], ['rate', 'Engagement rate'], ['follows', 'New followers']].filter(([k]) => sums.some(({ T }) => k === 'rate' ? (T.engrate ?? T.engrateCalc) != null : T[k] != null));
+    const cw = (PW - 2 * M - 520) / Math.max(1, cols.length);
+    ctx.font = RF(16, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('SOURCE', M + 20, y + 16); cols.forEach(([, l], i) => { ctx.textAlign = 'right'; ctx.fillText(l.toUpperCase(), M + 520 + cw * (i + 1) - 20, y + 16); });
+    y += 40;
+    sums.forEach(({ s, T }, r) => {
+      if (y > PH - 150) return;
+      card(M, y, PW - 2 * M, 70, r % 2 ? '#fff' : SOFT);
+      const P = AN_PLATFORMS[s.platform] || AN_PLATFORMS.other;
+      ctx.beginPath(); ctx.arc(M + 34, y + 35, 12, 0, 7); ctx.fillStyle = P.col; ctx.fill();
+      ctx.font = RF(20, 800); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, P.name + '  ·  ' + s.name, 440), M + 60, y + 35);
+      cols.forEach(([k], i) => { const v = k === 'rate' ? (T.engrate ?? T.engrateCalc) : T[k]; ctx.textAlign = 'right'; ctx.font = RF(24, 800); ctx.fillStyle = INK; ctx.fillText(k === 'rate' ? anPct(v) : anFmt(v), M + 520 + cw * (i + 1) - 20, y + 35); });
+      y += 80;
+    });
+    // comparisons in plain English
+    const nm = x => (AN_PLATFORMS[x.s.platform] || AN_PLATFORMS.other).name + (sums.filter(z => z.s.platform === x.s.platform).length > 1 ? ' (' + x.s.name.replace(/\.(xlsx|xls|csv)$/i, '') + ')' : '');
+    const best = (f, fmt, say) => { const c = sums.filter(x => f(x) != null && isFinite(f(x))); if (c.length < 2) return null; const b = c.sort((a, z) => f(z) - f(a))[0]; return say(nm(b), fmt(f(b))); };
+    const lines = [
+      best(x => x.T.reach ?? x.T.impr ?? x.T.views, anFmt, (n, v) => `${n} reached the most people (${v}).`),
+      best(x => x.T.engrate ?? x.T.engrateCalc, anPct, (n, v) => `${n} had the highest engagement rate (${v}), so its audience was the most likely to join in.`),
+      best(x => x.T.comments, anFmt, (n, v) => `${n} got the most comments (${v}).`),
+      best(x => x.T.follows, anFmt, (n, v) => `${n} brought in the most new followers (${v}).`)
+    ].filter(Boolean);
+    if (lines.length && y < PH - 200) {
+      y += 20; y = textBlock(ctx, 'In plain English', M, y, 600, 28, 800, INK) + 16;
+      lines.forEach((f, i) => { if (y > PH - 100) return; ctx.beginPath(); ctx.arc(M + 10, y + 15, 7, 0, 7); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill(); y = textBlock(ctx, f, M + 32, y, PW - 2 * M - 40, 24, 600, INK, { max: 2 }) + 14; });
+    }
+  }
+
+  /* ===== one section per source ===== */
+  sums.forEach(({ s: src, T, F }) => {
+    const P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other, rg = range(T);
+    const secTitle = sources.length > 1 ? src.name.replace(/\.(xlsx|xls|csv)$/i, '') : opts.title;
+    newPage(secTitle, [rg, sources.length > 1 ? '' : 'from ' + src.name, 'made ' + made].filter(Boolean).join('  ·  '), src);
+    // headline tiles
+    const er = T.engrate != null ? T.engrate : T.engrateCalc;
+    const cand = [
+      ['impr', anFmt(T.impr), 'Impressions', 'Times it appeared on screen'],
+      ['reach', anFmt(T.reach), 'People reached', 'Different people who saw it'],
+      ['views', anFmt(T.views), 'Views', 'Times it was viewed or played'],
+      ['active', anFmt(T.active), 'People who took part', 'Different people who posted, replied or reacted'],
+      ['interactions', anFmt(T.interactions), 'Interactions', 'Reactions, comments, shares & clicks'],
+      ['rate', anPct(er), 'Engagement rate', er != null ? anOneIn(er).replace(/^1 in/, '1 in every') + (er < .5 ? ' viewers joined in' : ' of viewers joined in') : ''],
+      ['follows', anFmt(T.follows), src.platform === 'viva' ? 'New members' : 'New followers', 'People who started following'],
+      ['followersTotal', anFmt(T.followersTotal), src.platform === 'viva' ? 'Members' : 'Followers', 'In total at the end'],
+      ['posts', anFmt(T.posts ?? T.postCount), 'Posts', 'Posts in this data'],
+      ['react', anFmt(T.react), 'Reactions', 'Likes and other reactions'],
+      ['comments', anFmt(T.comments), 'Comments', 'People who wrote back']
+    ].filter(([k, num]) => num !== '–' && (k !== 'rate' || er != null) && (k !== 'posts' || (T.posts ?? T.postCount) > 1));
+    const pickT = []; cand.forEach(c => { if (pickT.length < 5 && !(c[0] === 'interactions' && T.interactions === T.react)) pickT.push(c); });
+    if (pickT.length) tilesRow(pickT.map(([, num, lab, exp], i) => ({ num, lab, exp, col: i === 0 ? P.col : RAINBOW[(i + 1) % 5] })));
+    // findings (left) + journey (right)
+    const top = y, lw = 900;
+    textBlock(ctx, 'In plain English', M, y, lw, 28, 800, INK); y += 50;
+    const fs0 = F.length > 7 ? 21 : 24; F.slice(0, 9).forEach((f, i) => { if (y > PH - 110) return; ctx.beginPath(); ctx.arc(M + 10, y + fs0 * .62, 7, 0, 7); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill(); y = textBlock(ctx, f, M + 32, y, lw - 40, fs0, 600, INK, { max: 3, lh: 1.3 }) + 16; });
+    const stages = [['impr', 'Saw it', 'times on screen'], ['views', 'Viewed', 'views'], ['reach', 'People', 'different people'], ['interactions', 'Joined in', 'interactions'], ['clicks', 'Clicked', 'clicks'], ['follows', 'Followed', 'new followers']].filter(([k]) => T[k] && !(k === 'views' && T.impr)).sort((a, b) => T[b[0]] - T[a[0]]);
+    if (stages.length >= 2) {
+      const jx = M + lw + 60, jw = PW - M - jx; let jy = top;
+      textBlock(ctx, 'The journey', jx, jy, jw, 28, 800, INK); jy += 50;
+      const maxV = T[stages[0][0]], bh = Math.min(92, (PH - 110 - jy) / stages.length - 12);
+      stages.forEach(([k, lab, unit], i) => {
+        const frac = Math.min(1, Math.max(.14, Math.sqrt(T[k] / maxV))), bw = jw * frac, bx = jx + (jw - bw) / 2;
+        rrect(ctx, bx, jy, bw, bh, 16); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 1) % 5]; ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = RF(Math.min(30, bh * .38), 800); ctx.fillText(anFmt(T[k]), jx + jw / 2, jy + bh * .38);
+        ctx.font = RF(Math.min(16, bh * .22), 700); ctx.fillText(fitText(ctx, lab + ' · ' + unit, Math.max(bw - 16, 100)), jx + jw / 2, jy + bh * .74);
+        if (i) { const r = T[k] / T[stages[i - 1][0]]; if (r < 1 && r > 0) { ctx.font = RF(14, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.fillText(anOneIn(r), jx + (jw + bw) / 2 + 10 > jx + jw - 70 ? jx + jw - 80 : jx + (jw + bw) / 2 + 10, jy - 6); } }
+        jy += bh + 12;
+      });
+    }
+    // how people interacted
+    const ints = AN_INTERACT.filter(k => T[k] > 0).map(k => [k, T[k]]).sort((a, b) => b[1] - a[1]);
+    if (ints.length >= 2) {
+      newPage('How people responded', 'Every type of interaction, and what each one tells you', src);
+      const total = ints.reduce((a, e) => a + e[1], 0), cx = M + 260, cy = y + 270, R = 230;
+      let a0 = -Math.PI / 2; ints.forEach(([k, v]) => { const a1 = a0 + v / total * Math.PI * 2; ctx.beginPath(); ctx.arc(cx, cy, R * .78, a0, a1); ctx.lineWidth = R * .44; ctx.strokeStyle = AN_INT_COL[k]; ctx.stroke(); a0 = a1; });
+      textBlock(ctx, anFmt(total), cx, cy - 36, 260, 56, 800, INK, { align: 'center' });
+      textBlock(ctx, 'interactions', cx, cy + 24, 260, 20, 700, MUTED, { align: 'center' });
+      let ly = cy + R + 40; ints.forEach(([k, v]) => { ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, M + 40, ly, 22, 22, 6); ctx.fill(); ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(`${anLabel(src, k)}  ${anPct(v / total)}`, M + 74, ly + 11); ly += 34; });
+      const gx = M + 580, gw = PW - M - gx, n = ints.length, colsN = n > 3 ? 2 : 1, ch = Math.min(200, (PH - 100 - y) / Math.ceil(n / colsN) - 18), cw = (gw - (colsN - 1) * 20) / colsN;
+      const seenK = T.reach ? 'reach' : T.impr ? 'impr' : T.views ? 'views' : null;
+      ints.forEach(([k, v], i) => {
+        const x = gx + (i % colsN) * (cw + 20), yy = y + Math.floor(i / colsN) * (ch + 18);
+        card(x, yy, cw, ch); ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, x, yy, 8, ch, 4); ctx.fill();
+        textBlock(ctx, anFmt(v), x + 28, yy + 18, 220, 44, 800, INK, { max: 1 });
+        textBlock(ctx, anLabel(src, k), x + 28, yy + 72, cw - 40, 22, 800, INK, { max: 1 });
+        const m = AN_METRICS.find(z => z[0] === k); textBlock(ctx, (m ? m[4] : ''), x + 28, yy + 104, cw - 40, 16, 600, MUTED, { max: 2, lh: 1.25 });
+        if (seenK && T[seenK]) { ctx.font = RF(17, 800); const t = anOneIn(v / T[seenK]) + (v / T[seenK] < .5 ? (seenK === 'reach' ? ' people' : ' views') : ''); const tw2 = ctx.measureText(t).width + 24; rrect(ctx, x + cw - tw2 - 18, yy + 18, tw2, 34, 17); ctx.fillStyle = '#fff'; ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + cw - tw2 / 2 - 18, yy + 35); }
+      });
+    }
+    // over time
+    src.series.forEach(s => {
+      const main = anSeriesMain(s); if (!main) return;
+      const PRI = ['reach', 'engagements', 'active', 'react', 'comments', 'shares', 'clicks', 'follows', 'views', 'engrate', 'posts', 'saves', 'followersTotal', 'imprPaid'];
+      const prefC = c => /total/i.test(c.raw) ? 0 : /organic/i.test(c.raw) ? 1 : /sponsor|paid/i.test(c.raw) ? 3 : 2;
+      const groups = new Map(); s.cols.filter(c => c !== main && c.vals.some(v => v) && !(c.m && main.m && c.m.key === main.m.key)).forEach(c => { const k = c.m ? c.m.key : 'x:' + c.label; if (!groups.has(k) || prefC(c) < prefC(groups.get(k))) groups.set(k, c); });
+      const others = [...groups.entries()].sort((a, b) => (PRI.indexOf(a[0]) + 1 || 99) - (PRI.indexOf(b[0]) + 1 || 99)).map(e => e[1]).slice(0, 3);
+      newPage('Over time' + (s.title ? ' · ' + s.title : ''), `${s.dates.length} ${s.dates.length === 1 ? 'day' : 'days'} of data  ·  ${range({ from: s.dates[0], to: s.dates[s.dates.length - 1] })}`, src);
+      const tot = main.vals.reduce((a, v) => a + (v || 0), 0);
+      textBlock(ctx, `${main.label}${main.m && main.m.kind !== 'rate' && main.m.kind !== 'total' ? ': ' + anFmt(tot) + ' in total' : ''}`, M, y, 1200, 26, 800, INK); y += 44;
+      const bigH = others.length ? 440 : 820;
+      lineChart(M, y, PW - 2 * M, bigH, s.dates, main.vals, P.col, main.label); y += bigH + 20;
+      if (others.length) {
+        const gap = 24, w = (PW - 2 * M - gap * (others.length - 1)) / others.length, h = PH - 70 - y;
+        others.forEach((c, i) => {
+          const x = M + i * (w + gap); card(x, y, w, h);
+          const t = c.vals.reduce((a, v) => a + (v || 0), 0);
+          textBlock(ctx, c.label, x + 24, y + 18, w - 48, 20, 800, INK, { max: 1 });
+          textBlock(ctx, c.m && c.m.kind === 'rate' ? 'Average ' + anPct(t / c.vals.filter(v => v != null).length / (t / c.vals.length > 1 ? 100 : 1)) : c.m && c.m.kind === 'total' ? anFmt(c.vals.filter(v => v != null).pop()) + ' at the end' : anFmt(t) + ' in total', x + 24, y + 46, w - 48, 17, 600, MUTED, { max: 1 });
+          lineChart(x + 6, y + 78, w - 18, h - 90, s.dates, c.vals, RAINBOW[(i + 1) % 5], c.label);
+        });
+      }
+    });
+    // posts
+    const pk = anPostMain(src);
+    if (src.posts.length && pk) {
+      const list = src.posts.slice().sort((a, b) => (b.vals[pk] ?? -1) - (a.vals[pk] ?? -1));
+      newPage(src.posts.length > 1 ? 'Your posts' : 'Your post', `${src.posts.length} ${src.posts.length === 1 ? 'post' : 'posts'}, ranked by ${anLabel(src, pk).toLowerCase()}`, src);
+      const show = list.slice(0, 10), extra = src.postCols.filter(c => c.k !== pk && c.m && ['engagements', 'react', 'comments', 'shares', 'clicks', 'saves', 'engrate', 'reach', 'impr', 'views'].includes(c.m.key)).slice(0, 4);
+      const colW = 150, titleW = Math.min(700, Math.max(440, PW - 2 * M - 60 - extra.length * colW - 420)), barX = M + 60 + titleW, barW = PW - M - barX - extra.length * colW - 20, topV = Math.max(...show.map(p => p.vals[pk] || 0), 1);
+      ctx.font = RF(15, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('POST', M + 60, y + 12); ctx.fillText(anLabel(src, pk).toUpperCase(), barX, y + 12);
+      extra.forEach((c, i) => { ctx.textAlign = 'right'; ctx.fillText(fitText(ctx, c.label.toUpperCase(), colW - 10), PW - M - (extra.length - 1 - i) * colW, y + 12); });
+      y += 34;
+      const rowH = Math.min(84, (PH - 90 - y) / Math.max(show.length, 1));
+      show.forEach((p, i) => {
+        card(M, y, PW - 2 * M, rowH - 8, i === 0 ? P.col + '14' : i % 2 ? '#fff' : SOFT);
+        ctx.font = RF(24, 800); ctx.fillStyle = i === 0 ? P.col : MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), M + 30, y + (rowH - 8) / 2);
+        ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(fitText(ctx, anPostName(p), titleW - 20), M + 60, y + (rowH - 8) / 2 - (p.date || p.type ? 11 : 0));
+        if (p.date || p.type) { ctx.font = RF(15, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, [p.title && p.date ? p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '', p.type, !p.title && p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '') : ''].filter(Boolean).join('  ·  '), titleW - 20), M + 60, y + (rowH - 8) / 2 + 14); }
+        const v = p.vals[pk] || 0; rrect(ctx, barX, y + (rowH - 8) / 2 - 12, barW - 90, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+        rrect(ctx, barX, y + (rowH - 8) / 2 - 12, Math.max(8, (barW - 90) * v / topV), 24, 8); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 2) % 5]; ctx.fill();
+        ctx.font = RF(19, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(anFmt(p.vals[pk]), barX + barW, y + (rowH - 8) / 2);
+        extra.forEach((c, j) => { const val = p.vals[c.k]; ctx.font = RF(18, 700); ctx.fillStyle = INK; ctx.fillText(c.m.kind === 'rate' ? anPct(val > 1 ? val / 100 : val) : anFmt(val), PW - M - (extra.length - 1 - j) * colW - 10, y + (rowH - 8) / 2); });
+        y += rowH;
+      });
+      if (list.length > 10) textBlock(ctx, `+ ${list.length - 10} more posts. They're all in the table at the end.`, M, y + 6, 1200, 18, 600, MUTED);
+      // single post with lots of numbers: show every number
+    }
+    // audience
+    if (src.demos.length) {
+      const per = 6;
+      for (let s0 = 0; s0 < src.demos.length; s0 += per) {
+        newPage(src.platform === 'viva' ? 'Who took part' : 'Who saw it', 'The biggest groups in your audience', src);
+        const ds = src.demos.slice(s0, s0 + per), colsN = ds.length > 2 ? 3 : ds.length, gap = 24, w = (PW - 2 * M - gap * (colsN - 1)) / colsN, h = ds.length > colsN ? (PH - 80 - y - gap) / 2 : Math.min(560, PH - 80 - y);
+        ds.forEach((d, i) => {
+          const x = M + (i % colsN) * (w + gap), yy = y + Math.floor(i / colsN) * (h + gap);
+          card(x, yy, w, h); textBlock(ctx, d.cat, x + 26, yy + 20, w - 52, 22, 800, INK, { max: 1 });
+          hbarsAt(x + 26, yy + 64, w - 52, d.items, j => j === 0 ? P.col : RAINBOW[(j + 1) % 5], d.pct, Math.max(3, Math.min(8, Math.floor((h - 80) / 38))));
+        });
+      }
+    }
+    // every number from key/value lists
+    const kvNums = src.kv.filter(e => e.v != null || e.text || e.date);
+    if (kvNums.length > 4) {
+      newPage('All the numbers', 'Everything in the file, with what it means', src);
+      const colsN = 2, gap = 30, w = (PW - 2 * M - gap) / 2; let i = 0; const y0 = y;
+      kvNums.forEach(e => {
+        const col = i % colsN, yy = y0 + Math.floor(i / colsN) * 86; if (yy > PH - 150) return;
+        const x = M + col * (w + gap); card(x, yy, w, 74, i % 4 < 2 ? SOFT : '#fff');
+        const val = e.v != null ? (e.m && e.m.kind === 'rate' || e.pct ? anPct(e.v > 1 && e.m && e.m.kind === 'rate' ? e.v / 100 : e.v) : anFmt(e.v)) : e.date ? e.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + (e.date2 ? ' – ' + e.date2.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '') : e.text;
+        ctx.font = RF(26, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; const vv = fitText(ctx, val, w * .45); ctx.fillText(vv, x + w - 24, yy + 37);
+        const lab = (e.m ? e.m.name : e.label) + (e.m && e.m.name.toLowerCase() !== e.label.toLowerCase() ? ' (' + e.label + ')' : '');
+        textBlock(ctx, lab, x + 24, yy + 12, w * .55 - 24, 19, 800, INK, { max: 1 });
+        textBlock(ctx, e.m ? e.m.explain : '', x + 24, yy + 40, w * .55 - 24, 15, 600, MUTED, { max: 1 });
+        i++;
+      });
+    }
+    // all posts table
+    if (src.posts.length > 10) {
+      const list = src.posts.slice().sort((a, b) => (b.vals[pk] ?? -1) - (a.vals[pk] ?? -1));
+      const cols = src.postCols.slice(0, 7), nameW = PW - 2 * M - 180 - cols.length * 150;
+      let idx = 0;
+      while (idx < list.length) {
+        newPage('Every post', `${list.length} posts`, src);
+        ctx.font = RF(14, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('POST', M + 50, y + 10); ctx.fillText('DATE', M + 50 + nameW, y + 10);
+        cols.forEach((c, j) => { ctx.textAlign = 'right'; ctx.fillText(fitText(ctx, c.label.toUpperCase(), 140), M + 50 + nameW + 180 + (j + 1) * 150 - 50, y + 10); });
+        y += 28;
+        while (idx < list.length && y < PH - 90) {
+          const p = list[idx]; if (idx % 2 === 0) { rrect(ctx, M, y, PW - 2 * M, 38, 8); ctx.fillStyle = SOFT; ctx.fill(); }
+          ctx.font = RF(16, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(String(idx + 1), M + 36, y + 19);
+          ctx.font = RF(16, 600); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(fitText(ctx, anPostName(p), nameW - 20), M + 50, y + 19);
+          ctx.fillStyle = MUTED; ctx.fillText(p.date ? p.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : '', M + 50 + nameW, y + 19);
+          cols.forEach((c, j) => { const v = p.vals[c.k]; ctx.textAlign = 'right'; ctx.fillStyle = INK; ctx.font = RF(16, 700); ctx.fillText(c.m && c.m.kind === 'rate' ? anPct(v > 1 ? v / 100 : v) : anFmt(v), M + 50 + nameW + 180 + (j + 1) * 150 - 50, y + 19); });
+          y += 40; idx++;
+        }
+      }
+    }
+    // other tables we couldn't label
+    src.tables.slice(0, 4).forEach(t => {
+      newPage(t.title || 'Other data', 'Shown as it appears in the file', src);
+      const head = t.head.slice(0, 8), cw = (PW - 2 * M) / Math.max(1, head.length);
+      ctx.font = RF(15, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      head.forEach((h, j) => ctx.fillText(fitText(ctx, String(h || '').toUpperCase(), cw - 16), M + j * cw + 10, y + 10)); y += 30;
+      t.rows.forEach((r, i) => { if (y > PH - 90) return; if (i % 2 === 0) { rrect(ctx, M, y, PW - 2 * M, 36, 8); ctx.fillStyle = SOFT; ctx.fill(); } ctx.font = RF(16, 600); ctx.fillStyle = INK; head.forEach((h, j) => { const v = r[j]; const n = anNum(v); ctx.fillText(fitText(ctx, v instanceof Date ? v.toLocaleDateString('en-GB') : n && typeof v === 'number' ? anFmt(n.n) : String(v ?? ''), cw - 16), M + j * cw + 10, y + 18); }); y += 38; });
+    });
+  });
+
+  /* ===== glossary ===== */
+  if (opts.glossary) {
+    const used = new Set();
+    sums.forEach(({ s, T }) => { Object.keys(T).forEach(k => used.add(k)); s.postCols.forEach(c => c.m && used.add(c.m.key)); s.series.forEach(x => x.cols.forEach(c => c.m && used.add(c.m.key))); });
+    if (used.has('engrateCalc')) used.add('engrate');
+    const list = AN_METRICS.filter(m => used.has(m[0]));
+    if (list.length) {
+      newPage('What the words mean', 'A quick guide to the numbers in this report');
+      const colsN = 2, gap = 30, w = (PW - 2 * M - gap) / 2, h = Math.min(120, (PH - 90 - y) / Math.ceil(list.length / 2) - 14);
+      list.forEach((m, i) => { const x = M + (i % colsN) * (w + gap), yy = y + Math.floor(i / colsN) * (h + 14); card(x, yy, w, h); ctx.fillStyle = RAINBOW[i % 5]; rrect(ctx, x, yy, 8, h, 4); ctx.fill(); textBlock(ctx, m[2], x + 28, yy + 16, w - 50, 22, 800, INK, { max: 1 }); textBlock(ctx, m[4], x + 28, yy + 50, w - 50, 17, 600, MUTED, { max: 2, lh: 1.3 }); });
+    }
+  }
+  pages.forEach((cv, i) => { const c = cv.getContext('2d'); c.font = RF(16, 600); c.fillStyle = '#b3b7c8'; c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(`Page ${i + 1} of ${pages.length}`, PW - M, PH - 30); });
+  return pages;
+}
+
+function startAn(){
+  show('an'); document.title = 'Analytics · GentiMeter';
+  $('backEng2').onclick = () => nav('app=engagement');
+  const sources = []; let pages = null, busy = false, manual = null;
+  const setMsg = t => { $('anMsg').textContent = t; $('anMsg').classList.toggle('hidden', !t); };
+  const loadX = () => loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', () => window.XLSX);
+  async function addFiles(files){
+    for (const f of files) {
+      if (!/\.(xlsx|xls|xlsm|csv)$/i.test(f.name)) { setMsg(f.name + " isn't a spreadsheet. Use the .xlsx or .csv file from the export button."); continue; }
+      setMsg('Reading ' + f.name + '…');
+      try {
+        await loadX();
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array', cellDates: true, raw: /\.csv$/i.test(f.name) });
+        const src = anReadWorkbook(f.name, wb);
+        if (!src.kv.length && !src.series.length && !src.posts.length && !src.demos.length && !src.tables.length) { setMsg("Couldn't find any numbers in " + f.name + '.'); continue; }
+        sources.push(src); setMsg('');
+      } catch (e) { console.error(e); setMsg(e && e.message === 'load' ? "Couldn't load the spreadsheet reader. Check your internet connection." : 'Sorry, ' + f.name + " couldn't be read. Try saving it as .xlsx or .csv."); }
+    }
+    drawSources(); refresh();
+  }
+  function describe(src){
+    const bits = [];
+    const kvn = src.kv.filter(e => e.v != null).length; if (kvn) bits.push(kvn + ' headline ' + (kvn === 1 ? 'number' : 'numbers'));
+    src.series.forEach(s => bits.push(s.dates.length + ' days of ' + (anSeriesMain(s)?.label || 'data').toLowerCase()));
+    if (src.posts.length) bits.push(src.posts.length + (src.posts.length === 1 ? ' post' : ' posts'));
+    if (src.demos.length) bits.push('audience info (' + src.demos.map(d => d.cat.toLowerCase()).slice(0, 3).join(', ') + ')');
+    if (src.tables.length) bits.push(src.tables.length + ' other ' + (src.tables.length === 1 ? 'table' : 'tables'));
+    return bits.join(' · ');
+  }
+  function drawSources(){
+    const box = $('anList'); box.textContent = '';
+    sources.forEach((src, i) => {
+      const row = el('div', 'anrow'), P = AN_PLATFORMS[src.platform];
+      const dot = el('span', 'andot', P.icon); dot.style.background = P.col;
+      const info = el('div', 'aninfo'); info.append(el('b', '', src.name), el('span', '', describe(src)));
+      const sel = el('select', 'sel'); Object.entries(AN_PLATFORMS).forEach(([k, p]) => { const o = el('option', '', p.name); o.value = k; if (k === src.platform) o.selected = true; sel.append(o); });
+      sel.title = 'Which platform is this from?'; sel.onchange = () => { src.platform = sel.value; drawSources(); refresh(); };
+      const x = el('button', 'iconbtn danger'); x.type = 'button'; x.title = 'Remove'; x.setAttribute('aria-label', 'Remove ' + src.name); x.append(icon('x')); x.onclick = () => { sources.splice(i, 1); drawSources(); refresh(); };
+      row.append(dot, info, sel, x); box.append(row);
+    });
+    $('anStep2').classList.toggle('hidden', !sources.length); $('anStep3').classList.toggle('hidden', !sources.length);
+  }
+  let refreshT = null;
+  function refresh(){ clearTimeout(refreshT); pages = null; $('anDl').disabled = true; if (!sources.length) return; refreshT = setTimeout(preview, 250); }
+  async function preview(){
+    if (busy) { refresh(); return; } busy = true;
+    $('anCount').textContent = 'Making your report…';
+    try {
+      pages = await buildAnPages(sources, { title: $('anTitle').value.trim() || 'Social media report', by: $('anBy').value.trim(), glossary: $('anGloss').checked });
+      $('anCount').textContent = `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} ready. Tap a page to look closer.`;
+      const pv = $('anPreview'); pv.textContent = '';
+      pages.forEach((cv, i) => { const img = el('img'); img.src = cv.toDataURL('image/jpeg', .75); img.alt = 'Page ' + (i + 1); img.className = i === 0 ? 'pmfirst' : 'pmthumb'; img.onclick = () => { pv.querySelector('.pmfirst').src = img.src; }; pv.append(img); });
+      $('anDl').disabled = false;
+    } catch (e) { console.error(e); $('anCount').textContent = 'Something went wrong making the report.'; }
+    busy = false;
+  }
+  $('anDl').onclick = async () => {
+    if (!pages) return;
+    const b = $('anDl'), lab = b.textContent; b.disabled = true; b.textContent = 'Making PDF…';
+    try {
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
+      const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+      pages.forEach((cv, i) => { if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', .9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST'); });
+      pdf.save(($('anTitle').value.trim() || 'Social media report').replace(/[\\/:*?"<>|]+/g, '-') + '.pdf');
+      b.textContent = 'Downloaded!';
+    } catch { alert("Couldn't make the PDF. Check your internet connection and try again."); }
+    setTimeout(() => { b.textContent = lab; b.disabled = false; }, 1600);
+  };
+  ['anTitle', 'anBy'].forEach(id => $(id).oninput = refresh); $('anGloss').onchange = refresh;
+  $('anFile').onchange = () => { const fs = [...$('anFile').files]; $('anFile').value = ''; addFiles(fs); };
+  const drop = $('anDrop');
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addFiles([...e.dataTransfer.files]); };
+
+  /* ---- type the numbers in ---- */
+  const FIELDS = [['impr', 'Impressions'], ['reach', 'People reached'], ['views', 'Views / plays'], ['react', 'Reactions / likes'], ['comments', 'Comments'], ['shares', 'Shares / reposts'], ['saves', 'Saves'], ['clicks', 'Clicks'], ['follows', 'New followers'], ['profile', 'Profile visits']];
+  const grid = $('anFields');
+  FIELDS.forEach(([k, lab]) => { const l = el('label', 'anfield'); const i = el('input', 'field sm'); i.type = 'text'; i.inputMode = 'decimal'; i.dataset.k = k; i.placeholder = '0'; l.append(el('span', '', lab), i); grid.append(l); });
+  const psel = $('anManPlat'); Object.entries(AN_PLATFORMS).forEach(([k, p]) => { const o = el('option', '', p.name); o.value = k; psel.append(o); });
+  $('anManToggle').onclick = () => { $('anManual').classList.toggle('hidden'); };
+  $('anManAdd').onclick = () => {
+    const vals = {}; grid.querySelectorAll('input').forEach(i => { const x = anNum(i.value); if (x) vals[i.dataset.k] = x.n; });
+    if (!Object.keys(vals).length) { $('anManMsg').textContent = 'Type at least one number.'; return; }
+    const plat = psel.value, name = 'Typed in · ' + AN_PLATFORMS[plat].name;
+    let src = sources.find(s => s.manual && s.platform === plat);
+    if (!src) { src = anNewSource(name, plat); src.manual = true; sources.push(src); }
+    Object.keys(vals).forEach(k => { if (!src.postCols.some(c => c.k === k)) { const m = anMetric(AN_METRICS.find(x => x[0] === k)[2]); src.postCols.push({ k, label: AN_METRICS.find(x => x[0] === k)[2], m: m || { key: k, name: k, kind: 'count', explain: '' } }); } });
+    const d = $('anManDate').value ? new Date($('anManDate').value + 'T12:00') : null;
+    src.posts.push({ title: $('anManName').value.trim() || 'Post ' + (src.posts.length + 1), url: '', date: d, type: '', vals });
+    grid.querySelectorAll('input').forEach(i => { i.value = ''; }); $('anManName').value = ''; $('anManMsg').textContent = 'Added. Type in another post, or scroll down for your report.';
+    drawSources(); refresh();
+  };
+}
+
 /* ================= Router ================= */
 if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
@@ -4376,6 +5166,7 @@ else if (qp.get('app') === 'minutes') startMmHome();
 else if (qp.get('board')) { const bc = cleanBoardCode(qp.get('board')); if (isBoardCode(bc)) startBoard(bc); else startWbHome(); }
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'polls') { show('landing'); document.title = 'Polls & Quizzes · GentiMeter'; }
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'whiteboard') startWbHome();
+else if (qp.get('app') === 'engagement' && qp.get('tool') === 'analytics') startAn();
 else if (qp.get('app') === 'engagement') { show('enghome'); document.title = 'Engagement · GentiMeter'; }
 else if (qp.get('app') === 'pm' && qp.get('tool') === 'sitevisits') startPm();
 else if (qp.get('app') === 'pm') { show('pmhome'); document.title = 'PM Tools · GentiMeter'; }
@@ -4391,6 +5182,7 @@ $('hostBtn').onclick = () => nav('host=1');
 $('backHub').onclick = () => nav('app=engagement');
 $('backHub5').onclick = () => nav('');
 $('pollFolder').onclick = () => { $('pollFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=polls'), 420); };
+$('anFolder').onclick = () => { $('anFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=analytics'), 420); };
 $('wbFolder').onclick = () => { $('wbFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=whiteboard'), 420); };
 $('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTimeout(() => nav('app=engagement'), 420); };
 $('pmFolder').onclick = () => { $('pmFolder').classList.add('opening'); setTimeout(() => nav('app=pm'), 420); };
