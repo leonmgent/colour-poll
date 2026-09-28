@@ -81,6 +81,34 @@
   .backbtn svg{width:20px;height:20px}
   .crumb{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
 
+  /* ---------- PM Tools ---------- */
+  .pmtools{min-height:100%;padding:80px 16px 60px}
+  .pmwrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+  .pmhero{text-align:center;margin-bottom:10px}
+  .pmhero h1{font-size:clamp(44px,8vw,72px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  .pmhero .sub{color:var(--muted);font-size:18px;margin-top:10px}
+  .pmcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .4s ease both}
+  .pmt{display:flex;align-items:center;gap:12px} .pmt h2{font-size:21px;font-weight:800}
+  .pmnum{width:30px;height:30px;border-radius:9px;background:var(--rainbow);color:#10111c;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .pmdrop{border:2px dashed var(--line);border-radius:16px;padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+  .pmdrop svg{width:44px;height:44px;color:var(--good)}
+  .pmdrop span{color:var(--muted);font-size:14px}
+  .pmdrop:hover,.pmdrop.over{border-color:var(--good);background:rgba(61,220,151,.06)}
+  .pminfo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg);border-radius:12px;padding:10px 14px;font-size:15px}
+  .pminfo .ok{color:var(--good);font-weight:700} .pminfo .warn{color:#ffc371;font-weight:700} .pminfo .hint{flex-basis:100%;font-size:13px}
+  .pmcols summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px}
+  .pmmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px 16px;margin-top:10px}
+  .maprow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--muted)}
+  .maprow .sel{max-width:150px}
+  .pmdate{width:auto;color-scheme:dark}
+  .pmcount{font-weight:700;font-size:17px}
+  .pmprev{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .pmprev img{width:100%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.4);background:#fff}
+  .pmprev .pmfirst{grid-column:1/-1}
+  .genbtn{font-size:20px;padding:18px}
+  .folder.pm-f .back,.folder.pm-f .back::before{background:#0f766e}
+  .folder.pm-f .cover{background:linear-gradient(155deg,#34d399,#14b8a6 55%,#0ea5e9)}
+
   /* ---------- Landing ---------- */
   .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
   .landing h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.02em}
@@ -523,7 +551,13 @@
       <div class="paper"><i style="height:45%;background:#ff5f6d"></i><i style="height:80%;background:#ffc371"></i><i style="height:60%;background:#47e5bc"></i><i style="height:95%;background:#4facfe"></i></div>
       <div class="cover"><span class="fi">📊</span><b>Engagement</b><small>Live polls, quizzes &amp; word clouds</small></div>
     </button>
-    <div class="folder soon" aria-hidden="true" style="animation-delay:.1s">
+    <button class="folder pm-f" id="pmFolder" type="button" aria-label="Open PM Tools" style="animation-delay:.08s">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper" style="flex-direction:column;align-items:stretch;justify-content:center;gap:7px;padding:14px 18px"><i style="flex:0 0 10px;width:60%;background:#34d399"></i><i style="flex:0 0 10px;width:45%;background:#14b8a6;margin-left:25%"></i><i style="flex:0 0 10px;width:55%;background:#0ea5e9;margin-left:40%"></i></div>
+      <div class="cover"><span class="fi">📋</span><b>PM Tools</b><small>Spreadsheet to date-range report</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.16s">
       <div class="back"></div>
       <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More tools on the way</small></div>
     </div>
@@ -556,6 +590,45 @@
       <button class="btn ghost" id="adminBtn"><svg class="i"><use href="#i-edit"/></svg>Edit slides</button>
       <button class="btn" id="hostBtn"><svg class="i"><use href="#i-play"/></svg>Start hosting</button>
       <span class="resume hidden" id="resumeNote"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PM Tools: date-range report ===== -->
+<section id="pm" class="pmtools hidden">
+  <button class="backbtn" id="backHub3" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>GentiMeter home</button>
+  <div class="pmwrap">
+    <div class="pmhero">
+      <div class="crumb rainbow-text">GentiMeter</div>
+      <h1><span class="rainbow-text">PM Tools</span></h1>
+      <p class="sub">Turn your tracker spreadsheet into a report for any dates.</p>
+    </div>
+    <div class="pmcard">
+      <div class="pmt"><span class="pmnum">1</span><h2>Your spreadsheet</h2></div>
+      <label class="pmdrop" id="pmDrop">
+        <input type="file" id="pmFile" accept=".xlsx,.xls,.xlsm,.csv" class="hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+        <b>Drop your Excel file here or click to choose</b>
+        <span>.xlsx, .xls or .csv. It's read on your computer and never uploaded.</span>
+      </label>
+      <p class="hint hidden" id="pmMsg"></p>
+      <div class="pminfo hidden" id="pmInfo"></div>
+      <div class="row hidden" id="pmSheetRow">Sheet <select class="sel" id="pmSheet"></select></div>
+      <details class="pmcols"><summary>Columns (change if something was picked wrong)</summary><div class="pmmap" id="pmMap"></div></details>
+    </div>
+    <div class="pmcard hidden" id="pmStep2">
+      <div class="pmt"><span class="pmnum">2</span><h2>Date range</h2></div>
+      <div class="row">From <input type="date" class="field sm pmdate" id="pmFrom"> to <input type="date" class="field sm pmdate" id="pmTo"></div>
+      <div class="chips" id="pmQuick"></div>
+      <div class="row">Include <select class="sel" id="pmMode"><option value="overlap">jobs happening at any point in the range</option><option value="starts">only jobs that start in the range</option></select></div>
+      <div class="row" style="align-items:flex-start">Statuses <div class="chips" id="pmStatus"></div></div>
+      <input class="field sm" id="pmTitle" maxlength="80" value="Install report" placeholder="Report title">
+    </div>
+    <div class="pmcard hidden" id="pmStep3">
+      <div class="pmt"><span class="pmnum">3</span><h2>Your report</h2></div>
+      <p class="pmcount" id="pmCount"></p>
+      <div class="pmprev" id="pmPreview"></div>
+      <button class="btn rain genbtn" id="pmDl" type="button" disabled>⬇ Download PDF</button>
     </div>
   </div>
 </section>
@@ -819,7 +892,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['hub','landing','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','landing','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -1620,11 +1693,365 @@ async function exportResults(btn){
   }
 }
 
+/* ================= PM TOOLS: date-range report from Excel ================= */
+const PM_FIELDS = [
+  ['status',   'Status',       h => /status/i.test(h)],
+  ['site',     'Site / name',  h => /^site|site name|^name$|^task/i.test(h)],
+  ['type',     'Type of work', h => /type/i.test(h)],
+  ['start',    'Start date',   h => /start/i.test(h) || /^date$/i.test(h)],
+  ['end',      'End date',     h => /end|finish|due/i.test(h)],
+  ['engineer', 'Engineer / owner', h => /engineer|owner|assignee|lead|resource/i.test(h)],
+  ['supplier', 'Supplier',     h => /supplier|vendor|contractor/i.test(h)],
+  ['scheme',   'Scheme / ref', h => /scheme|ref|wo |work order/i.test(h)],
+  ['address',  'Address',      h => /address|location/i.test(h)]
+];
+const STATUS_COLOURS = [[/complete|done|closed/i, '#3ddc97'], [/schedul|booked|planned/i, '#ff8fd6'], [/pending|remed/i, '#4facfe'],
+  [/resourc/i, '#ffd84d'], [/await|survey|hold/i, '#ffc371'], [/cancel|n\/a|^na$/i, '#9aa0b8'], [/progress|active|live/i, '#a66cff']];
+const statusColour = s => { for (const [re, c] of STATUS_COLOURS) if (re.test(s)) return c; return hashColour(s || '?').bg; };
+const DAY = 86400000;
+const dayStart = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+function toDate(v){
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : dayStart(v);
+  if (typeof v === 'number') { if (v > 20000 && v < 80000) return dayStart(new Date(Math.round((v - 25569) * DAY))); return null; }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);            // UK style 14/02/2025
+  if (m) { const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; const d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) ? null : d; }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);                               // 2026-07-01
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(s); return isNaN(d) || !/\d{4}/.test(s) ? null : dayStart(d);
+}
+const fmtDay = (d, long) => d ? d.toLocaleDateString('en-GB', long ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: '2-digit', month: 'short', year: '2-digit' }) : 'TBC';
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/* ---- build the PDF pages for a filtered set of jobs ---- */
+async function buildPmPages(o){
+  // o: { title, from, to, fileName, jobs:[{status,site,type,start,end,engineer,supplier,scheme,address}], tbc, cols }
+  try { await Promise.all([document.fonts.load(RF(40, 800)), document.fonts.load(RF(40, 600)), document.fonts.load(RF(40, 700))]); } catch {}
+  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee';
+  const pages = []; let ctx, y, pageTitle = '';
+  const rangeTxt = `${fmtDay(o.from, true)} – ${fmtDay(o.to, true)}`;
+  function newPage(title){
+    const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
+    const g = ctx.createLinearGradient(0, 0, PW, 0); RAINBOW.forEach((c, i) => g.addColorStop(i / 4, c)); ctx.fillStyle = g; ctx.fillRect(0, 0, PW, 12);
+    ctx.font = RF(30, 800); const tw = ctx.measureText('GentiMeter').width;
+    const g2 = ctx.createLinearGradient(M, 0, M + tw, 0); RAINBOW.forEach((c, i) => g2.addColorStop(i / 4, c));
+    ctx.fillStyle = g2; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('GentiMeter', M, 40);
+    textBlock(ctx, `PM Tools  ·  ${rangeTxt}`, M + tw + 24, 48, 1000, 20, 600, MUTED);
+    textBlock(ctx, 'Created by Leon Gent', PW - M, 48, 400, 18, 600, '#b3b7c8', { align: 'right' });
+    pageTitle = title; y = textBlock(ctx, title, M, 100, PW - 2 * M, 44, 800, INK, { max: 1 }) + 18;
+    pages.push(cv);
+  }
+  const room = h => { if (y + h > PH - 70) { newPage(pageTitle.replace(/ \(continued\)$/, '') + ' (continued)'); return true; } return false; };
+  const heading = (t, x = M, w = PW - 2 * M) => textBlock(ctx, t, x, y, w, 26, 800, INK) + 14;
+  const count = (key) => { const m = new Map(); o.jobs.forEach(j => { const k = (j[key] || 'Not set').toString().trim() || 'Not set'; m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  function hbars(x, w, entries, colourFn, max = 8){
+    const total = entries.reduce((a, e) => a + e[1], 0) || 1, top = Math.max(1, ...entries.map(e => e[1]));
+    entries.slice(0, max).forEach(([name, n], i) => {
+      const lw = Math.min(260, w * .38), bw = w - lw - 120;
+      ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, name, lw - 10), x, y + 18);
+      rrect(ctx, x + lw, y + 6, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+      rrect(ctx, x + lw, y + 6, Math.max(8, bw * n / top), 24, 8); ctx.fillStyle = colourFn(name, i); ctx.fill();
+      ctx.font = RF(20, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(`${n}  (${Math.round(n / total * 100)}%)`, x + w, y + 18);
+      y += 40;
+    });
+    if (entries.length > max) { y = textBlock(ctx, `+ ${entries.length - max} more`, x, y, w, 18, 600, MUTED) + 6; }
+  }
+  const catCol = (name, i) => PALETTE[i % PALETTE.length];
+
+  /* ---- page 1: summary ---- */
+  newPage(o.title || 'Install report');
+  y = textBlock(ctx, `${rangeTxt}  ·  from ${o.fileName}`, M, y - 10, PW - 2 * M, 22, 600, MUTED) + 24;
+  const byStatus = count('status');
+  const engineers = new Set(o.jobs.map(j => j.engineer).filter(e => e && !/^tbc$/i.test(e))).size;
+  const tiles = [[o.jobs.length, 'Jobs in range']];
+  byStatus.slice(0, 3).forEach(([s, n]) => tiles.push([n, s]));
+  if (o.cols.engineer != null) tiles.push([engineers, 'Engineers / owners']);
+  const tw2 = (PW - 2 * M - 24 * (tiles.length - 1)) / tiles.length;
+  tiles.forEach(([num, lab], i) => {
+    const x = M + i * (tw2 + 24);
+    rrect(ctx, x, y, tw2, 140, 18); ctx.fillStyle = '#f5f6fa'; ctx.fill();
+    ctx.fillStyle = i === 0 ? RAINBOW[3] : statusColour(lab); rrect(ctx, x, y, 8, 140, 4); ctx.fill();
+    textBlock(ctx, String(num), x + 30, y + 22, tw2 - 40, 58, 800, INK, { max: 1 });
+    textBlock(ctx, lab, x + 30, y + 94, tw2 - 40, 19, 600, MUTED, { max: 1 });
+  });
+  y += 170;
+  if (!o.jobs.length) {
+    textBlock(ctx, 'No jobs found in this date range.', M, y + 40, PW - 2 * M, 30, 700, MUTED);
+  } else {
+    const colW = (PW - 2 * M - 80) / 2, y0 = y;
+    // status donut
+    y = heading('By status');
+    const R = 150, cx = M + R + 10, cy = y + R + 10, total = o.jobs.length; let a0 = -Math.PI / 2;
+    byStatus.forEach(([s, n]) => { const a1 = a0 + n / total * Math.PI * 2; ctx.beginPath(); ctx.arc(cx, cy, R * .78, a0, a1); ctx.lineWidth = R * .44; ctx.strokeStyle = statusColour(s); ctx.stroke(); a0 = a1; });
+    textBlock(ctx, String(total), cx, cy - 36, 200, 56, 800, INK, { align: 'center' });
+    textBlock(ctx, 'jobs', cx, cy + 22, 200, 20, 600, MUTED, { align: 'center' });
+    let ly = cy - Math.min(byStatus.length, 7) * 22;
+    byStatus.slice(0, 7).forEach(([s, n]) => {
+      const lx = cx + R + 40; rrect(ctx, lx, ly + 4, 20, 20, 5); ctx.fillStyle = statusColour(s); ctx.fill();
+      ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(fitText(ctx, s, colW - R * 2 - 150), lx + 32, ly + 3);
+      ctx.font = RF(20, 800); ctx.textAlign = 'right'; ctx.fillText(String(n), M + colW, ly + 3); ly += 44;
+    });
+    const yLeftEnd = cy + R + 20;
+    // engineers
+    y = y0;
+    const rx = M + colW + 80;
+    if (o.cols.engineer != null) { y = heading('Jobs per engineer / owner', rx, colW); hbars(rx, colW, count('engineer'), catCol, 7); }
+    else if (o.cols.type != null) { y = heading('By type of work', rx, colW); hbars(rx, colW, count('type'), catCol, 7); }
+    y = Math.max(y, yLeftEnd) + 16;
+    // jobs per day
+    const days = Math.round((o.to - o.from) / DAY) + 1;
+    if (days <= 62 && y + 260 < PH - 70) {
+      y = heading(`Jobs happening each day`);
+      const ch = PH - 90 - y - 40, cw = PW - 2 * M, bw = cw / days, perDay = [];
+      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); perDay.push(o.jobs.filter(j => { const s = j.start || j.end, e = j.end || j.start; return s && s <= d && e >= d; }).length); }
+      const top = Math.max(1, ...perDay);
+      perDay.forEach((n, i) => {
+        const d = new Date(o.from.getTime() + i * DAY), wk = d.getDay() === 0 || d.getDay() === 6, h = n / top * (ch - 30);
+        if (wk) { ctx.fillStyle = '#f7f7fb'; ctx.fillRect(M + i * bw, y, bw, ch); }
+        if (n) { rrect(ctx, M + i * bw + bw * .15, y + ch - h, bw * .7, h, 6); const g = ctx.createLinearGradient(0, y + ch - h, 0, y + ch); g.addColorStop(0, '#4facfe'); g.addColorStop(1, '#a66cff'); ctx.fillStyle = g; ctx.fill();
+          if (bw > 22) textBlock(ctx, String(n), M + i * bw + bw / 2, y + ch - h - 24, bw, 16, 800, INK, { align: 'center' }); }
+        if (days <= 31 || i % Math.ceil(days / 31) === 0) textBlock(ctx, String(d.getDate()), M + i * bw + bw / 2, y + ch + 8, bw + 10, 15, 600, wk ? '#b3b7c8' : MUTED, { align: 'center' });
+      });
+      y += ch + 34;
+    }
+  }
+  if (o.tbc) textBlock(ctx, `${o.tbc} job${o.tbc === 1 ? ' has' : 's have'} TBC or missing dates, so ${o.tbc === 1 ? "isn't" : "aren't"} included.`, M, PH - 64, 1200, 17, 600, MUTED);
+
+  if (o.jobs.length) {
+    /* ---- page 2: breakdowns + timeline ---- */
+    newPage('Breakdown & timeline');
+    const colW = (PW - 2 * M - 80) / 2, y0 = y;
+    const leftKey = o.cols.type != null ? 'type' : o.cols.status != null ? 'status' : null;
+    const rightKey = o.cols.supplier != null ? 'supplier' : o.cols.scheme != null ? null : null;
+    let yl = y, yr = y;
+    if (leftKey) { y = heading(leftKey === 'type' ? 'By type of work' : 'By status', M, colW); hbars(M, colW, count(leftKey), leftKey === 'status' ? statusColour : catCol, 5); yl = y; }
+    if (rightKey) { y = y0; y = heading('By supplier', M + colW + 80, colW); hbars(M + colW + 80, colW, count(rightKey), catCol, 5); yr = y; }
+    y = Math.max(yl, yr) + 20;
+    // Gantt timeline, split across pages
+    const jobs = [...o.jobs].sort((a, b) => (a.start || a.end) - (b.start || b.end) || String(a.site).localeCompare(String(b.site)));
+    const days = Math.round((o.to - o.from) / DAY) + 1, LW = 420, gx = M + LW, gw = PW - M - gx, RH = 34, dw = gw / days;
+    const axis = () => {
+      y = heading('Timeline');
+      for (let i = 0; i < days; i++) {
+        const d = new Date(o.from.getTime() + i * DAY);
+        if (days <= 31 || i % Math.ceil(days / 31) === 0 || d.getDate() === 1)
+          textBlock(ctx, d.getDate() === 1 || i === 0 ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : String(d.getDate()), gx + i * dw + dw / 2, y, 80, 14, 700, MUTED, { align: 'center' });
+      }
+      y += 26;
+    };
+    const drawRow = (j, ry) => {
+      const s = j.start || j.end, e = j.end || j.start;
+      const si = Math.max(0, (s - o.from) / DAY), ei = Math.min(days - 1, (e - o.from) / DAY);
+      ctx.font = RF(17, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(fitText(ctx, j.site || '(no name)', LW - 180), M + 8, ry + RH / 2);
+      ctx.font = RF(14, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, j.engineer || '', 160), M + LW - 170, ry + RH / 2);
+      const bx = gx + si * dw + 2, bw = Math.max(dw - 4, (ei - si + 1) * dw - 4);
+      rrect(ctx, bx, ry + 6, bw, RH - 12, 7); ctx.fillStyle = statusColour(j.status || ''); ctx.fill();
+      ctx.fillStyle = INK;
+      if (s < o.from) { ctx.beginPath(); ctx.moveTo(bx - 3, ry + RH / 2); ctx.lineTo(bx + 7, ry + 9); ctx.lineTo(bx + 7, ry + RH - 9); ctx.fill(); }
+      if (e > o.to) { ctx.beginPath(); ctx.moveTo(bx + bw + 3, ry + RH / 2); ctx.lineTo(bx + bw - 7, ry + 9); ctx.lineTo(bx + bw - 7, ry + RH - 9); ctx.fill(); }
+    };
+    let rest = jobs;
+    while (rest.length) {
+      const cap = Math.floor((PH - 110 - y - 46 - 26) / RH);
+      if (cap < 3) { newPage('Timeline (continued)'); continue; }
+      const chunk = rest.slice(0, cap); rest = rest.slice(cap);
+      axis(); const top = y, h = chunk.length * RH;
+      chunk.forEach((j, i) => { if (i % 2) { ctx.fillStyle = 'rgba(20,21,31,.03)'; ctx.fillRect(M, top + i * RH, PW - 2 * M, RH); } });
+      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); if (d.getDay() === 0 || d.getDay() === 6) { ctx.fillStyle = 'rgba(20,21,31,.04)'; ctx.fillRect(gx + i * dw, top, dw, h); } }
+      ctx.fillStyle = LINE; ctx.fillRect(gx, top, 1, h);
+      const today = dayStart(new Date()); if (today >= o.from && today <= o.to) { ctx.fillStyle = '#ff5f6d'; ctx.fillRect(gx + ((today - o.from) / DAY + .5) * dw - 1, top, 2, h); }
+      chunk.forEach((j, i) => drawRow(j, top + i * RH));
+      y = top + h;
+      if (rest.length) newPage('Timeline (continued)');
+    }
+    // legend
+    room(40); y += 14;
+    let lx = M; count('status').forEach(([s]) => { ctx.font = RF(17, 700); const w = ctx.measureText(s).width; if (lx + w + 50 > PW - M) return; rrect(ctx, lx, y + 2, 18, 18, 4); ctx.fillStyle = statusColour(s); ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(s, lx + 26, y + 2); lx += w + 60; });
+    y += 34;
+
+    /* ---- job list ---- */
+    newPage('All jobs in range');
+    const cols = [['Status', 'status', .14], ['Site', 'site', .2], ['Type of work', 'type', .18], ['Start', 'start', .08], ['End', 'end', .08], ['Engineer', 'engineer', .12], ['Supplier', 'supplier', .08], ['Scheme / ref', 'scheme', .12]]
+      .filter(c => o.cols[c[1]] != null);
+    const tot = cols.reduce((a, c) => a + c[2], 0), TW = PW - 2 * M, RH2 = 42;
+    const head = () => {
+      rrect(ctx, M, y, TW, RH2, 10); ctx.fillStyle = '#f1f2f7'; ctx.fill(); let x = M;
+      cols.forEach(c => { const w = c[2] / tot * TW; ctx.font = RF(16, 700); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(c[0].toUpperCase(), x + 12, y + RH2 / 2); x += w; });
+      y += RH2;
+    };
+    head();
+    jobs.forEach((j, ri) => {
+      if (room(RH2)) head();
+      if (ri % 2) { ctx.fillStyle = '#fafbfd'; ctx.fillRect(M, y, TW, RH2); }
+      ctx.fillStyle = LINE; ctx.fillRect(M, y + RH2 - 1, TW, 1);
+      let x = M;
+      cols.forEach(c => {
+        const w = c[2] / tot * TW, v = j[c[1]];
+        ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+        if (c[1] === 'status') {
+          ctx.font = RF(15, 700); const t = fitText(ctx, v || '–', w - 34), tw = ctx.measureText(t).width;
+          rrect(ctx, x + 8, y + 8, tw + 20, RH2 - 16, 13); ctx.fillStyle = statusColour(v || ''); ctx.globalAlpha = .28; ctx.fill(); ctx.globalAlpha = 1;
+          ctx.fillStyle = INK; ctx.fillText(t, x + 18, y + RH2 / 2);
+        } else {
+          ctx.font = RF(16, c[1] === 'site' ? 700 : 600); ctx.fillStyle = INK;
+          const txt = v instanceof Date ? fmtDay(v) : (v ?? '');
+          ctx.fillText(fitText(ctx, String(txt || (c[1] === 'start' || c[1] === 'end' ? 'TBC' : '–')), w - 20), x + 12, y + RH2 / 2);
+        }
+        x += w;
+      });
+      y += RH2;
+    });
+  }
+  pages.forEach((cv, i) => { const c2 = cv.getContext('2d'); textBlock(c2, `Page ${i + 1} of ${pages.length}`, PW - M, PH - 50, 300, 18, 600, '#b3b7c8', { align: 'right' }); });
+  return pages;
+}
+
+function startPm(){
+  show('pm');
+  document.title = 'PM Tools · GentiMeter';
+  $('backHub3').onclick = () => nav('');
+  let wb = null, sheetRows = [], headerIdx = 0, headers = [], cols = {}, fileName = '', statusOn = new Set(), pages = null;
+
+  const setMsg = t => { $('pmMsg').textContent = t; $('pmMsg').classList.toggle('hidden', !t); };
+  async function loadFile(f){
+    setMsg('Reading ' + f.name + '…');
+    try {
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', () => window.XLSX);
+      const buf = await f.arrayBuffer();
+      wb = XLSX.read(buf, { type: 'array', cellDates: true, raw: /\.csv$/i.test(f.name) });
+      fileName = f.name;
+      const sel = $('pmSheet'); sel.textContent = '';
+      wb.SheetNames.forEach(n => { const o = el('option', null, n); o.value = n; sel.append(o); });
+      $('pmSheetRow').classList.toggle('hidden', wb.SheetNames.length < 2);
+      // choose the sheet with most rows
+      let best = wb.SheetNames[0], most = 0;
+      wb.SheetNames.forEach(n => { const r = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1 }).length; if (r > most) { most = r; best = n; } });
+      sel.value = best; useSheet(best); setMsg('');
+    } catch (e) { console.error(e); setMsg(e && e.message === 'load' ? "Couldn't load the Excel reader. Check your internet connection." : "Sorry, that file couldn't be read. Try saving it as .xlsx or .csv."); }
+  }
+  function useSheet(name){
+    sheetRows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', raw: true });
+    // header row = first row (in the first 15) matching the most known column names
+    let bestI = 0, bestScore = -1;
+    sheetRows.slice(0, 15).forEach((r, i) => { const sc = PM_FIELDS.filter(([, , t]) => r.some(h => typeof h === 'string' && t(h))).length; if (sc > bestScore) { bestScore = sc; bestI = i; } });
+    headerIdx = bestI; headers = (sheetRows[headerIdx] || []).map((h, i) => String(h || `Column ${i + 1}`).trim());
+    cols = {};
+    PM_FIELDS.forEach(([k, , t]) => { const i = headers.findIndex((h, hi) => t(h) && !Object.values(cols).includes(hi)); if (i >= 0) cols[k] = i; });
+    if (cols.start == null) { // guess a date column from the data
+      const i = headers.findIndex((h, hi) => sheetRows.slice(headerIdx + 1, headerIdx + 20).filter(r => toDate(r[hi])).length >= 5); if (i >= 0) cols.start = i;
+    }
+    renderMapping(); renderFileInfo(); guessRange(); refresh();
+  }
+  $('pmSheet').onchange = () => useSheet($('pmSheet').value);
+  function allJobs(){
+    return sheetRows.slice(headerIdx + 1).filter(r => r.some(v => v !== '' && v != null)).map(r => {
+      const g = k => cols[k] != null ? r[cols[k]] : '';
+      return { status: String(g('status') || '').trim(), site: String(g('site') || '').trim(), type: String(g('type') || '').trim(),
+               start: toDate(g('start')), end: toDate(g('end')) || toDate(g('start')), engineer: String(g('engineer') || '').trim(),
+               supplier: String(g('supplier') || '').trim(), scheme: String(g('scheme') || '').trim(), address: String(g('address') || '').trim() };
+    }).map(j => ({ ...j, start: j.start || j.end }));
+  }
+  function renderFileInfo(){
+    const jobs = allJobs(), info = $('pmInfo'); info.textContent = ''; info.classList.remove('hidden');
+    const found = PM_FIELDS.filter(([k]) => cols[k] != null).map(([, l]) => l.split(' /')[0]);
+    info.append(el('b', null, '📊 ' + fileName), el('span', null, `· ${jobs.length} rows`), cols.start != null ? el('span', 'ok', '✓ Dates found') : el('span', 'warn', '⚠ No date column found. Pick one under "Columns".'));
+    info.append(el('span', 'hint', 'Columns: ' + (found.join(', ') || 'none recognised')));
+    $('pmStep2').classList.remove('hidden'); $('pmStep3').classList.remove('hidden');
+  }
+  function renderMapping(){
+    const box = $('pmMap'); box.textContent = '';
+    PM_FIELDS.forEach(([k, label]) => {
+      const r = el('label', 'maprow'); r.append(el('span', null, label));
+      const s = el('select', 'sel'); const none = el('option', null, '(not used)'); none.value = ''; s.append(none);
+      headers.forEach((h, i) => { const o = el('option', null, h); o.value = i; if (cols[k] === i) o.selected = true; s.append(o); });
+      s.onchange = () => { if (s.value === '') delete cols[k]; else cols[k] = +s.value; renderFileInfo(); renderStatusChips(); refresh(); };
+      r.append(s); box.append(r);
+    });
+  }
+  /* range */
+  const setRange = (a, b) => { $('pmFrom').value = isoDay(a); $('pmTo').value = isoDay(b); refresh(); };
+  function guessRange(){
+    const jobs = allJobs().filter(j => j.start); if (!jobs.length) return;
+    const today = dayStart(new Date()), max = new Date(Math.max(...jobs.map(j => (j.end || j.start).getTime())));
+    const end = max < today ? max : today; setRange(new Date(end.getTime() - 13 * DAY), end);
+  }
+  const quick = [['This week', () => { const t = dayStart(new Date()), m = new Date(t.getTime() - ((t.getDay() + 6) % 7) * DAY); return [m, new Date(m.getTime() + 6 * DAY)]; }],
+    ['Last week', () => { const t = dayStart(new Date()), m = new Date(t.getTime() - ((t.getDay() + 6) % 7 + 7) * DAY); return [m, new Date(m.getTime() + 6 * DAY)]; }],
+    ['Next 2 weeks', () => { const t = dayStart(new Date()); return [t, new Date(t.getTime() + 13 * DAY)]; }],
+    ['This month', () => { const t = new Date(); return [new Date(t.getFullYear(), t.getMonth(), 1), new Date(t.getFullYear(), t.getMonth() + 1, 0)]; }],
+    ['Last month', () => { const t = new Date(); return [new Date(t.getFullYear(), t.getMonth() - 1, 1), new Date(t.getFullYear(), t.getMonth(), 0)]; }]];
+  quick.forEach(([l, f]) => { const b = el('button', 'chip', l); b.type = 'button'; b.onclick = () => setRange(...f()); $('pmQuick').append(b); });
+  $('pmFrom').onchange = $('pmTo').onchange = () => refresh();
+  $('pmMode').onchange = () => refresh();
+  $('pmTitle').oninput = () => { clearTimeout(window.__pmT); window.__pmT = setTimeout(refresh, 400); };
+
+  function renderStatusChips(){
+    const box = $('pmStatus'); box.textContent = '';
+    if (cols.status == null) { box.append(el('span', 'hint', 'No status column')); return; }
+    const all = [...new Set(allJobs().map(j => j.status || 'Not set'))].sort();
+    if (!statusOn.size || [...statusOn].some(s => !all.includes(s))) statusOn = new Set(all);
+    all.forEach(st => {
+      const b = el('button', 'chip' + (statusOn.has(st) ? ' on' : ''), st); b.type = 'button';
+      b.style.borderColor = statusOn.has(st) ? statusColour(st) : ''; b.onclick = () => { statusOn.has(st) ? statusOn.delete(st) : statusOn.add(st); renderStatusChips(); refresh(); };
+      box.append(b);
+    });
+  }
+  function filtered(){
+    const from = toDate($('pmFrom').value), to = toDate($('pmTo').value);
+    if (!from || !to || to < from) return null;
+    const startsOnly = $('pmMode').value === 'starts';
+    const jobs = allJobs(); let tbc = 0;
+    const inRange = jobs.filter(j => {
+      if (cols.status != null && !statusOn.has(j.status || 'Not set')) return false;
+      if (!j.start) { tbc++; return false; }
+      const s = j.start, e = j.end || j.start;
+      return startsOnly ? (s >= from && s <= to) : (s <= to && e >= from);
+    });
+    return { from, to, jobs: inRange, tbc };
+  }
+  let refreshTimer = null;
+  function refresh(){ clearTimeout(refreshTimer); refreshTimer = setTimeout(doRefresh, 120); }
+  async function doRefresh(){
+    if (!sheetRows.length) return;
+    if (!$('pmStatus').children.length) renderStatusChips();
+    const f = filtered();
+    if (!f) { $('pmCount').textContent = 'Pick a start and end date.'; $('pmPreview').textContent = ''; $('pmDl').disabled = true; return; }
+    $('pmCount').textContent = `${f.jobs.length} job${f.jobs.length === 1 ? '' : 's'} between ${fmtDay(f.from, true)} and ${fmtDay(f.to, true)}` + (f.tbc ? ` (${f.tbc} with TBC dates left out)` : '');
+    pages = await buildPmPages({ title: $('pmTitle').value.trim() || 'Install report', from: f.from, to: f.to, fileName, jobs: f.jobs, tbc: f.tbc, cols });
+    const pv = $('pmPreview'); pv.textContent = '';
+    pages.forEach((cv, i) => { const img = el('img'); img.src = cv.toDataURL('image/jpeg', .8); img.alt = 'Page ' + (i + 1); img.className = i === 0 ? 'pmfirst' : 'pmthumb'; pv.append(img); });
+    $('pmDl').disabled = false;
+  }
+  $('pmDl').onclick = async () => {
+    if (!pages) return;
+    const b = $('pmDl'), lab = b.textContent; b.disabled = true; b.textContent = 'Making PDF…';
+    try {
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
+      const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+      pages.forEach((cv, i) => { if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', .9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST'); });
+      const f = filtered();
+      pdf.save(`${($('pmTitle').value.trim() || 'Install report')} ${isoDay(f.from)} to ${isoDay(f.to)}.pdf`);
+      b.textContent = 'Downloaded!';
+    } catch { alert("Couldn't make the PDF. Check your internet connection and try again."); b.textContent = lab; }
+    setTimeout(() => { b.textContent = lab; b.disabled = false; }, 1600);
+  };
+
+  $('pmFile').onchange = () => { const f = $('pmFile').files[0]; $('pmFile').value = ''; if (f) loadFile(f); };
+  const drop = $('pmDrop');
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) loadFile(f); };
+}
+
 /* ================= Router ================= */
 if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
 else if (qp.get('code')) startJoin(qp.get('code').replace(/\D/g,''));
 else if (qp.get('app') === 'engagement') show('landing');
+else if (qp.get('app') === 'pm') startPm();
 else show('hub');
 
 $('joinForm').onsubmit = e => {
@@ -1636,6 +2063,7 @@ $('hostBtn').onclick = () => nav('host=1');
 ['homeAdmin','homeHost','homeJoin'].forEach(id => { $(id).onclick = () => nav('app=engagement'); });
 $('backHub').onclick = () => nav('');
 $('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTimeout(() => nav('app=engagement'), 420); };
+$('pmFolder').onclick = () => { $('pmFolder').classList.add('opening'); setTimeout(() => nav('app=pm'), 420); };
 $('hubJoin').onsubmit = e => { e.preventDefault(); const c = $('hubCode').value.replace(/\D/g,''); if (c.length === 6) nav('code=' + c); else $('hubCode').focus(); };
 if (ss.get('cp_hostCode')) { $('hubResume').textContent = 'Session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Open Engagement to go back to it.'; $('hubResume').classList.remove('hidden'); }
 if (ss.get('cp_hostCode')) { $('resumeNote').textContent = 'Your session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Start hosting to go back to it.'; $('resumeNote').classList.remove('hidden'); }
