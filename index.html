@@ -350,7 +350,7 @@
   .anrow{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px 12px;animation:rise .3s ease both}
   .andot{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex:none}
   .aninfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-  .aninfo b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aninfo b{overflow-wrap:anywhere}
   .aninfo span{color:var(--muted);font-size:14px}
   .anrow .sel{max-width:150px}
   .anmanual{display:flex;flex-direction:column;gap:12px;background:var(--bg);border-radius:14px;padding:14px}
@@ -1773,6 +1773,12 @@ function wrapLines(ctx, text, maxW){
   String(text || '').split('\n').forEach(par => {
     let line = '';
     par.split(/\s+/).forEach(w => {
+      // words too long for a line (like web links) are broken up rather than running off the edge
+      while (ctx.measureText(w).width > maxW && w.length > 1) {
+        let n = w.length; while (n > 1 && ctx.measureText((line ? line + ' ' : '') + w.slice(0, n)).width > maxW) n--;
+        if (n <= 1 && line) { out.push(line); line = ''; continue; }
+        out.push((line ? line + ' ' : '') + w.slice(0, n)); line = ''; w = w.slice(n);
+      }
       const t = line ? line + ' ' + w : w;
       if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t;
     });
@@ -4463,7 +4469,8 @@ const AN_METRICS = [
   ['reach', /reach|unique (viewers|visitors|impressions)|unique views/, 'People reached', 'count', 'How many different people saw it. Each person is only counted once.'],
   ['impr', /impression/, 'Impressions', 'count', "How many times it appeared on someone's screen. The same person can count more than once."],
   ['profile', /profile (view|visit)|viewers? of your profile|profile viewers/, 'Profile visits', 'count', 'People who went on to look at your profile after seeing it.'],
-  ['watch', /watch time|duration|time watched|average (view|watch)/, 'Watch time', 'other', 'How long people spent watching.'],
+  ['duration', /duration|video length|length \(sec/, 'Video length', 'other', 'How long the video is (the average, if there are several).'],
+  ['watch', /watch time|time watched|average (view|watch)/, 'Watch time', 'other', 'How long people spent watching.'],
   ['followersTotal', /total (followers|members|subscribers)|^followers$|^members$|member count|follower count/, 'Total followers', 'total', 'Everyone following you (or in the community) at the end of the period.'],
   ['follows', /new followers|followers gained|follows?\b|new members|members (gained|added|joined)|subscribers? gained|^subscribers?$/, 'New followers', 'count', 'People who started following you because of this.'],
   ['active', /people engaged|members engaged|engaged (members|people|users)|active (members|people|users)|people reached/, 'People who took part', 'count', 'Different people who did something: posted, replied or reacted.'],
@@ -4684,7 +4691,7 @@ function anReadWorkbook(name, wb){
 }
 
 /* ---- totals + plain-English findings ---- */
-const anFmt = n => n == null || !isFinite(n) ? '–' : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : Math.abs(n) >= 1e5 ? Math.round(n / 1e3) + 'K' : Number.isInteger(Math.round(n * 10) / 10) || Math.abs(n) >= 100 ? Math.round(n).toLocaleString('en-GB') : (Math.round(n * 10) / 10).toLocaleString('en-GB');
+const anFmt = n => n == null || !isFinite(n) ? '–' : Math.abs(n) >= 100 || Number.isInteger(Math.round(n * 10) / 10) ? Math.round(n).toLocaleString('en-GB') : (Math.round(n * 10) / 10).toLocaleString('en-GB');
 const anPct = r => r == null || !isFinite(r) ? '–' : (r * 100 >= 10 ? Math.round(r * 100) : Math.round(r * 1000) / 10) + '%';
 const anOneIn = r => !r || !isFinite(r) ? '' : r >= .5 ? anPct(r) : '1 in ' + Math.max(2, Math.round(1 / r)).toLocaleString('en-GB');
 function anTotals(src){
@@ -4694,13 +4701,13 @@ function anTotals(src){
   const pref = c => /total/i.test(c.raw || c.label) ? 0 : /organic/i.test(c.raw || c.label) ? 1 : 2;
   src.series.forEach(s => s.cols.slice().sort((a, b) => pref(a) - pref(b)).forEach(c => {
     if (!c.m) return; const v = c.vals.filter(x => x != null); if (!v.length) return;
-    let x = c.m.kind === 'rate' ? v.reduce((a, b) => a + b, 0) / v.length : c.m.kind === 'total' ? v[v.length - 1] : v.reduce((a, b) => a + b, 0);
+    let x = c.m.kind === 'rate' || c.m.kind === 'other' ? v.reduce((a, b) => a + b, 0) / v.length : c.m.kind === 'total' ? v[v.length - 1] : v.reduce((a, b) => a + b, 0);
     if (c.m.kind === 'rate' && x > 1) x /= 100;
     put(c.m.key, x, 'series');
   }));
   src.postCols.forEach(pc => {
     if (!pc.m) return; const v = src.posts.map(p => p.vals[pc.k]).filter(x => x != null); if (!v.length) return;
-    let x = pc.m.kind === 'rate' ? v.reduce((a, b) => a + b, 0) / v.length : pc.m.kind === 'total' ? Math.max(...v) : v.reduce((a, b) => a + b, 0);
+    let x = pc.m.kind === 'rate' || pc.m.kind === 'other' ? v.reduce((a, b) => a + b, 0) / v.length : pc.m.kind === 'total' ? Math.max(...v) : v.reduce((a, b) => a + b, 0);
     if (pc.m.kind === 'rate' && x > 1) x /= 100;
     put(pc.m.key, x, 'posts');
   });
@@ -4771,13 +4778,13 @@ function anFindings(src){
   if (!out.length) out.push(`We found ${src.kv.length + src.series.length + src.posts.length + src.demos.length} sets of numbers in this ${P.name} file. They're all shown on the pages that follow.`);
   return out;
 }
-const anPostName = p => { const t = (p.title || '').replace(/https?:\/\/\S+/g, '').trim(); if (t) return t.length > 70 ? t.slice(0, 67).trim() + '…' : t; if (p.date) return 'Post from ' + p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); const u = String(p.url || '').replace(/^https?:\/\/(www\.)?/, ''); return u.length > 60 ? u.slice(0, 57) + '…' : u || 'Untitled post'; };
+const anPostName = p => { const t = (p.title || '').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim(); if (t) return t; if (p.date) return 'Post from ' + p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); const u = String(p.url || '').replace(/^https?:\/\/(www\.)?/, ''); return u || 'Untitled post'; };
 
 /* ---- the PDF pages ---- */
 async function buildAnPages(sources, opts){
   try { await Promise.all([document.fonts.load(RF(40, 800)), document.fonts.load(RF(40, 600)), document.fonts.load(RF(40, 700))]); } catch {}
-  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee', SOFT = '#f5f6fa';
-  const pages = []; let ctx, y, curTitle = '', curSub = '';
+  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee', SOFT = '#f5f6fa', BOTTOM = PH - 80;
+  const pages = []; let ctx, y, curTitle = '', curSub = '', curSrc = null;
   const made = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   function newPage(title, sub, src){
     const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
@@ -4786,29 +4793,37 @@ async function buildAnPages(sources, opts){
     ctx.font = RF(30, 800); const tw = ctx.measureText('GentiMeter').width;
     const g2 = ctx.createLinearGradient(M, 0, M + tw, 0); RAINBOW.forEach((c, i) => g2.addColorStop(i / 4, c));
     ctx.fillStyle = g2; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('GentiMeter', M, 40);
-    textBlock(ctx, `Analytics  ·  ${opts.title}${opts.by ? '  ·  ' + opts.by : ''}`, M + tw + 24, 48, 1100, 20, 600, MUTED, { max: 1 });
+    textBlock(ctx, `Analytics  ·  ${opts.title}${opts.by ? '  ·  ' + opts.by : ''}`, M + tw + 24, 48, 1100, 20, 600, MUTED);
     textBlock(ctx, 'Created by Leon Gent', PW - M, 48, 400, 18, 600, '#b3b7c8', { align: 'right' });
-    curTitle = title; curSub = sub || ''; y = 100;
-    if (src) { const P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other; ctx.font = RF(20, 800); const cw = ctx.measureText(P.name).width + 60; rrect(ctx, M, y + 6, cw, 40, 20); ctx.fillStyle = P.col; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('● ' + P.name, M + 18, y + 27); textBlock(ctx, title, M + cw + 18, y, PW - 2 * M - cw - 18, 44, 800, INK, { max: 1 }); y += 64; }
-    else if (title) y = textBlock(ctx, title, M, y, PW - 2 * M, 44, 800, INK, { max: 1 }) + 14;
-    if (sub) y = textBlock(ctx, sub, M, y - 6, PW - 2 * M, 21, 600, MUTED, { max: 1 }) + 22;
+    curTitle = title; curSub = sub || ''; curSrc = src || null; y = 100;
+    if (src) {
+      const P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other; ctx.font = RF(20, 800); const cw = ctx.measureText('● ' + P.name).width + 36;
+      rrect(ctx, M, y + 6, cw, 40, 20); ctx.fillStyle = P.col; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('● ' + P.name, M + 18, y + 27);
+      y = Math.max(y + 64, textBlock(ctx, title, M + cw + 18, y, PW - 2 * M - cw - 18, 44, 800, INK, { lh: 1.15 }) + 12);
+    } else if (title) y = textBlock(ctx, title, M, y, PW - 2 * M, 44, 800, INK, { lh: 1.15 }) + 14;
+    if (sub) y = textBlock(ctx, sub, M, y - 6, PW - 2 * M, 21, 600, MUTED) + 22;
     pages.push(cv);
   }
+  const more = () => newPage(curTitle.replace(/ \(continued\)$/, '') + ' (continued)', '', curSrc);
+  const hOf = (text, w, size, weight = 600, lh = 1.22) => { ctx.font = RF(size, weight); return wrapLines(ctx, String(text ?? ''), w).length * size * lh; };
   const range = T => T.from ? (T.from.toDateString() === T.to.toDateString() ? T.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : `${T.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: T.from.getFullYear() === T.to.getFullYear() ? undefined : 'numeric' })} – ${T.to.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`) : '';
   const card = (x, yy, w, h, fill = SOFT) => { rrect(ctx, x, yy, w, h, 20); ctx.fillStyle = fill; ctx.fill(); };
   const niceMax = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
-  function tilesRow(list, h = 196){
-    const n = list.length, gap = 20, tw = (PW - 2 * M - gap * (n - 1)) / n;
+  const rateOf = T => T.engrate != null ? T.engrate : T.engrateCalc;
+  const valOf = (T, k) => k === 'engrate' ? anPct(rateOf(T)) : ['ctr', 'resprate'].includes(k) ? anPct(T[k]) : anFmt(T[k]);
+  function tilesRow(list){
+    const n = list.length, gap = 20, tw = (PW - 2 * M - gap * (n - 1)) / n, size = n > 4 ? 50 : 56;
+    const h = Math.max(...list.map(t => 20 + size + 18 + hOf(t.lab, tw - 44, 21, 800, 1.2) + 8 + hOf(t.exp, tw - 44, 16, 600, 1.25) + 24));
     list.forEach((t, i) => {
       const x = M + i * (tw + gap); card(x, y, tw, h); ctx.fillStyle = t.col || RAINBOW[i % 5]; rrect(ctx, x, y, 8, h, 4); ctx.fill();
-      textBlock(ctx, t.num, x + 28, y + 20, tw - 40, n > 4 ? 50 : 56, 800, INK, { max: 1 });
-      textBlock(ctx, t.lab, x + 28, y + 90, tw - 40, 21, 800, INK, { max: 1 });
-      textBlock(ctx, t.exp, x + 28, y + 120, tw - 40, 16, 600, MUTED, { max: 3, lh: 1.25 });
+      let yy = textBlock(ctx, t.num, x + 28, y + 20, tw - 44, size, 800, INK) + 10;
+      yy = textBlock(ctx, t.lab, x + 28, yy, tw - 44, 21, 800, INK, { lh: 1.2 }) + 8;
+      textBlock(ctx, t.exp, x + 28, yy, tw - 44, 16, 600, MUTED, { lh: 1.25 });
     });
     y += h + 30;
   }
-  function lineChart(x, yy, w, h, dates, vals, col, label){
-    const max = niceMax(Math.max(...vals.map(v => v || 0))), L = x + 70, R = x + w - 10, T = yy + 10, B = yy + h - 40;
+  function lineChart(x, yy, w, h, dates, vals, col){
+    const max = niceMax(Math.max(...vals.map(v => v || 0))), L = x + 80, R = x + w - 10, T = yy + 10, B = yy + h - 40;
     ctx.font = RF(15, 600); ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
     for (let i = 0; i <= 4; i++) { const gy = B - (B - T) * i / 4; ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, gy); ctx.lineTo(R, gy); ctx.stroke(); ctx.fillStyle = MUTED; ctx.fillText(anFmt(max * i / 4), L - 10, gy); }
     const n = vals.length, px = i => n === 1 ? (L + R) / 2 : L + (R - L) * i / (n - 1), py = v => B - (B - T) * (v || 0) / max;
@@ -4823,22 +4838,38 @@ async function buildAnPages(sources, opts){
       const tx = Math.min(Math.max(bx - tw / 2, L), R - tw), ty = Math.max(T - 4, by - 48); rrect(ctx, tx, ty, tw, 32, 10); ctx.fillStyle = INK; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(txt, tx + tw / 2, ty + 16);
     }
     ctx.font = RF(15, 600); ctx.fillStyle = MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    const step = Math.max(1, Math.ceil(n / Math.floor((R - L) / 110)));
+    const step = Math.max(1, Math.ceil(n / Math.max(1, Math.floor((R - L) / 110))));
     for (let i = 0; i < n; i += step) ctx.fillText(dates[i].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), px(i), B + 12);
   }
-  function hbarsAt(x, yy, w, items, col, pct, max = 6){
-    const top = Math.max(...items.map(e => e[1]), 1e-9), lw = Math.min(330, w * .45), bw = w - lw - 110;
-    items.slice(0, max).forEach(([name, v], i) => {
-      ctx.font = RF(18, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, name, lw - 14), x, yy + 17);
-      rrect(ctx, x + lw, yy + 5, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
-      rrect(ctx, x + lw, yy + 5, Math.max(8, bw * v / top), 24, 8); ctx.fillStyle = typeof col === 'function' ? col(i) : col; ctx.fill();
-      ctx.font = RF(18, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(pct ? anPct(v) : anFmt(v), x + w, yy + 17);
-      yy += 38;
+  // horizontal bars where every label is written out in full (long labels wrap)
+  const barRowH = (name, lw) => Math.max(38, hOf(name, lw - 14, 18, 700, 1.2) + 14);
+  function hbarsAt(x, yy, w, items, col, pct){
+    const top = Math.max(...items.map(e => e[1]), 1e-9), lw = Math.min(360, w * .48), bw = w - lw - 120;
+    items.forEach(([name, v], i) => {
+      const rh = barRowH(name, lw);
+      textBlock(ctx, name, x, yy + 7, lw - 14, 18, 700, INK, { lh: 1.2 });
+      rrect(ctx, x + lw, yy + rh / 2 - 12, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+      rrect(ctx, x + lw, yy + rh / 2 - 12, Math.max(8, bw * v / top), 24, 8); ctx.fillStyle = typeof col === 'function' ? col(i) : col; ctx.fill();
+      ctx.font = RF(18, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(pct ? anPct(v) : anFmt(v), x + w, yy + rh / 2);
+      yy += rh;
     });
     return yy;
   }
+  // simple table with wrapped cells that carries on to new pages
+  function table(head, rows, widths, aligns){
+    const drawHead = () => { let hh = 0; head.forEach((h, j) => { hh = Math.max(hh, hOf(String(h).toUpperCase(), widths[j] - 16, 14, 800, 1.2)); }); let x = M; head.forEach((h, j) => { textBlock(ctx, String(h).toUpperCase(), aligns[j] === 'right' ? x + widths[j] - 8 : x + 8, y, widths[j] - 16, 14, 800, MUTED, { lh: 1.2, align: aligns[j] }); x += widths[j]; }); y += hh + 10; };
+    drawHead();
+    rows.forEach((r, i) => {
+      let rh = 0; r.forEach((c, j) => { rh = Math.max(rh, hOf(c.t, widths[j] - 16, c.size || 16, c.w || 600, 1.25)); }); rh += 16;
+      if (y + rh > BOTTOM) { more(); drawHead(); }
+      if (i % 2 === 0) { rrect(ctx, M, y, widths.reduce((a, b) => a + b, 0), rh, 8); ctx.fillStyle = SOFT; ctx.fill(); }
+      let x = M; r.forEach((c, j) => { textBlock(ctx, c.t, aligns[j] === 'right' ? x + widths[j] - 8 : x + 8, y + 8, widths[j] - 16, c.size || 16, c.w || 600, c.col || INK, { lh: 1.25, align: aligns[j] }); x += widths[j]; });
+      y += rh + 4;
+    });
+  }
 
   const sums = sources.map(s => ({ s, ...anTotals(s), F: anFindings(s) }));
+  const pName = s => (AN_PLATFORMS[s.platform] || AN_PLATFORMS.other).name;
 
   /* ===== combined overview when there's more than one file ===== */
   if (sources.length > 1) {
@@ -4847,32 +4878,21 @@ async function buildAnPages(sources, opts){
     const gt = [['impr', 'Impressions', 'Times your content was shown, across everything.'], ['reach', 'People reached', 'Different people who saw it (added up per source).'], ['views', 'Views', 'Views and plays, across everything.'], ['interactions', 'Interactions', 'Reactions, comments, shares and clicks added up.'], ['follows', 'New followers', 'New followers or members, across everything.']].filter(([k]) => grand[k] != null);
     if (gt.length) tilesRow(gt.map(([k, lab, exp], i) => ({ num: anFmt(grand[k]), lab, exp, col: RAINBOW[i % 5] })));
     y = textBlock(ctx, 'Side by side', M, y, 600, 28, 800, INK) + 16;
-    const cols = [['impr', 'Impressions'], ['reach', 'Reached'], ['views', 'Views'], ['interactions', 'Interactions'], ['rate', 'Engagement rate'], ['follows', 'New followers']].filter(([k]) => sums.some(({ T }) => k === 'rate' ? (T.engrate ?? T.engrateCalc) != null : T[k] != null));
-    const cw = (PW - 2 * M - 520) / Math.max(1, cols.length);
-    ctx.font = RF(16, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText('SOURCE', M + 20, y + 16); cols.forEach(([, l], i) => { ctx.textAlign = 'right'; ctx.fillText(l.toUpperCase(), M + 520 + cw * (i + 1) - 20, y + 16); });
-    y += 40;
-    sums.forEach(({ s, T }, r) => {
-      if (y > PH - 150) return;
-      card(M, y, PW - 2 * M, 70, r % 2 ? '#fff' : SOFT);
-      const P = AN_PLATFORMS[s.platform] || AN_PLATFORMS.other;
-      ctx.beginPath(); ctx.arc(M + 34, y + 35, 12, 0, 7); ctx.fillStyle = P.col; ctx.fill();
-      ctx.font = RF(20, 800); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, P.name + '  ·  ' + s.name, 440), M + 60, y + 35);
-      cols.forEach(([k], i) => { const v = k === 'rate' ? (T.engrate ?? T.engrateCalc) : T[k]; ctx.textAlign = 'right'; ctx.font = RF(24, 800); ctx.fillStyle = INK; ctx.fillText(k === 'rate' ? anPct(v) : anFmt(v), M + 520 + cw * (i + 1) - 20, y + 35); });
-      y += 80;
-    });
-    // comparisons in plain English
-    const nm = x => (AN_PLATFORMS[x.s.platform] || AN_PLATFORMS.other).name + (sums.filter(z => z.s.platform === x.s.platform).length > 1 ? ' (' + x.s.name.replace(/\.(xlsx|xls|csv)$/i, '') + ')' : '');
+    const cols = [['impr', 'Impressions'], ['reach', 'People reached'], ['views', 'Views'], ['interactions', 'Interactions'], ['engrate', 'Engagement rate'], ['follows', 'New followers']].filter(([k]) => sums.some(({ T }) => k === 'engrate' ? rateOf(T) != null : T[k] != null));
+    const nameW = 520, cw = (PW - 2 * M - nameW) / Math.max(1, cols.length);
+    table(['Source', ...cols.map(c => c[1])], sums.map(({ s, T }) => [{ t: pName(s) + '  ·  ' + s.name, w: 800, size: 18 }, ...cols.map(([k]) => ({ t: valOf(T, k), w: 800, size: 22 }))]), [nameW, ...cols.map(() => cw)], ['left', ...cols.map(() => 'right')]);
+    const nm = x => pName(x.s) + (sums.filter(z => z.s.platform === x.s.platform).length > 1 ? ' (' + x.s.name.replace(/\.(xlsx|xls|csv)$/i, '') + ')' : '');
     const best = (f, fmt, say) => { const c = sums.filter(x => f(x) != null && isFinite(f(x))); if (c.length < 2) return null; const b = c.sort((a, z) => f(z) - f(a))[0]; return say(nm(b), fmt(f(b))); };
     const lines = [
       best(x => x.T.reach ?? x.T.impr ?? x.T.views, anFmt, (n, v) => `${n} reached the most people (${v}).`),
-      best(x => x.T.engrate ?? x.T.engrateCalc, anPct, (n, v) => `${n} had the highest engagement rate (${v}), so its audience was the most likely to join in.`),
+      best(x => rateOf(x.T), anPct, (n, v) => `${n} had the highest engagement rate (${v}), so its audience was the most likely to join in.`),
       best(x => x.T.comments, anFmt, (n, v) => `${n} got the most comments (${v}).`),
       best(x => x.T.follows, anFmt, (n, v) => `${n} brought in the most new followers (${v}).`)
     ].filter(Boolean);
-    if (lines.length && y < PH - 200) {
-      y += 20; y = textBlock(ctx, 'In plain English', M, y, 600, 28, 800, INK) + 16;
-      lines.forEach((f, i) => { if (y > PH - 100) return; ctx.beginPath(); ctx.arc(M + 10, y + 15, 7, 0, 7); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill(); y = textBlock(ctx, f, M + 32, y, PW - 2 * M - 40, 24, 600, INK, { max: 2 }) + 14; });
+    if (lines.length) {
+      y += 20; if (y + 60 > BOTTOM) more();
+      y = textBlock(ctx, 'In plain English', M, y, 600, 28, 800, INK) + 16;
+      lines.forEach((f, i) => { if (y + hOf(f, PW - 2 * M - 40, 24) > BOTTOM) more(); ctx.beginPath(); ctx.arc(M + 10, y + 15, 7, 0, 7); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill(); y = textBlock(ctx, f, M + 32, y, PW - 2 * M - 40, 24, 600, INK, { lh: 1.3 }) + 14; });
     }
   }
 
@@ -4881,60 +4901,95 @@ async function buildAnPages(sources, opts){
     const P = AN_PLATFORMS[src.platform] || AN_PLATFORMS.other, rg = range(T);
     const secTitle = sources.length > 1 ? src.name.replace(/\.(xlsx|xls|csv)$/i, '') : opts.title;
     newPage(secTitle, [rg, sources.length > 1 ? '' : 'from ' + src.name, 'made ' + made].filter(Boolean).join('  ·  '), src);
-    // headline tiles
-    const er = T.engrate != null ? T.engrate : T.engrateCalc;
+    const er = rateOf(T), viva = src.platform === 'viva';
     const cand = [
       ['impr', anFmt(T.impr), 'Impressions', 'Times it appeared on screen'],
       ['reach', anFmt(T.reach), 'People reached', 'Different people who saw it'],
       ['views', anFmt(T.views), 'Views', 'Times it was viewed or played'],
       ['active', anFmt(T.active), 'People who took part', 'Different people who posted, replied or reacted'],
-      ['interactions', anFmt(T.interactions), 'Interactions', 'Reactions, comments, shares & clicks'],
-      ['rate', anPct(er), 'Engagement rate', er != null ? anOneIn(er).replace(/^1 in/, '1 in every') + (er < .5 ? ' viewers joined in' : ' of viewers joined in') : ''],
-      ['follows', anFmt(T.follows), src.platform === 'viva' ? 'New members' : 'New followers', 'People who started following'],
-      ['followersTotal', anFmt(T.followersTotal), src.platform === 'viva' ? 'Members' : 'Followers', 'In total at the end'],
+      ['interactions', anFmt(T.interactions), 'Interactions', 'Reactions, comments, shares and clicks added together'],
+      ['engrate', anPct(er), 'Engagement rate', er != null ? (er < .5 ? anOneIn(er).replace(/^1 in/, '1 in every') + ' people who saw it joined in' : anPct(er) + ' of people who saw it joined in') : ''],
+      ['follows', anFmt(T.follows), viva ? 'New members' : 'New followers', 'People who started following'],
+      ['followersTotal', anFmt(T.followersTotal), viva ? 'Members' : 'Followers', 'In total at the end'],
       ['posts', anFmt(T.posts ?? T.postCount), 'Posts', 'Posts in this data'],
       ['react', anFmt(T.react), 'Reactions', 'Likes and other reactions'],
       ['comments', anFmt(T.comments), 'Comments', 'People who wrote back']
-    ].filter(([k, num]) => num !== '–' && (k !== 'rate' || er != null) && (k !== 'posts' || (T.posts ?? T.postCount) > 1));
+    ].filter(([k, num]) => num !== '–' && (k !== 'engrate' || er != null) && (k !== 'posts' || (T.posts ?? T.postCount) > 1));
     const pickT = []; cand.forEach(c => { if (pickT.length < 5 && !(c[0] === 'interactions' && T.interactions === T.react)) pickT.push(c); });
     if (pickT.length) tilesRow(pickT.map(([, num, lab, exp], i) => ({ num, lab, exp, col: i === 0 ? P.col : RAINBOW[(i + 1) % 5] })));
-    // findings (left) + journey (right)
-    const top = y, lw = 900;
-    textBlock(ctx, 'In plain English', M, y, lw, 28, 800, INK); y += 50;
-    const fs0 = F.length > 7 ? 21 : 24; F.slice(0, 9).forEach((f, i) => { if (y > PH - 110) return; ctx.beginPath(); ctx.arc(M + 10, y + fs0 * .62, 7, 0, 7); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill(); y = textBlock(ctx, f, M + 32, y, lw - 40, fs0, 600, INK, { max: 3, lh: 1.3 }) + 16; });
-    const stages = [['impr', 'Saw it', 'times on screen'], ['views', 'Viewed', 'views'], ['reach', 'People', 'different people'], ['interactions', 'Joined in', 'interactions'], ['clicks', 'Clicked', 'clicks'], ['follows', 'Followed', 'new followers']].filter(([k]) => T[k] && !(k === 'views' && T.impr)).sort((a, b) => T[b[0]] - T[a[0]]);
+    // findings (left) and the journey (right)
+    const top = y, lw = 860, jx = M + lw + 60, jw = PW - M - jx;
+    y = textBlock(ctx, 'In plain English', M, y, lw, 28, 800, INK) + 20;
+    let fi = 0, fsz = 22; const page0 = pages.length;
+    while (fsz > 17 && y + F.reduce((a, f) => a + hOf(f, lw - 40, fsz, 600, 1.3) + 12, 0) > BOTTOM) fsz--;
+    for (; fi < F.length; fi++) { const h = hOf(F[fi], lw - 40, fsz, 600, 1.3); if (y + h > BOTTOM) break; ctx.beginPath(); ctx.arc(M + 10, y + fsz * .62, 7, 0, 7); ctx.fillStyle = RAINBOW[fi % 5]; ctx.fill(); y = textBlock(ctx, F[fi], M + 32, y, lw - 40, fsz, 600, INK, { lh: 1.3 }) + 12; }
+    const leftEnd = y;
+    const stages = [['impr', 'Times it was shown on screen'], ['views', 'Times it was viewed or played'], ['reach', 'Different people who saw it'], ['active', 'People who took part'], ['interactions', 'Reacted, commented, shared or clicked'], ['clicks', 'Clicked on it'], ['profile', 'Went on to look at your profile'], ['follows', viva ? 'Joined as new members' : 'Started following you']]
+      .filter(([k]) => T[k] && !(k === 'views' && T.impr) && !(k === 'active' && T.interactions)).sort((a, b) => T[b[0]] - T[a[0]]);
+    let rightEnd = top;
     if (stages.length >= 2) {
-      const jx = M + lw + 60, jw = PW - M - jx; let jy = top;
-      textBlock(ctx, 'The journey', jx, jy, jw, 28, 800, INK); jy += 50;
-      const maxV = T[stages[0][0]], bh = Math.min(92, (PH - 110 - jy) / stages.length - 12);
-      stages.forEach(([k, lab, unit], i) => {
-        const frac = Math.min(1, Math.max(.14, Math.sqrt(T[k] / maxV))), bw = jw * frac, bx = jx + (jw - bw) / 2;
-        rrect(ctx, bx, jy, bw, bh, 16); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 1) % 5]; ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.font = RF(Math.min(30, bh * .38), 800); ctx.fillText(anFmt(T[k]), jx + jw / 2, jy + bh * .38);
-        ctx.font = RF(Math.min(16, bh * .22), 700); ctx.fillText(fitText(ctx, lab + ' · ' + unit, Math.max(bw - 16, 100)), jx + jw / 2, jy + bh * .74);
-        if (i) { const r = T[k] / T[stages[i - 1][0]]; if (r < 1 && r > 0) { ctx.font = RF(14, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.fillText(anOneIn(r), jx + (jw + bw) / 2 + 10 > jx + jw - 70 ? jx + jw - 80 : jx + (jw + bw) / 2 + 10, jy - 6); } }
-        jy += bh + 12;
+      let jy = textBlock(ctx, 'The journey', jx, top, jw, 28, 800, INK) + 20;
+      const maxV = T[stages[0][0]], bz = jw * .42, tx = jx + bz + 22, txw = jw - bz - 22;
+      stages.forEach(([k, lab], i) => {
+        const prev = i ? T[stages[i - 1][0]] : 0, r = i ? T[k] / prev : 0;
+        const sub = i && r > 0 && r < 1 ? (r >= .5 ? anPct(r) : anOneIn(r)) + ' of the step above' : '';
+        const h = Math.max(62, hOf(lab, txw, 19, 800, 1.2) + (sub ? 24 : 0) + 12);
+        if (jy + h > BOTTOM) return;
+        const bw = Math.max(110, bz * Math.min(1, Math.sqrt(T[k] / maxV)));
+        rrect(ctx, jx + bz - bw, jy, bw, h - 10, 14); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 1) % 5]; ctx.fill();
+        ctx.font = RF(26, 800); ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(anFmt(T[k]), jx + bz - 16, jy + (h - 10) / 2);
+        let ty = textBlock(ctx, lab, tx, jy + 4, txw, 19, 800, INK, { lh: 1.2 });
+        if (sub) textBlock(ctx, sub, tx, ty + 4, txw, 16, 600, MUTED);
+        jy += h;
       });
+      rightEnd = jy;
+    }
+    // every number, as small tiles
+    const shown = new Set(pickT.map(c => c[0]));
+    const chips = AN_METRICS.map(m => m[0]).concat(['interactions']).filter(k => !shown.has(k) && (k === 'engrate' ? er != null : T[k] != null) && !(k === 'engagements' && shown.has('interactions') && T.engagements === T.interactions)).map(k => [k === 'interactions' ? 'Interactions' : anLabel(src, k), valOf(T, k)]);
+    if (fi < F.length || chips.length) {
+      y = fi < F.length ? Math.max(leftEnd, rightEnd) + 16 : leftEnd;
+      if (fi < F.length) { if (y + 80 > BOTTOM) more(); for (; fi < F.length; fi++) { if (y + hOf(F[fi], PW - 2 * M - 40, 22, 600, 1.3) > BOTTOM) more(); ctx.beginPath(); ctx.arc(M + 10, y + 14, 7, 0, 7); ctx.fillStyle = RAINBOW[fi % 5]; ctx.fill(); y = textBlock(ctx, F[fi], M + 32, y, PW - 2 * M - 40, 22, 600, INK, { lh: 1.3 }) + 14; } y += 10; }
+      if (chips.length) {
+        const gap = 16;
+        const drawChips = (x0, w0, perRow) => {
+          const cw = (w0 - gap * (perRow - 1)) / perRow, ch = Math.max(...chips.map(([l, v]) => hOf(l, cw - 36, 17, 700, 1.2) + hOf(v, cw - 36, 32, 800, 1.15))) + 40;
+          y = textBlock(ctx, 'Every number at a glance', x0, y, w0, 24, 800, INK) + 14;
+          chips.forEach(([lab, val], i) => {
+            const col = i % perRow; if (col === 0 && i) { y += ch + gap; if (y + ch > BOTTOM) { more(); } }
+            const x = x0 + col * (cw + gap); card(x, y, cw, ch); const ty = textBlock(ctx, val, x + 18, y + 14, cw - 36, 32, 800, INK, { lh: 1.15 }); textBlock(ctx, lab, x + 18, ty + 6, cw - 36, 17, 700, MUTED, { lh: 1.2 });
+          });
+          y += ch + gap;
+        };
+        const need = (w0, perRow) => { const cw = (w0 - gap * (perRow - 1)) / perRow; return 44 + Math.ceil(chips.length / perRow) * (Math.max(...chips.map(([l, v]) => hOf(l, cw - 36, 17, 700, 1.2) + hOf(v, cw - 36, 32, 800, 1.15))) + 40 + gap); };
+        const sideY = (stages.length >= 2 ? rightEnd : top) + 24;
+        if (fi >= F.length && pages.length === page0 && sideY + need(jw, 3) <= BOTTOM) { y = sideY; drawChips(jx, jw, 3); }
+        else { y = Math.max(y, rightEnd + 16); if (y + need(PW - 2 * M, 6) > BOTTOM) more(); drawChips(M, PW - 2 * M, 6); }
+      }
     }
     // how people interacted
     const ints = AN_INTERACT.filter(k => T[k] > 0).map(k => [k, T[k]]).sort((a, b) => b[1] - a[1]);
     if (ints.length >= 2) {
       newPage('How people responded', 'Every type of interaction, and what each one tells you', src);
-      const total = ints.reduce((a, e) => a + e[1], 0), cx = M + 260, cy = y + 270, R = 230;
+      const total = ints.reduce((a, e) => a + e[1], 0), cx = M + 260, cy = y + 250, R = 220;
       let a0 = -Math.PI / 2; ints.forEach(([k, v]) => { const a1 = a0 + v / total * Math.PI * 2; ctx.beginPath(); ctx.arc(cx, cy, R * .78, a0, a1); ctx.lineWidth = R * .44; ctx.strokeStyle = AN_INT_COL[k]; ctx.stroke(); a0 = a1; });
       textBlock(ctx, anFmt(total), cx, cy - 36, 260, 56, 800, INK, { align: 'center' });
       textBlock(ctx, 'interactions', cx, cy + 24, 260, 20, 700, MUTED, { align: 'center' });
-      let ly = cy + R + 40; ints.forEach(([k, v]) => { ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, M + 40, ly, 22, 22, 6); ctx.fill(); ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(`${anLabel(src, k)}  ${anPct(v / total)}`, M + 74, ly + 11); ly += 34; });
-      const gx = M + 580, gw = PW - M - gx, n = ints.length, colsN = n > 3 ? 2 : 1, ch = Math.min(200, (PH - 100 - y) / Math.ceil(n / colsN) - 18), cw = (gw - (colsN - 1) * 20) / colsN;
+      let ly = cy + R + 36; ints.forEach(([k, v]) => { ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, M + 40, ly, 22, 22, 6); ctx.fill(); ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(`${anLabel(src, k)}: ${anFmt(v)} (${anPct(v / total)})`, M + 74, ly + 11); ly += 34; });
+      const gx = M + 580, gw = PW - M - gx, colsN = ints.length > 3 ? 2 : 1, cw = (gw - (colsN - 1) * 20) / colsN;
       const seenK = T.reach ? 'reach' : T.impr ? 'impr' : T.views ? 'views' : null;
+      const colY = Array(colsN).fill(y);
       ints.forEach(([k, v], i) => {
-        const x = gx + (i % colsN) * (cw + 20), yy = y + Math.floor(i / colsN) * (ch + 18);
-        card(x, yy, cw, ch); ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, x, yy, 8, ch, 4); ctx.fill();
-        textBlock(ctx, anFmt(v), x + 28, yy + 18, 220, 44, 800, INK, { max: 1 });
-        textBlock(ctx, anLabel(src, k), x + 28, yy + 72, cw - 40, 22, 800, INK, { max: 1 });
-        const m = AN_METRICS.find(z => z[0] === k); textBlock(ctx, (m ? m[4] : ''), x + 28, yy + 104, cw - 40, 16, 600, MUTED, { max: 2, lh: 1.25 });
-        if (seenK && T[seenK]) { ctx.font = RF(17, 800); const t = anOneIn(v / T[seenK]) + (v / T[seenK] < .5 ? (seenK === 'reach' ? ' people' : ' views') : ''); const tw2 = ctx.measureText(t).width + 24; rrect(ctx, x + cw - tw2 - 18, yy + 18, tw2, 34, 17); ctx.fillStyle = '#fff'; ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + cw - tw2 / 2 - 18, yy + 35); }
+        const m = AN_METRICS.find(z => z[0] === k), exp = m ? m[4] : '';
+        const r = seenK && T[seenK] ? v / T[seenK] : null, badge = r ? (r >= .5 ? anPct(r) : anOneIn(r)) + ' of the ' + (seenK === 'reach' ? 'people reached' : seenK === 'impr' ? 'impressions' : 'views') : '';
+        const h = 24 + 50 + 34 + hOf(exp, cw - 50, 17, 600, 1.3) + (badge ? 34 : 0) + 20;
+        const c = colY.indexOf(Math.min(...colY)), x = gx + c * (cw + 20), yy = colY[c];
+        card(x, yy, cw, h); ctx.fillStyle = AN_INT_COL[k]; rrect(ctx, x, yy, 8, h, 4); ctx.fill();
+        let ty = textBlock(ctx, anFmt(v), x + 28, yy + 20, cw - 50, 44, 800, INK) + 6;
+        ty = textBlock(ctx, anLabel(src, k), x + 28, ty, cw - 50, 22, 800, INK) + 6;
+        ty = textBlock(ctx, exp, x + 28, ty, cw - 50, 17, 600, MUTED, { lh: 1.3 }) + 8;
+        if (badge) textBlock(ctx, badge, x + 28, ty, cw - 50, 17, 800, AN_INT_COL[k] === '#ffc371' ? '#b7791f' : AN_INT_COL[k]);
+        colY[c] += h + 18;
       });
     }
     // over time
@@ -4943,118 +4998,127 @@ async function buildAnPages(sources, opts){
       const PRI = ['reach', 'engagements', 'active', 'react', 'comments', 'shares', 'clicks', 'follows', 'views', 'engrate', 'posts', 'saves', 'followersTotal', 'imprPaid'];
       const prefC = c => /total/i.test(c.raw) ? 0 : /organic/i.test(c.raw) ? 1 : /sponsor|paid/i.test(c.raw) ? 3 : 2;
       const groups = new Map(); s.cols.filter(c => c !== main && c.vals.some(v => v) && !(c.m && main.m && c.m.key === main.m.key)).forEach(c => { const k = c.m ? c.m.key : 'x:' + c.label; if (!groups.has(k) || prefC(c) < prefC(groups.get(k))) groups.set(k, c); });
-      const others = [...groups.entries()].sort((a, b) => (PRI.indexOf(a[0]) + 1 || 99) - (PRI.indexOf(b[0]) + 1 || 99)).map(e => e[1]).slice(0, 3);
-      newPage('Over time' + (s.title ? ' · ' + s.title : ''), `${s.dates.length} ${s.dates.length === 1 ? 'day' : 'days'} of data  ·  ${range({ from: s.dates[0], to: s.dates[s.dates.length - 1] })}`, src);
-      const tot = main.vals.reduce((a, v) => a + (v || 0), 0);
-      textBlock(ctx, `${main.label}${main.m && main.m.kind !== 'rate' && main.m.kind !== 'total' ? ': ' + anFmt(tot) + ' in total' : ''}`, M, y, 1200, 26, 800, INK); y += 44;
-      const bigH = others.length ? 440 : 820;
-      lineChart(M, y, PW - 2 * M, bigH, s.dates, main.vals, P.col, main.label); y += bigH + 20;
-      if (others.length) {
-        const gap = 24, w = (PW - 2 * M - gap * (others.length - 1)) / others.length, h = PH - 70 - y;
-        others.forEach((c, i) => {
-          const x = M + i * (w + gap); card(x, y, w, h);
-          const t = c.vals.reduce((a, v) => a + (v || 0), 0);
-          textBlock(ctx, c.label, x + 24, y + 18, w - 48, 20, 800, INK, { max: 1 });
-          textBlock(ctx, c.m && c.m.kind === 'rate' ? 'Average ' + anPct(t / c.vals.filter(v => v != null).length / (t / c.vals.length > 1 ? 100 : 1)) : c.m && c.m.kind === 'total' ? anFmt(c.vals.filter(v => v != null).pop()) + ' at the end' : anFmt(t) + ' in total', x + 24, y + 46, w - 48, 17, 600, MUTED, { max: 1 });
-          lineChart(x + 6, y + 78, w - 18, h - 90, s.dates, c.vals, RAINBOW[(i + 1) % 5], c.label);
+      const rest = [...groups.entries()].sort((a, b) => (PRI.indexOf(a[0]) + 1 || 99) - (PRI.indexOf(b[0]) + 1 || 99)).map(e => e[1]);
+      const sumTxt = c => { const v = c.vals.filter(x => x != null); if (!v.length) return ''; if (c.m && c.m.kind === 'rate') { const a = v.reduce((p, q) => p + q, 0) / v.length; return 'Average ' + anPct(a > 1 ? a / 100 : a); } if (c.m && c.m.kind === 'total') return anFmt(v[v.length - 1]) + ' at the end'; return anFmt(v.reduce((p, q) => p + q, 0)) + ' in total'; };
+      const sub = `${s.dates.length} ${s.dates.length === 1 ? 'day' : 'days'} of data  ·  ${range({ from: s.dates[0], to: s.dates[s.dates.length - 1] })}`;
+      newPage('Over time' + (s.title ? ' · ' + s.title : ''), sub, src);
+      y = textBlock(ctx, `${main.label}: ${sumTxt(main)}`, M, y, PW - 2 * M, 26, 800, INK) + 14;
+      const bigH = rest.length ? 430 : BOTTOM - y;
+      lineChart(M, y, PW - 2 * M, bigH, s.dates, main.vals, P.col); y += bigH + 20;
+      for (let i = 0; i < rest.length; i += 3) {
+        if (i) { newPage('Over time' + (s.title ? ' · ' + s.title : '') + ' (continued)', sub, src); }
+        const row = rest.slice(i, i + 3), gap = 24, w = (PW - 2 * M - gap * (row.length - 1)) / row.length, h = Math.min(BOTTOM - y, i ? 480 : BOTTOM - y);
+        row.forEach((c, j) => {
+          const x = M + j * (w + gap); card(x, y, w, h);
+          let ty = textBlock(ctx, c.label, x + 24, y + 18, w - 48, 20, 800, INK);
+          ty = textBlock(ctx, sumTxt(c), x + 24, ty + 4, w - 48, 17, 600, MUTED);
+          lineChart(x + 6, ty + 10, w - 18, y + h - ty - 20, s.dates, c.vals, RAINBOW[(i + j + 1) % 5]);
         });
+        y += h + 20;
       }
     });
-    // posts
+    // posts: every post, full titles, carries on over pages
     const pk = anPostMain(src);
     if (src.posts.length && pk) {
       const list = src.posts.slice().sort((a, b) => (b.vals[pk] ?? -1) - (a.vals[pk] ?? -1));
-      newPage(src.posts.length > 1 ? 'Your posts' : 'Your post', `${src.posts.length} ${src.posts.length === 1 ? 'post' : 'posts'}, ranked by ${anLabel(src, pk).toLowerCase()}`, src);
-      const show = list.slice(0, 10), extra = src.postCols.filter(c => c.k !== pk && c.m && ['engagements', 'react', 'comments', 'shares', 'clicks', 'saves', 'engrate', 'reach', 'impr', 'views'].includes(c.m.key)).slice(0, 4);
-      const colW = 150, titleW = Math.min(700, Math.max(440, PW - 2 * M - 60 - extra.length * colW - 420)), barX = M + 60 + titleW, barW = PW - M - barX - extra.length * colW - 20, topV = Math.max(...show.map(p => p.vals[pk] || 0), 1);
-      ctx.font = RF(15, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText('POST', M + 60, y + 12); ctx.fillText(anLabel(src, pk).toUpperCase(), barX, y + 12);
-      extra.forEach((c, i) => { ctx.textAlign = 'right'; ctx.fillText(fitText(ctx, c.label.toUpperCase(), colW - 10), PW - M - (extra.length - 1 - i) * colW, y + 12); });
-      y += 34;
-      const rowH = Math.min(84, (PH - 90 - y) / Math.max(show.length, 1));
-      show.forEach((p, i) => {
-        card(M, y, PW - 2 * M, rowH - 8, i === 0 ? P.col + '14' : i % 2 ? '#fff' : SOFT);
-        ctx.font = RF(24, 800); ctx.fillStyle = i === 0 ? P.col : MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), M + 30, y + (rowH - 8) / 2);
-        ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(fitText(ctx, anPostName(p), titleW - 20), M + 60, y + (rowH - 8) / 2 - (p.date || p.type ? 11 : 0));
-        if (p.date || p.type) { ctx.font = RF(15, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, [p.title && p.date ? p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '', p.type, !p.title && p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '') : ''].filter(Boolean).join('  ·  '), titleW - 20), M + 60, y + (rowH - 8) / 2 + 14); }
-        const v = p.vals[pk] || 0; rrect(ctx, barX, y + (rowH - 8) / 2 - 12, barW - 90, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
-        rrect(ctx, barX, y + (rowH - 8) / 2 - 12, Math.max(8, (barW - 90) * v / topV), 24, 8); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 2) % 5]; ctx.fill();
-        ctx.font = RF(19, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(anFmt(p.vals[pk]), barX + barW, y + (rowH - 8) / 2);
-        extra.forEach((c, j) => { const val = p.vals[c.k]; ctx.font = RF(18, 700); ctx.fillStyle = INK; ctx.fillText(c.m.kind === 'rate' ? anPct(val > 1 ? val / 100 : val) : anFmt(val), PW - M - (extra.length - 1 - j) * colW - 10, y + (rowH - 8) / 2); });
-        y += rowH;
+      const title = src.posts.length > 1 ? 'Your posts' : 'Your post', sub = `${src.posts.length} ${src.posts.length === 1 ? 'post' : 'posts'}, ranked by ${anLabel(src, pk).toLowerCase()}`;
+      newPage(title, sub, src);
+      const extra = src.postCols.filter(c => c.k !== pk).slice(0, 6);
+      const colW = extra.length <= 3 ? 170 : 118, barW = 300, titleW = PW - 2 * M - 60 - barW - 20 - extra.length * colW, barX = M + 60 + titleW, topV = Math.max(...list.map(p => p.vals[pk] || 0), 1);
+      const head = () => {
+        let hh = 20;
+        textBlock(ctx, 'POST', M + 60, y, titleW, 14, 800, MUTED); textBlock(ctx, anLabel(src, pk).toUpperCase(), barX, y, barW, 14, 800, MUTED);
+        extra.forEach((c, i) => { hh = Math.max(hh, hOf(c.label.toUpperCase(), colW - 12, 14, 800, 1.2)); textBlock(ctx, c.label.toUpperCase(), barX + barW + 20 + (i + 1) * colW, y, colW - 12, 14, 800, MUTED, { align: 'right', lh: 1.2 }); });
+        y += hh + 12;
+      };
+      head();
+      list.forEach((p, i) => {
+        const name = (p.title || '').replace(/\s+/g, ' ').trim() || (p.date ? 'Post from ' + p.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Post');
+        const meta = [p.title && p.date ? p.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '', p.type, p.url].filter(Boolean).join('  ·  ');
+        const h = Math.max(70, hOf(name, titleW - 20, 18, 700, 1.25) + (meta ? hOf(meta, titleW - 20, 14, 600, 1.3) + 6 : 0) + 26);
+        if (y + h > BOTTOM) { more(); head(); }
+        card(M, y, PW - 2 * M, h - 8, i === 0 ? P.col + '14' : i % 2 ? '#fff' : SOFT);
+        ctx.font = RF(24, 800); ctx.fillStyle = i === 0 ? P.col : MUTED; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), M + 30, y + (h - 8) / 2);
+        let ty = textBlock(ctx, name, M + 60, y + 12, titleW - 20, 18, 700, INK, { lh: 1.25 });
+        if (meta) textBlock(ctx, meta, M + 60, ty + 4, titleW - 20, 14, 600, MUTED, { lh: 1.3 });
+        const v = p.vals[pk] || 0, mid = y + (h - 8) / 2;
+        rrect(ctx, barX, mid - 12, barW - 110, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+        rrect(ctx, barX, mid - 12, Math.max(8, (barW - 110) * v / topV), 24, 8); ctx.fillStyle = i === 0 ? P.col : RAINBOW[(i + 2) % 5]; ctx.fill();
+        ctx.font = RF(19, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(anFmt(p.vals[pk]), barX + barW, mid);
+        extra.forEach((c, j) => { const val = p.vals[c.k]; ctx.font = RF(18, 700); ctx.fillText(c.m && c.m.kind === 'rate' ? anPct(val > 1 ? val / 100 : val) : anFmt(val), barX + barW + 20 + (j + 1) * colW, mid); });
+        y += h;
       });
-      if (list.length > 10) textBlock(ctx, `+ ${list.length - 10} more posts. They're all in the table at the end.`, M, y + 6, 1200, 18, 600, MUTED);
-      // single post with lots of numbers: show every number
     }
-    // audience
+    // audience: every group, every label in full
     if (src.demos.length) {
-      const per = 6;
-      for (let s0 = 0; s0 < src.demos.length; s0 += per) {
-        newPage(src.platform === 'viva' ? 'Who took part' : 'Who saw it', 'The biggest groups in your audience', src);
-        const ds = src.demos.slice(s0, s0 + per), colsN = ds.length > 2 ? 3 : ds.length, gap = 24, w = (PW - 2 * M - gap * (colsN - 1)) / colsN, h = ds.length > colsN ? (PH - 80 - y - gap) / 2 : Math.min(560, PH - 80 - y);
-        ds.forEach((d, i) => {
-          const x = M + (i % colsN) * (w + gap), yy = y + Math.floor(i / colsN) * (h + gap);
-          card(x, yy, w, h); textBlock(ctx, d.cat, x + 26, yy + 20, w - 52, 22, 800, INK, { max: 1 });
-          hbarsAt(x + 26, yy + 64, w - 52, d.items, j => j === 0 ? P.col : RAINBOW[(j + 1) % 5], d.pct, Math.max(3, Math.min(8, Math.floor((h - 80) / 38))));
+      const title = viva ? 'Who took part' : 'Who saw it';
+      newPage(title, 'The biggest groups in your audience', src);
+      const colsN = 3, gap = 24, w = (PW - 2 * M - gap * (colsN - 1)) / colsN, lw = Math.min(360, (w - 52) * .48);
+      for (let i = 0; i < src.demos.length; i += colsN) {
+        const row = src.demos.slice(i, i + colsN);
+        const h = Math.max(...row.map(d => 20 + hOf(d.cat, w - 52, 22, 800, 1.2) + 18 + d.items.reduce((a, [n]) => a + barRowH(n, lw), 0) + 20));
+        if (y + h > BOTTOM && i) more();
+        row.forEach((d, j) => {
+          const x = M + j * (w + gap); card(x, y, w, h);
+          const ty = textBlock(ctx, d.cat, x + 26, y + 20, w - 52, 22, 800, INK, { lh: 1.2 }) + 18;
+          hbarsAt(x + 26, ty, w - 52, d.items, k => k === 0 ? P.col : RAINBOW[(k + 1) % 5], d.pct);
         });
+        y += h + gap;
       }
     }
-    // every number from key/value lists
-    const kvNums = src.kv.filter(e => e.v != null || e.text || e.date);
-    if (kvNums.length > 4) {
+    // every line of the file, with what it means
+    const kvAll = src.kv.filter(e => e.v != null || e.text || e.date);
+    if (kvAll.length > 4) {
       newPage('All the numbers', 'Everything in the file, with what it means', src);
-      const colsN = 2, gap = 30, w = (PW - 2 * M - gap) / 2; let i = 0; const y0 = y;
-      kvNums.forEach(e => {
-        const col = i % colsN, yy = y0 + Math.floor(i / colsN) * 86; if (yy > PH - 150) return;
-        const x = M + col * (w + gap); card(x, yy, w, 74, i % 4 < 2 ? SOFT : '#fff');
-        const val = e.v != null ? (e.m && e.m.kind === 'rate' || e.pct ? anPct(e.v > 1 && e.m && e.m.kind === 'rate' ? e.v / 100 : e.v) : anFmt(e.v)) : e.date ? e.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + (e.date2 ? ' – ' + e.date2.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '') : e.text;
-        ctx.font = RF(26, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; const vv = fitText(ctx, val, w * .45); ctx.fillText(vv, x + w - 24, yy + 37);
-        const lab = (e.m ? e.m.name : e.label) + (e.m && e.m.name.toLowerCase() !== e.label.toLowerCase() ? ' (' + e.label + ')' : '');
-        textBlock(ctx, lab, x + 24, yy + 12, w * .55 - 24, 19, 800, INK, { max: 1 });
-        textBlock(ctx, e.m ? e.m.explain : '', x + 24, yy + 40, w * .55 - 24, 15, 600, MUTED, { max: 1 });
-        i++;
+      const gap = 30, w = (PW - 2 * M - gap) / 2, vw = w * .38, lw2 = w - vw - 60;
+      let colY = [y, y];
+      kvAll.forEach(e => {
+        const val = e.v != null ? (e.m && e.m.kind === 'rate' || e.pct ? anPct(e.v > 1 && e.m && e.m.kind === 'rate' ? e.v / 100 : e.v) : anFmt(e.v)) : e.date ? e.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + (e.date2 ? ' – ' + e.date2.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '') : e.text;
+        const big = e.v != null, vs = big ? 28 : 17;
+        const lab = e.m && e.m.name.toLowerCase() !== e.label.toLowerCase() ? e.m.name + ' (' + e.label + ')' : e.label;
+        const h = Math.max(hOf(lab, lw2, 19, 800, 1.2) + (e.m ? 6 + hOf(e.m.explain, lw2, 15, 600, 1.3) : 0), hOf(val, vw, vs, 800, 1.25)) + 30;
+        let c = colY[0] <= colY[1] ? 0 : 1;
+        if (colY[c] + h > BOTTOM) { if (colY[1 - c] + h <= BOTTOM) c = 1 - c; else { more(); colY = [y, y]; c = 0; } }
+        const x = M + c * (w + gap), yy = colY[c];
+        card(x, yy, w, h);
+        const ty = textBlock(ctx, lab, x + 24, yy + 15, lw2, 19, 800, INK, { lh: 1.2 });
+        if (e.m) textBlock(ctx, e.m.explain, x + 24, ty + 6, lw2, 15, 600, MUTED, { lh: 1.3 });
+        textBlock(ctx, val, x + w - 24, yy + 15, vw, vs, 800, INK, { align: 'right', lh: 1.25 });
+        colY[c] += h + 14;
       });
+      y = Math.max(...colY);
     }
-    // all posts table
-    if (src.posts.length > 10) {
-      const list = src.posts.slice().sort((a, b) => (b.vals[pk] ?? -1) - (a.vals[pk] ?? -1));
-      const cols = src.postCols.slice(0, 7), nameW = PW - 2 * M - 180 - cols.length * 150;
-      let idx = 0;
-      while (idx < list.length) {
-        newPage('Every post', `${list.length} posts`, src);
-        ctx.font = RF(14, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('POST', M + 50, y + 10); ctx.fillText('DATE', M + 50 + nameW, y + 10);
-        cols.forEach((c, j) => { ctx.textAlign = 'right'; ctx.fillText(fitText(ctx, c.label.toUpperCase(), 140), M + 50 + nameW + 180 + (j + 1) * 150 - 50, y + 10); });
-        y += 28;
-        while (idx < list.length && y < PH - 90) {
-          const p = list[idx]; if (idx % 2 === 0) { rrect(ctx, M, y, PW - 2 * M, 38, 8); ctx.fillStyle = SOFT; ctx.fill(); }
-          ctx.font = RF(16, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(String(idx + 1), M + 36, y + 19);
-          ctx.font = RF(16, 600); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(fitText(ctx, anPostName(p), nameW - 20), M + 50, y + 19);
-          ctx.fillStyle = MUTED; ctx.fillText(p.date ? p.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : '', M + 50 + nameW, y + 19);
-          cols.forEach((c, j) => { const v = p.vals[c.k]; ctx.textAlign = 'right'; ctx.fillStyle = INK; ctx.font = RF(16, 700); ctx.fillText(c.m && c.m.kind === 'rate' ? anPct(v > 1 ? v / 100 : v) : anFmt(v), M + 50 + nameW + 180 + (j + 1) * 150 - 50, y + 19); });
-          y += 40; idx++;
-        }
-      }
-    }
-    // other tables we couldn't label
-    src.tables.slice(0, 4).forEach(t => {
+    // other tables we couldn't label, in full
+    src.tables.forEach(t => {
       newPage(t.title || 'Other data', 'Shown as it appears in the file', src);
-      const head = t.head.slice(0, 8), cw = (PW - 2 * M) / Math.max(1, head.length);
-      ctx.font = RF(15, 800); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      head.forEach((h, j) => ctx.fillText(fitText(ctx, String(h || '').toUpperCase(), cw - 16), M + j * cw + 10, y + 10)); y += 30;
-      t.rows.forEach((r, i) => { if (y > PH - 90) return; if (i % 2 === 0) { rrect(ctx, M, y, PW - 2 * M, 36, 8); ctx.fillStyle = SOFT; ctx.fill(); } ctx.font = RF(16, 600); ctx.fillStyle = INK; head.forEach((h, j) => { const v = r[j]; const n = anNum(v); ctx.fillText(fitText(ctx, v instanceof Date ? v.toLocaleDateString('en-GB') : n && typeof v === 'number' ? anFmt(n.n) : String(v ?? ''), cw - 16), M + j * cw + 10, y + 18); }); y += 38; });
+      const head = t.head.map(h => h || ''), n = Math.max(head.length, ...t.rows.map(r => r.length)), cw = (PW - 2 * M) / Math.max(1, n);
+      const cell = v => { const x = anNum(v); return v instanceof Date ? v.toLocaleDateString('en-GB') : x && typeof v === 'number' ? anFmt(x.n) : String(v ?? ''); };
+      table(Array.from({ length: n }, (_, j) => head[j] || ''), t.rows.map(r => Array.from({ length: n }, (_, j) => ({ t: cell(r[j]), size: n > 8 ? 14 : 16 }))), Array(n).fill(cw), Array(n).fill('left'));
     });
   });
 
-  /* ===== glossary ===== */
+  /* ===== the words, with your numbers ===== */
   if (opts.glossary) {
-    const used = new Set();
-    sums.forEach(({ s, T }) => { Object.keys(T).forEach(k => used.add(k)); s.postCols.forEach(c => c.m && used.add(c.m.key)); s.series.forEach(x => x.cols.forEach(c => c.m && used.add(c.m.key))); });
-    if (used.has('engrateCalc')) used.add('engrate');
-    const list = AN_METRICS.filter(m => used.has(m[0]));
+    const has = (T, k) => k === 'engrate' ? rateOf(T) != null : T[k] != null;
+    const list = AN_METRICS.filter(m => sums.some(({ T }) => has(T, m[0])));
     if (list.length) {
-      newPage('What the words mean', 'A quick guide to the numbers in this report');
-      const colsN = 2, gap = 30, w = (PW - 2 * M - gap) / 2, h = Math.min(120, (PH - 90 - y) / Math.ceil(list.length / 2) - 14);
-      list.forEach((m, i) => { const x = M + (i % colsN) * (w + gap), yy = y + Math.floor(i / colsN) * (h + 14); card(x, yy, w, h); ctx.fillStyle = RAINBOW[i % 5]; rrect(ctx, x, yy, 8, h, 4); ctx.fill(); textBlock(ctx, m[2], x + 28, yy + 16, w - 50, 22, 800, INK, { max: 1 }); textBlock(ctx, m[4], x + 28, yy + 50, w - 50, 17, 600, MUTED, { max: 2, lh: 1.3 }); });
+      newPage('What the words mean', 'Each number in this report explained, with your figure next to it');
+      const gap = 30, w = (PW - 2 * M - gap) / 2, single = sums.length === 1;
+      let colY = [y, y];
+      list.forEach((m, i) => {
+        const vals = sums.filter(({ T }) => has(T, m[0])).map(({ s, T }) => (single ? '' : pName(s) + ': ') + valOf(T, m[0]));
+        const valTxt = vals.join('   ·   '), vw = single ? 220 : 0, tw2 = w - 56 - vw;
+        const h = 20 + hOf(m[2], tw2, 22, 800, 1.2) + 8 + hOf(m[4], tw2, 17, 600, 1.3) + (single ? 0 : 10 + hOf(valTxt, tw2, 18, 800, 1.3)) + 22;
+        let c = colY[0] <= colY[1] ? 0 : 1;
+        if (colY[c] + h > BOTTOM) { more(); colY = [y, y]; c = 0; }
+        const x = M + c * (w + gap), yy = colY[c];
+        card(x, yy, w, h); ctx.fillStyle = RAINBOW[i % 5]; rrect(ctx, x, yy, 8, h, 4); ctx.fill();
+        let ty = textBlock(ctx, m[2], x + 28, yy + 20, tw2, 22, 800, INK, { lh: 1.2 }) + 8;
+        ty = textBlock(ctx, m[4], x + 28, ty, tw2, 17, 600, MUTED, { lh: 1.3 });
+        if (single) textBlock(ctx, valTxt, x + w - 26, yy + 18, vw, 36, 800, INK, { align: 'right' });
+        else textBlock(ctx, valTxt, x + 28, ty + 10, tw2, 18, 800, INK, { lh: 1.3 });
+        colY[c] += h + 14;
+      });
     }
   }
   pages.forEach((cv, i) => { const c = cv.getContext('2d'); c.font = RF(16, 600); c.fillStyle = '#b3b7c8'; c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(`Page ${i + 1} of ${pages.length}`, PW - M, PH - 30); });
