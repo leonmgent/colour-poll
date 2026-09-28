@@ -363,6 +363,55 @@
   .anhelp b{color:var(--text)}
   @media (max-width:640px){ .anrow{flex-wrap:wrap} .anrow .sel{max-width:none;flex:1} }
 
+  /* ---------- Screen Recorder ---------- */
+  .folder.rec-f .back,.folder.rec-f .back::before{background:#991b1b}
+  .folder.rec-f .cover{background:linear-gradient(155deg,#ff8a80,#ff5f6d 50%,#c2185b)}
+  .folder .paper.screen{display:flex;align-items:center;justify-content:center;padding:14px 18px}
+  .folder .paper.screen i{flex:none;width:30px;height:30px;border-radius:50%;background:#ff5f6d;box-shadow:0 0 0 8px rgba(255,95,109,.2)}
+  .recmodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+  .recmode{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:16px;padding:16px;transition:border-color .2s,transform .15s}
+  .recmode:hover{transform:translateY(-2px)}
+  .recmode.on{border-color:var(--focus);background:rgba(79,172,254,.08)}
+  .recmode svg{width:34px;height:34px;color:var(--focus)}
+  .recmode b{font-size:17px}
+  .recmode span{color:var(--muted);font-size:13px;line-height:1.35}
+  .recopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 18px}
+  .recopt{display:flex;flex-direction:column;gap:6px}
+  .recopt>span{font-weight:700;font-size:14px;color:var(--muted)}
+  .recopt .seg button:disabled{opacity:.35;cursor:default}
+  .recpick{display:flex;flex-direction:column;gap:10px}
+  .recview{position:relative;background:#000;border-radius:14px;overflow:hidden;max-height:62vh;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:none}
+  .recview video{display:block;max-width:100%;max-height:62vh}
+  .reccrop{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move;border-radius:4px}
+  .reccrop i{position:absolute;width:18px;height:18px;background:#fff;border-radius:5px;margin:-10px 0 0 -10px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .reccrop i[data-h=nw]{left:0;top:0;cursor:nwse-resize} .reccrop i[data-h=ne]{left:100%;top:0;cursor:nesw-resize}
+  .reccrop i[data-h=sw]{left:0;top:100%;cursor:nesw-resize} .reccrop i[data-h=se]{left:100%;top:100%;cursor:nwse-resize}
+  .reccrop span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);color:#fff;font-weight:800;font-size:13px;padding:4px 10px;border-radius:99px;white-space:nowrap;pointer-events:none}
+  .recpresets{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .recpresets button{padding:7px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-weight:700;font-size:14px;color:var(--muted)}
+  .recpresets button:hover{color:var(--text);border-color:var(--focus)}
+  .recbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .recdot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff3b4a;box-shadow:0 0 0 3px rgba(255,59,74,.25)}
+  .recdot.big{width:18px;height:18px;animation:blink 1.2s infinite}
+  .recdot.big.paused{animation:none;background:#ffc371;box-shadow:0 0 0 3px rgba(255,195,113,.25)}
+  .recsq{display:inline-block;width:12px;height:12px;border-radius:3px;background:#fff}
+  .reclive{display:flex;flex-direction:column;gap:6px}
+  .recclock{display:flex;align-items:center;gap:14px}
+  .recclock b{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1}
+  .recclock small{color:var(--muted);font-weight:700;font-size:16px}
+  .reccount{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(8,9,18,.55);pointer-events:none}
+  .reccount b{font-size:180px;font-weight:800;color:#fff;text-shadow:0 10px 40px rgba(0,0,0,.5);animation:recPop 1s ease both}
+  @keyframes recPop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.1);opacity:1}80%{opacity:1}100%{transform:scale(.9);opacity:0}}
+  .reclist{display:flex;flex-direction:column;gap:14px}
+  .recitem{display:grid;grid-template-columns:260px 1fr;gap:16px;background:var(--bg);border-radius:16px;padding:12px;animation:rise .3s ease both}
+  .recitem video{width:100%;border-radius:10px;background:#000;max-height:170px}
+  .recinfo{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .recinfo .field{font-weight:700}
+  .recmeta{color:var(--muted);font-size:14px;font-weight:600}
+  .recinfo .recbtns{margin-top:auto}
+  @media (max-width:640px){ .recitem{grid-template-columns:1fr} .recclock b{font-size:44px} }
+  #recSetup.recdim{opacity:.55}
+
   /* ---------- Landing ---------- */
   .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
   .landing h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.02em}
@@ -881,7 +930,13 @@
       <div class="paper"><i style="height:30%;background:#47e5bc"></i><i style="height:55%;background:#4facfe"></i><i style="height:42%;background:#6366f1"></i><i style="height:85%;background:#ff5f6d"></i></div>
       <div class="cover"><span class="fi">📈</span><b>Analytics</b><small>Social stats into an easy PDF</small></div>
     </button>
-    <div class="folder soon" aria-hidden="true" style="animation-delay:.24s">
+    <button class="folder rec-f" id="recFolder" type="button" aria-label="Open Screen Recorder" style="animation-delay:.24s">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper screen"><i></i></div>
+      <div class="cover"><span class="fi">🎥</span><b>Screen Recorder</b><small>Record your screen and save the video</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.32s">
       <div class="back"></div>
       <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More engagement tools on the way</small></div>
     </div>
@@ -1099,6 +1154,67 @@
       <p class="pmcount" id="anCount"></p>
       <div class="pmprev" id="anPreview"></div>
       <button class="btn rain genbtn" id="anDl" type="button" disabled>⬇ Download PDF</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Engagement: Screen Recorder ===== -->
+<section id="rec" class="pmtools hidden">
+  <button class="backbtn" id="backEng3" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Engagement</button>
+  <div class="pmwrap">
+    <div class="pmhero">
+      <div class="crumb rainbow-text">GentiMeter · Engagement</div>
+      <h1><span class="rainbow-text">Screen Recorder</span></h1>
+      <p class="sub">Record your screen, a window, a tab or just part of it, then save the video to your computer.</p>
+    </div>
+    <div class="pmcard hidden" id="recNoSupport">
+      <div class="pmt"><h2>This device can't record its screen</h2></div>
+      <p class="hint">Screen recording works on a computer in Chrome, Edge, Firefox or Safari. Phones and tablets don't let websites record the screen.</p>
+    </div>
+    <div class="pmcard" id="recSetup">
+      <div class="pmt"><span class="pmnum">1</span><h2>What do you want to record?</h2></div>
+      <div class="recmodes" id="recModes"></div>
+      <div class="pmt" style="margin-top:6px"><span class="pmnum">2</span><h2>Options</h2></div>
+      <div class="recopts">
+        <div class="recopt"><span>Mouse cursor</span><div class="seg" id="recCursor"></div></div>
+        <div class="recopt"><span>Sound</span><div class="seg" id="recAudio"></div></div>
+        <div class="recopt"><span>Smoothness</span><div class="seg" id="recFps"></div></div>
+        <div class="recopt"><span>Countdown</span><div class="seg" id="recCount"></div></div>
+        <div class="recopt"><span>File type</span><div class="seg" id="recFmt"></div></div>
+      </div>
+      <p class="hint" id="recOptHint"></p>
+    </div>
+    <div class="pmcard" id="recStage">
+      <div class="pmt"><span class="pmnum">3</span><h2 id="recStageH">Record</h2></div>
+      <div class="recpick" id="recPickBox">
+        <button class="btn rain genbtn" id="recPick" type="button"><svg class="i"><use href="#i-eye"/></svg>Choose what to record</button>
+        <p class="hint">Your browser will ask which screen, window or tab to share. Nothing is uploaded: the video stays on your computer.</p>
+      </div>
+      <div class="recprev hidden" id="recPrevBox">
+        <div class="recview" id="recView"><video id="recVideo" muted playsinline autoplay></video><div class="reccrop hidden" id="recCrop"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i><span id="recCropSize"></span></div></div>
+        <div class="recpresets hidden" id="recPresets"></div>
+        <p class="hint" id="recPrevHint"></p>
+        <div class="recbtns">
+          <button class="btn rain" id="recStart" type="button"><span class="recdot"></span>Start recording</button>
+          <button class="btn ghost" id="recRepick" type="button">Choose something else</button>
+          <button class="btn ghost" id="recCancel" type="button">Cancel</button>
+        </div>
+      </div>
+      <div class="reclive hidden" id="recLiveBox">
+        <div class="recclock"><span class="recdot big" id="recLiveDot"></span><b id="recTime">0:00</b><small id="recState">Recording</small></div>
+        <div class="recbtns">
+          <button class="btn ghost" id="recPause" type="button"><svg class="i"><use href="#i-pause"/></svg>Pause</button>
+          <button class="btn" id="recStop" type="button" style="background:var(--bad);color:#fff"><span class="recsq"></span>Stop and save</button>
+          <button class="btn ghost hidden" id="recPop" type="button">Pop out controls</button>
+        </div>
+        <p class="hint" id="recLiveHint">You can switch to the window you're recording. Come back here, use the pop-out controls, or press "Stop sharing" in your browser to finish.</p>
+      </div>
+      <div class="reccount hidden" id="recCountBox"><b id="recCountNum">3</b></div>
+    </div>
+    <div class="pmcard hidden" id="recListCard">
+      <div class="pmt"><span class="pmnum">4</span><h2>Your recordings</h2></div>
+      <p class="hint">These are only kept while this page is open. Download the ones you want to keep.</p>
+      <div class="reclist" id="recList"></div>
     </div>
   </div>
 </section>
@@ -1425,7 +1541,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['hub','enghome','landing','wbhome','board','an','mmhome','mins','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','enghome','landing','wbhome','board','an','rec','mmhome','mins','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -5221,6 +5337,258 @@ function startAn(){
   };
 }
 
+
+/* ================= Screen Recorder ================= */
+function startRec(){
+  show('rec'); document.title = 'Screen Recorder · GentiMeter';
+  $('backEng3').onclick = () => nav('app=engagement');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) {
+    $('recNoSupport').classList.remove('hidden'); $('recSetup').classList.add('hidden'); $('recStage').classList.add('hidden'); return;
+  }
+  const SVG = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const MODES = {
+    monitor: { name: 'Entire screen', desc: 'Everything on one of your screens.', icon: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>' },
+    window:  { name: 'A window', desc: 'One app, like PowerPoint or Excel.', icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>' },
+    browser: { name: 'A browser tab', desc: 'One tab in this browser. Can include the tab\'s sound.', icon: '<path d="M3 8a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' },
+    area:    { name: 'Part of the screen', desc: 'Pick a screen or window, then drag a box around the part you want.', icon: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="8" y="8" width="8" height="8" rx="1"/>' }
+  };
+  const types = [['mp4', 'MP4', ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.42E01F,mp4a.40.2', 'video/mp4;codecs=h264,aac', 'video/mp4;codecs=avc1,opus', 'video/mp4']], ['webm', 'WebM', ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']]];
+  const mimeFor = f => { const t = types.find(x => x[0] === f); return t ? t[2].find(m => MediaRecorder.isTypeSupported(m)) : null; };
+  const saved = ls.get('rec_opts') || {};
+  const opt = { mode: saved.mode || 'monitor', cursor: saved.cursor || 'always', audio: saved.audio || 'none', fps: saved.fps || 30, count: saved.count ?? 3, fmt: saved.fmt && mimeFor(saved.fmt) ? saved.fmt : (mimeFor('mp4') ? 'mp4' : 'webm') };
+  const saveOpts = () => ls.set('rec_opts', opt);
+  let display = null, mic = null, cropper = null, recorder = null, chunks = [], state = 'idle', t0 = 0, pausedFor = 0, pauseAt = 0, tick = null, audioCtx = null, pip = null, crop = { x: 0, y: 0, w: 1, h: 1 };
+  const recordings = [];
+
+  /* ---- setup controls ---- */
+  const modes = $('recModes');
+  Object.entries(MODES).forEach(([k, m]) => {
+    const b = el('button', 'recmode' + (opt.mode === k ? ' on' : '')); b.type = 'button'; b.dataset.k = k;
+    b.innerHTML = SVG(m.icon); b.append(el('b', '', m.name), el('span', '', m.desc));
+    b.onclick = () => { opt.mode = k; saveOpts(); modes.querySelectorAll('.recmode').forEach(x => x.classList.toggle('on', x.dataset.k === k)); drawOpts(); };
+    modes.append(b);
+  });
+  function seg(id, list, key, cb){
+    const box = $(id); box.textContent = '';
+    list.forEach(([v, lab, dis]) => { const b = el('button', opt[key] === v ? 'on' : '', lab); b.type = 'button'; b.disabled = !!dis; b.onclick = () => { opt[key] = v; saveOpts(); drawOpts(); cb && cb(); }; box.append(b); });
+  }
+  function drawOpts(){
+    seg('recCursor', [['always', 'Show'], ['never', 'Hide']], 'cursor');
+    seg('recAudio', [['none', 'No sound'], ['system', 'Computer sound'], ['mic', 'Microphone'], ['both', 'Both']], 'audio');
+    seg('recFps', [[30, 'Standard (30 fps)'], [60, 'Extra smooth (60 fps)']], 'fps');
+    seg('recCount', [[0, 'Off'], [3, '3 seconds']], 'count');
+    seg('recFmt', types.map(([k, lab]) => [k, lab + (k === 'mp4' ? ' (best for sharing)' : ''), !mimeFor(k)]), 'fmt');
+    const hints = [];
+    if (opt.audio === 'system' || opt.audio === 'both') hints.push(opt.mode === 'window' ? 'Computer sound: most browsers can only record sound from a whole screen or a tab, not a single window.' : 'Computer sound: tick "Share audio" (or "Also share system audio") in the box that pops up.');
+    if (!mimeFor('mp4')) hints.push('Your browser can only save WebM videos. They play in Chrome, VLC and most video editors.');
+    $('recOptHint').textContent = hints.join(' ');
+  }
+  drawOpts();
+
+  /* ---- choosing the source ---- */
+  const ui = s => {
+    state = s;
+    $('recPickBox').classList.toggle('hidden', s !== 'idle');
+    $('recPrevBox').classList.toggle('hidden', s !== 'picked');
+    $('recLiveBox').classList.toggle('hidden', !['recording', 'paused'].includes(s));
+    $('recSetup').classList.toggle('recdim', s !== 'idle');
+    $('recStageH').textContent = s === 'picked' ? 'Check it looks right' : s === 'recording' || s === 'paused' ? 'Recording' : 'Record';
+    modes.querySelectorAll('button').forEach(b => { b.disabled = s !== 'idle'; }); document.querySelectorAll('#recSetup .seg button').forEach(b => { if (s !== 'idle') b.disabled = true; });
+    if (s === 'idle') drawOpts();
+  };
+  function stopTracks(){
+    [display, mic].forEach(st => st && st.getTracks().forEach(t => t.stop()));
+    display = mic = null; if (cropper) { cropper.stop(); cropper = null; }
+    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
+    $('recVideo').srcObject = null;
+  }
+  async function pick(){
+    const sys = opt.audio === 'system' || opt.audio === 'both';
+    const vid = { frameRate: { ideal: opt.fps, max: opt.fps }, cursor: opt.cursor, width: { ideal: 3840 }, height: { ideal: 2160 } };
+    const surf = opt.mode === 'area' ? 'monitor' : opt.mode;
+    const req = { video: { ...vid, displaySurface: surf }, audio: sys ? { suppressLocalAudioPlayback: false } : false, selfBrowserSurface: 'exclude', surfaceSwitching: 'include', systemAudio: sys ? 'include' : 'exclude', monitorTypeSurfaces: 'include', preferCurrentTab: false };
+    try { display = await navigator.mediaDevices.getDisplayMedia(req); }
+    catch (e) {
+      if (e && e.name === 'NotAllowedError') msg("Nothing was picked, or your browser blocked screen sharing. Press the button to try again.");
+      else { try { display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: sys }); } catch { msg("Your browser wouldn't share the screen. Try Chrome or Edge on a computer."); } }
+      if (!display) return;
+    }
+    const vt = display.getVideoTracks()[0];
+    vt.onended = () => { if (state === 'recording' || state === 'paused') stop(); else if (state === 'picked') { stopTracks(); ui('idle'); } };
+    const s = vt.getSettings ? vt.getSettings() : {};
+    const hints = [];
+    if (opt.cursor === 'never' && s.cursor && s.cursor !== 'never') hints.push("Your browser doesn't let websites hide the cursor, so it will still show.");
+    if (opt.cursor === 'never' && !s.cursor) hints.push("Your browser may still show the cursor. Hiding it works best in Safari.");
+    if (sys && !display.getAudioTracks().length) hints.push('No computer sound is being shared. To include it, press "Choose something else" and tick "Share audio".');
+    if (opt.mode !== 'area' && s.displaySurface && s.displaySurface !== opt.mode) hints.push(`You picked ${MODES[s.displaySurface] ? MODES[s.displaySurface].name.toLowerCase() : 'something different'}, which is fine too.`);
+    if (opt.audio === 'mic' || opt.audio === 'both') {
+      try { mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+      catch { hints.push("The microphone couldn't be used, so it won't be recorded. Check your browser allowed it."); }
+    }
+    const v = $('recVideo'); v.srcObject = new MediaStream([vt]); v.play().catch(() => {});
+    crop = { x: 0, y: 0, w: 1, h: 1 };
+    const isArea = opt.mode === 'area';
+    $('recCrop').classList.toggle('hidden', !isArea); $('recPresets').classList.toggle('hidden', !isArea);
+    $('recPrevHint').textContent = (isArea ? 'Drag the box to move it and the white corners to resize it. Only what is inside the box will be recorded. ' : 'This is what will be recorded. ') + hints.join(' ');
+    ui('picked');
+    if (isArea) { await new Promise(r => { if (v.videoWidth) r(); else v.onloadedmetadata = () => r(); setTimeout(r, 1500); }); setCrop(.1, .1, .8, .8); }
+  }
+  const msg = t => { $('recPrevHint').textContent = t; const h = $('recPickBox').querySelector('.hint'); h.textContent = t; };
+  $('recPick').onclick = pick;
+  $('recRepick').onclick = () => { stopTracks(); ui('idle'); pick(); };
+  $('recCancel').onclick = () => { stopTracks(); ui('idle'); };
+
+  /* ---- the crop box ---- */
+  const view = $('recView'), box = $('recCrop');
+  function vidRect(){ const v = $('recVideo'), r = v.getBoundingClientRect(), pr = view.getBoundingClientRect(); return { x: r.left - pr.left, y: r.top - pr.top, w: r.width, h: r.height }; }
+  function setCrop(x, y, w, h){
+    const v = $('recVideo'), vw = v.videoWidth || 1920, vh = v.videoHeight || 1080, minW = 64 / vw, minH = 64 / vh;
+    w = Math.max(minW, Math.min(1, w)); h = Math.max(minH, Math.min(1, h)); x = Math.max(0, Math.min(1 - w, x)); y = Math.max(0, Math.min(1 - h, y));
+    crop = { x, y, w, h };
+    const r = vidRect(); Object.assign(box.style, { left: r.x + x * r.w + 'px', top: r.y + y * r.h + 'px', width: w * r.w + 'px', height: h * r.h + 'px' });
+    $('recCropSize').textContent = `${Math.round(w * vw)} × ${Math.round(h * vh)}`;
+  }
+  addEventListener('resize', () => { if (state === 'picked' && opt.mode === 'area') setCrop(crop.x, crop.y, crop.w, crop.h); });
+  box.onpointerdown = e => {
+    e.preventDefault(); box.setPointerCapture(e.pointerId);
+    const r = vidRect(), h = e.target.dataset.h, s = { ...crop }, sx = e.clientX, sy = e.clientY;
+    box.onpointermove = ev => {
+      const dx = (ev.clientX - sx) / r.w, dy = (ev.clientY - sy) / r.h;
+      if (!h) return setCrop(s.x + dx, s.y + dy, s.w, s.h);
+      let x1 = s.x, y1 = s.y, x2 = s.x + s.w, y2 = s.y + s.h;
+      if (h.includes('w')) x1 = Math.min(x2 - .03, Math.max(0, s.x + dx)); else x2 = Math.max(x1 + .03, Math.min(1, x2 + dx));
+      if (h.includes('n')) y1 = Math.min(y2 - .03, Math.max(0, s.y + dy)); else y2 = Math.max(y1 + .03, Math.min(1, y2 + dy));
+      setCrop(x1, y1, x2 - x1, y2 - y1);
+    };
+    box.onpointerup = box.onpointercancel = () => { box.onpointermove = box.onpointerup = null; };
+  };
+  const presets = $('recPresets');
+  [['Whole thing', 0], ['Widescreen 16:9', 16 / 9], ['Square 1:1', 1], ['Portrait 4:5', 4 / 5], ['Phone / Stories 9:16', 9 / 16]].forEach(([lab, ratio]) => {
+    const b = el('button', '', lab); b.type = 'button';
+    b.onclick = () => {
+      if (!ratio) return setCrop(0, 0, 1, 1);
+      const v = $('recVideo'), vw = v.videoWidth || 1920, vh = v.videoHeight || 1080;
+      let w = vw * .8, h = w / ratio; if (h > vh * .9) { h = vh * .9; w = h * ratio; }
+      setCrop((1 - w / vw) / 2, (1 - h / vh) / 2, w / vw, h / vh);
+    };
+    presets.append(b);
+  });
+
+  /* ---- recording ---- */
+  function cropStream(track){
+    const s = track.getSettings(), v0 = $('recVideo'), fw = v0.videoWidth || s.width || 1920, fh = v0.videoHeight || s.height || 1080;
+    const cv = document.createElement('canvas'); cv.width = Math.max(2, Math.round(crop.w * fw / 2) * 2); cv.height = Math.max(2, Math.round(crop.h * fh / 2) * 2);
+    const cx = cv.getContext('2d'); const out = cv.captureStream(opt.fps); let dead = false;
+    const draw = (src, w, h) => cx.drawImage(src, crop.x * w, crop.y * h, crop.w * w, crop.h * h, 0, 0, cv.width, cv.height);
+    if (window.MediaStreamTrackProcessor) {
+      const reader = new MediaStreamTrackProcessor({ track: track.clone() }).readable.getReader();
+      (async () => { while (!dead) { let r; try { r = await reader.read(); } catch { break; } if (r.done) break; const f = r.value; try { draw(f, f.displayWidth, f.displayHeight); } catch {} f.close(); } })();
+      return { stream: out, stop: () => { dead = true; reader.cancel().catch(() => {}); out.getTracks().forEach(t => t.stop()); } };
+    }
+    // Fallback: a worker keeps the frames coming even when this tab is in the background
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = new MediaStream([track]); v.play().catch(() => {});
+    const w = new Worker(URL.createObjectURL(new Blob([`setInterval(() => postMessage(0), ${Math.round(1000 / opt.fps)})`], { type: 'text/javascript' })));
+    w.onmessage = () => { if (v.videoWidth) draw(v, v.videoWidth, v.videoHeight); };
+    return { stream: out, stop: () => { dead = true; w.terminate(); v.srcObject = null; out.getTracks().forEach(t => t.stop()); } };
+  }
+  function audioTracks(){
+    const list = [...(display ? display.getAudioTracks() : []), ...(mic ? mic.getAudioTracks() : [])];
+    if (list.length <= 1) return list;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const dest = audioCtx.createMediaStreamDestination();
+    list.forEach(t => audioCtx.createMediaStreamSource(new MediaStream([t])).connect(dest));
+    return dest.stream.getAudioTracks();
+  }
+  async function begin(){
+    if (!display) return;
+    if (opt.count) {
+      const cb = $('recCountBox'); cb.classList.remove('hidden');
+      for (let n = opt.count; n > 0; n--) { const b = $('recCountNum'); b.textContent = n; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; await wait(1000); if (!display) { cb.classList.add('hidden'); return; } }
+      cb.classList.add('hidden');
+    }
+    const vt = display.getVideoTracks()[0];
+    const isCrop = opt.mode === 'area' && !(crop.x === 0 && crop.y === 0 && crop.w === 1 && crop.h === 1);
+    if (isCrop) cropper = cropStream(vt);
+    const stream = new MediaStream([...(isCrop ? cropper.stream.getVideoTracks() : [vt]), ...audioTracks()]);
+    const mime = mimeFor(opt.fmt) || mimeFor('webm') || '';
+    const bits = Math.round(Math.min(16e6, (isCrop ? 6e6 : 8e6) * (opt.fps / 30)));
+    try { recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bits, audioBitsPerSecond: 160000 }); }
+    catch { recorder = new MediaRecorder(stream); }
+    chunks = [];
+    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = finish;
+    recorder.start(1000);
+    t0 = Date.now(); pausedFor = 0; pauseAt = 0;
+    ui('recording'); setLive();
+    clearInterval(tick); tick = setInterval(setLive, 250);
+    $('recPop').classList.toggle('hidden', !('documentPictureInPicture' in window));
+  }
+  const elapsed = () => (pauseAt || Date.now()) - t0 - pausedFor;
+  const fmtT = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  function setLive(){
+    const t = fmtT(elapsed()), paused = state === 'paused';
+    $('recTime').textContent = t; $('recState').textContent = paused ? 'Paused' : 'Recording';
+    $('recLiveDot').classList.toggle('paused', paused);
+    $('recPause').lastChild.textContent = paused ? 'Resume' : 'Pause'; $('recPause').querySelector('use').setAttribute('href', paused ? '#i-play' : '#i-pause');
+    document.title = (paused ? '❚❚ ' : '● ') + t + ' Recording · GentiMeter';
+    if (pip && !pip.closed) { const d = pip.document; d.getElementById('t').textContent = t; d.getElementById('p').textContent = paused ? '▶ Resume' : '❚❚ Pause'; d.getElementById('dot').className = paused ? 'dot paused' : 'dot'; }
+  }
+  function pauseToggle(){
+    if (!recorder) return;
+    if (state === 'recording') { recorder.pause(); pauseAt = Date.now(); state = 'paused'; }
+    else if (state === 'paused') { recorder.resume(); pausedFor += Date.now() - pauseAt; pauseAt = 0; state = 'recording'; }
+    setLive();
+  }
+  function stop(){ if (recorder && recorder.state !== 'inactive') { if (pauseAt) { pausedFor += Date.now() - pauseAt; pauseAt = 0; } recorder.stop(); } }
+  function finish(){
+    clearInterval(tick); const dur = elapsed(); document.title = 'Screen Recorder · GentiMeter';
+    if (pip && !pip.closed) pip.close(); pip = null;
+    const type = (recorder && recorder.mimeType) || chunks[0]?.type || 'video/webm';
+    const blob = new Blob(chunks, { type: type.split(';')[0] }); chunks = []; recorder = null;
+    stopTracks(); ui('idle');
+    if (!blob.size) { msg('Nothing was recorded. Try again.'); return; }
+    const d = new Date(), stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}-${String(d.getSeconds()).padStart(2, '0')}`;
+    recordings.unshift({ id: rid(), blob, url: URL.createObjectURL(blob), ext: /mp4/.test(type) ? 'mp4' : 'webm', name: 'Screen recording ' + stamp, dur, saved: false });
+    drawList();
+    $('recListCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('recStart').onclick = begin;
+  $('recPause').onclick = pauseToggle;
+  $('recStop').onclick = stop;
+  $('recPop').onclick = async () => {
+    try {
+      pip = await documentPictureInPicture.requestWindow({ width: 300, height: 130 });
+      const d = pip.document;
+      d.head.innerHTML = '<style>body{margin:0;font-family:Outfit,system-ui,sans-serif;background:#0d0e1a;color:#f4f4f8;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;height:100vh}.r{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}.dot{width:14px;height:14px;border-radius:50%;background:#ff3b4a}.dot.paused{background:#ffc371}.b{display:flex;gap:8px}button{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:10px;padding:8px 14px;cursor:pointer;background:#20243a;color:#f4f4f8}button.s{background:#ff6b6b;color:#fff}</style>';
+      d.body.innerHTML = '<div class="r"><span class="dot" id="dot"></span><span id="t">0:00</span></div><div class="b"><button id="p"></button><button class="s" id="s">■ Stop and save</button></div>';
+      d.getElementById('p').onclick = pauseToggle; d.getElementById('s').onclick = stop;
+      setLive();
+    } catch { $('recPop').classList.add('hidden'); }
+  };
+
+  /* ---- the recordings list ---- */
+  const fmtSize = b => b > 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB';
+  function download(r){
+    const a = el('a'); a.href = r.url; a.download = (r.name.trim() || 'Screen recording').replace(/[\\/:*?"<>|]+/g, '-') + '.' + r.ext;
+    document.body.append(a); a.click(); a.remove(); r.saved = true; drawList();
+  }
+  function drawList(){
+    const list = $('recList'); list.textContent = '';
+    $('recListCard').classList.toggle('hidden', !recordings.length);
+    recordings.forEach(r => {
+      const item = el('div', 'recitem'), v = el('video'); v.src = r.url; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+      const info = el('div', 'recinfo'), name = el('input', 'field sm'); name.value = r.name; name.maxLength = 100; name.setAttribute('aria-label', 'File name'); name.oninput = () => { r.name = name.value; };
+      info.append(name, el('span', 'recmeta', `${fmtT(r.dur)} long  ·  ${fmtSize(r.blob.size)}  ·  ${r.ext.toUpperCase()}${r.saved ? '  ·  ✓ Downloaded' : ''}`));
+      const btns = el('div', 'recbtns'), dl = el('button', 'btn rain sm', '⬇ Download'), del = el('button', 'btn ghost sm'); dl.type = del.type = 'button';
+      del.append(icon('trash'), document.createTextNode('Delete'));
+      dl.onclick = () => download(r);
+      del.onclick = () => { if (!r.saved && !confirm('Delete this recording? It hasn\'t been downloaded yet.')) return; URL.revokeObjectURL(r.url); recordings.splice(recordings.indexOf(r), 1); drawList(); };
+      btns.append(dl, del); info.append(btns); item.append(v, info); list.append(item);
+    });
+  }
+  addEventListener('beforeunload', e => { if (state === 'recording' || state === 'paused' || recordings.some(r => !r.saved)) { e.preventDefault(); e.returnValue = ''; } });
+  ui('idle');
+}
+
 /* ================= Router ================= */
 if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
@@ -5231,6 +5599,7 @@ else if (qp.get('board')) { const bc = cleanBoardCode(qp.get('board')); if (isBo
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'polls') { show('landing'); document.title = 'Polls & Quizzes · GentiMeter'; }
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'whiteboard') startWbHome();
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'analytics') startAn();
+else if (qp.get('app') === 'engagement' && qp.get('tool') === 'recorder') startRec();
 else if (qp.get('app') === 'engagement') { show('enghome'); document.title = 'Engagement · GentiMeter'; }
 else if (qp.get('app') === 'pm' && qp.get('tool') === 'sitevisits') startPm();
 else if (qp.get('app') === 'pm') { show('pmhome'); document.title = 'PM Tools · GentiMeter'; }
@@ -5246,6 +5615,7 @@ $('hostBtn').onclick = () => nav('host=1');
 $('backHub').onclick = () => nav('app=engagement');
 $('backHub5').onclick = () => nav('');
 $('pollFolder').onclick = () => { $('pollFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=polls'), 420); };
+$('recFolder').onclick = () => { $('recFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=recorder'), 420); };
 $('anFolder').onclick = () => { $('anFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=analytics'), 420); };
 $('wbFolder').onclick = () => { $('wbFolder').classList.add('opening'); setTimeout(() => nav('app=engagement&tool=whiteboard'), 420); };
 $('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTimeout(() => nav('app=engagement'), 420); };
