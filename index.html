@@ -594,13 +594,35 @@
   </div>
 </section>
 
+<!-- ===== PM Tools folder ===== -->
+<section id="pmhome" class="hub hidden">
+  <button class="backbtn" id="backHub4" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>GentiMeter home</button>
+  <div>
+    <div class="crumb rainbow-text">GentiMeter</div>
+    <h1 style="font-size:clamp(44px,8vw,80px)"><span class="rainbow-text">PM Tools</span></h1>
+    <p class="sub">Pick a tool.</p>
+  </div>
+  <div class="folders">
+    <button class="folder pm-f" id="svFolder" type="button" aria-label="Open Site Visits">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper" style="flex-direction:column;align-items:stretch;justify-content:center;gap:7px;padding:14px 18px"><i style="flex:0 0 10px;width:60%;background:#34d399"></i><i style="flex:0 0 10px;width:45%;background:#14b8a6;margin-left:25%"></i><i style="flex:0 0 10px;width:55%;background:#0ea5e9;margin-left:40%"></i></div>
+      <div class="cover"><span class="fi">📍</span><b>Site Visits</b><small>Tracker to date-range report with maps</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.08s">
+      <div class="back"></div>
+      <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More PM tools on the way</small></div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== PM Tools: date-range report ===== -->
 <section id="pm" class="pmtools hidden">
-  <button class="backbtn" id="backHub3" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>GentiMeter home</button>
+  <button class="backbtn" id="backHub3" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>PM Tools</button>
   <div class="pmwrap">
     <div class="pmhero">
-      <div class="crumb rainbow-text">GentiMeter</div>
-      <h1><span class="rainbow-text">PM Tools</span></h1>
+      <div class="crumb rainbow-text">GentiMeter · PM Tools</div>
+      <h1><span class="rainbow-text">Site Visits</span></h1>
       <p class="sub">Turn your tracker spreadsheet into a report for any dates.</p>
     </div>
     <div class="pmcard">
@@ -622,6 +644,7 @@
       <div class="chips" id="pmQuick"></div>
       <div class="row">Include <select class="sel" id="pmMode"><option value="overlap">jobs happening at any point in the range</option><option value="starts">only jobs that start in the range</option></select></div>
       <div class="row" style="align-items:flex-start">Statuses <div class="chips" id="pmStatus"></div></div>
+      <label class="row" style="cursor:pointer"><input type="checkbox" id="pmTbc" style="width:20px;height:20px;accent-color:#3ddc97"> Include sites whose dates are TBC</label>
       <label class="row" style="cursor:pointer"><input type="checkbox" id="pmSites" checked style="width:20px;height:20px;accent-color:#3ddc97"> Add a page for every site, with all its details and a map</label>
       <input class="field sm" id="pmTitle" maxlength="80" value="Install report" placeholder="Report title">
     </div>
@@ -893,7 +916,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['hub','landing','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','landing','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -1823,7 +1846,9 @@ async function buildPmPages(o){
   const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee', SOFT = '#f5f6fa';
   const pages = []; let ctx, y, pageTitle = '';
   const rangeTxt = `${fmtDay(o.from, true)} – ${fmtDay(o.to, true)}`;
-  const jobs = [...o.jobs].sort((a, b) => a.start - b.start || String(a.site).localeCompare(String(b.site)));
+  // dated jobs first (by date), TBC ones at the end
+  const jobs = [...o.jobs].sort((a, b) => (a.start ? 0 : 1) - (b.start ? 0 : 1) || (a.start && b.start ? a.start - b.start : 0) || String(a.site).localeCompare(String(b.site)));
+  const dated = jobs.filter(j => j.start), tbcJobs = jobs.filter(j => !j.start);
   function newPage(title, sub){
     const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
@@ -1902,7 +1927,7 @@ async function buildPmPages(o){
     if (days <= 62) {
       y = heading('Jobs on site each day', M, leftW);
       const ch = PH - 100 - y - 30, bw = leftW / days, perDay = [];
-      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); perDay.push(jobs.filter(j => j.start <= d && (j.end || j.start) >= d).length); }
+      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); perDay.push(dated.filter(j => j.start <= d && (j.end || j.start) >= d).length); }
       const top = Math.max(1, ...perDay);
       perDay.forEach((n, i) => {
         const d = new Date(o.from.getTime() + i * DAY), wk = d.getDay() === 0 || d.getDay() === 6, h = n / top * (ch - 26);
@@ -1917,19 +1942,20 @@ async function buildPmPages(o){
     y = y0; y = heading(`Where the work is (${located.length} of ${jobs.length} located)`, mx, mw);
     drawUkMap(ctx, mx, y, mw, mh, located.map(j => ({ lat: j.geo.lat, lon: j.geo.lon, colour: statusColour(j.status) })), { pinSize: 16 });
   }
-  if (o.tbc) textBlock(ctx, `${o.tbc} job${o.tbc === 1 ? ' has' : 's have'} TBC or missing dates, so ${o.tbc === 1 ? "isn't" : "aren't"} included.`, M, PH - 62, 1200, 16, 600, MUTED);
+  if (tbcJobs.length) textBlock(ctx, `Includes ${tbcJobs.length} job${tbcJobs.length === 1 ? '' : 's'} with TBC dates (shown on the map and site pages, not on the day-by-day charts).`, M, PH - 62, 1300, 16, 600, MUTED);
+  else if (o.tbc) textBlock(ctx, `${o.tbc} job${o.tbc === 1 ? ' has' : 's have'} TBC or missing dates, so ${o.tbc === 1 ? "isn't" : "aren't"} included. Tick "Include TBC" to add them.`, M, PH - 62, 1300, 16, 600, MUTED);
 
   if (jobs.length) {
     /* ================= 2. Insights ================= */
     newPage('Insights', 'The useful numbers at a glance');
     const colW = (PW - 2 * M - 80) / 2, rx = M + colW + 80;
     // key facts
-    const perDayMap = new Map(); jobs.forEach(j => { for (let d = j.start.getTime(); d <= (j.end || j.start).getTime(); d += DAY) if (d >= o.from.getTime() && d <= o.to.getTime()) perDayMap.set(d, (perDayMap.get(d) || 0) + 1); });
+    const perDayMap = new Map(); dated.forEach(j => { for (let d = j.start.getTime(); d <= (j.end || j.start).getTime(); d += DAY) if (d >= o.from.getTime() && d <= o.to.getTime()) perDayMap.set(d, (perDayMap.get(d) || 0) + 1); });
     const busiest = [...perDayMap.entries()].sort((a, b) => b[1] - a[1])[0];
-    const longest = [...jobs].sort((a, b) => jobDays(b) - jobDays(a))[0];
-    const avgLen = jobs.reduce((a, j) => a + jobDays(j), 0) / jobs.length;
+    const longest = [...dated].sort((a, b) => jobDays(b) - jobDays(a))[0];
+    const avgLen = dated.length ? dated.reduce((a, j) => a + jobDays(j), 0) / dated.length : 0;
     const repeat = count('site').filter(([, n]) => n > 1);
-    const overdue = jobs.filter(j => !/complete|done|closed|n\/a|cancel/i.test(j.status) && (j.end || j.start) < today);
+    const overdue = dated.filter(j => !/complete|done|closed|n\/a|cancel/i.test(j.status) && (j.end || j.start) < today);
     const upcoming = jobs.filter(j => j.start >= today);
     const facts = [
       ['Busiest day', busiest ? `${fmtDayW(new Date(busiest[0]))} with ${busiest[1]} jobs on site` : '–'],
@@ -1937,7 +1963,7 @@ async function buildPmPages(o){
       ['Longest job', longest ? `${longest.site} (${jobDays(longest)} days)` : '–'],
       ['Sites visited more than once', repeat.length ? repeat.slice(0, 4).map(([s, n]) => `${s} ×${n}`).join(', ') + (repeat.length > 4 ? ` +${repeat.length - 4} more` : '') : 'None'],
       ['Not complete and past their end date', overdue.length ? `${overdue.length}: ` + overdue.slice(0, 4).map(j => j.site).join(', ') + (overdue.length > 4 ? '…' : '') : 'None'],
-      ['Still to start (from today)', String(upcoming.length)]
+      ['Still to start (from today)', String(upcoming.length) + (tbcJobs.length ? `, plus ${tbcJobs.length} with TBC dates` : '')]
     ];
     y = heading('Key facts', M, colW); const fy0 = y;
     facts.forEach(([k, v]) => { rrect(ctx, M, y, colW, 78, 14); ctx.fillStyle = SOFT; ctx.fill(); textBlock(ctx, k, M + 20, y + 12, colW - 40, 16, 700, MUTED); textBlock(ctx, v, M + 20, y + 36, colW - 40, 21, 800, INK, { max: 1 }); y += 90; });
@@ -1972,7 +1998,7 @@ async function buildPmPages(o){
     }
 
     /* ================= 3. Timeline ================= */
-    newPage('Timeline', 'Every job in the range, coloured by status');
+    newPage('Timeline', 'Every job in the range, coloured by status' + (tbcJobs.length ? `. ${tbcJobs.length} TBC job${tbcJobs.length === 1 ? ' is' : 's are'} listed at the bottom` : ''));
     const days = Math.round((o.to - o.from) / DAY) + 1, LW = 440, gx = M + LW, gw = PW - M - gx, RH = 34, dw = gw / days;
     const axis = () => {
       for (let i = 0; i < days; i++) {
@@ -1982,7 +2008,7 @@ async function buildPmPages(o){
       }
       y += 26;
     };
-    let rest = jobs;
+    let rest = dated;
     while (rest.length) {
       const cap = Math.floor((PH - 120 - y - 26) / RH);
       const chunk = rest.slice(0, cap); rest = rest.slice(cap);
@@ -2005,6 +2031,19 @@ async function buildPmPages(o){
       let lx = M; byStatus.forEach(([s]) => { ctx.font = RF(16, 700); const w = ctx.measureText(s).width; if (lx + w + 50 > PW - M) return; rrect(ctx, lx, y + 2, 18, 18, 4); ctx.fillStyle = statusColour(s); ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(s, lx + 26, y + 2); lx += w + 56; });
       if (rest.length) newPage('Timeline (continued)');
     }
+    if (tbcJobs.length) {
+      y += 50; room(90);
+      y = heading(`Dates TBC (${tbcJobs.length})`);
+      tbcJobs.forEach((j, i) => {
+        room(34);
+        if (i % 2) { ctx.fillStyle = 'rgba(20,21,31,.03)'; ctx.fillRect(M, y, PW - 2 * M, 34); }
+        ctx.font = RF(16, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, j.site || '(no name)', LW - 190), M + 8, y + 17);
+        ctx.font = RF(14, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, j.engineer || '', 170), M + LW - 180, y + 17);
+        ctx.setLineDash([8, 6]); rrect(ctx, gx + 2, y + 6, gw - 4, 22, 7); ctx.strokeStyle = statusColour(j.status || ''); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+        textBlock(ctx, 'Dates TBC' + (j.status ? '  ·  ' + j.status : ''), gx + gw / 2, y + 9, gw, 14, 700, MUTED, { align: 'center' });
+        y += 34;
+      });
+    }
 
     /* ================= 4. One page per site ================= */
     if (o.sitePages) {
@@ -2022,13 +2061,14 @@ async function buildPmPages(o){
         const cardW = 1000;
         rrect(ctx, M, y, cardW, 120, 18); ctx.fillStyle = SOFT; ctx.fill();
         const dd = jobDays(j);
-        [['Start', fmtDayW(j.start)], ['End', fmtDayW(j.end || j.start)], ['Length', dd + (dd === 1 ? ' day' : ' days')]].forEach(([k, v], i) => {
+        [['Start', fmtDayW(j.start)], ['End', fmtDayW(j.end || j.start)], ['Length', dd ? dd + (dd === 1 ? ' day' : ' days') : 'TBC']].forEach(([k, v], i) => {
           textBlock(ctx, k, M + 24 + i * 320, y + 16, 300, 15, 700, MUTED); textBlock(ctx, v, M + 24 + i * 320, y + 38, 300, 23, 800, INK, { max: 1 });
         });
         const sx = M + 24, sw = cardW - 48, days2 = Math.round((o.to - o.from) / DAY) + 1;
         rrect(ctx, sx, y + 86, sw, 14, 7); ctx.fillStyle = '#e3e6ef'; ctx.fill();
-        const a = Math.max(0, (j.start - o.from) / DAY), b = Math.min(days2, ((j.end || j.start) - o.from) / DAY + 1);
-        rrect(ctx, sx + sw * a / days2, y + 86, Math.max(10, sw * (b - a) / days2), 14, 7); ctx.fillStyle = sc; ctx.fill();
+        if (j.start) { const a = Math.max(0, (j.start - o.from) / DAY), b = Math.min(days2, ((j.end || j.start) - o.from) / DAY + 1);
+          rrect(ctx, sx + sw * a / days2, y + 86, Math.max(10, sw * (b - a) / days2), 14, 7); ctx.fillStyle = sc; ctx.fill(); }
+        else textBlock(ctx, 'Dates to be confirmed', sx + sw / 2, y + 84, sw, 14, 700, MUTED, { align: 'center' });
         y += 150;
         // every column from the spreadsheet
         textBlock(ctx, 'All details', M, y, 400, 24, 800, INK); y += 40;
@@ -2105,7 +2145,7 @@ async function buildPmPages(o){
 function startPm(){
   show('pm');
   document.title = 'PM Tools · GentiMeter';
-  $('backHub3').onclick = () => nav('');
+  $('backHub3').onclick = () => nav('app=pm');
   let wb = null, sheetRows = [], headerIdx = 0, headers = [], cols = {}, fileName = '', statusOn = new Set(), pages = null, geoState = '';
 
   const setMsg = t => { $('pmMsg').textContent = t; $('pmMsg').classList.toggle('hidden', !t); };
@@ -2183,6 +2223,7 @@ function startPm(){
   $('pmFrom').onchange = $('pmTo').onchange = () => refresh();
   $('pmMode').onchange = () => refresh();
   $('pmSites').onchange = () => refresh();
+  $('pmTbc').onchange = () => refresh();
   $('pmTitle').oninput = () => { clearTimeout(window.__pmT); window.__pmT = setTimeout(refresh, 400); };
 
   function renderStatusChips(){
@@ -2199,15 +2240,15 @@ function startPm(){
   function filtered(){
     const from = toDate($('pmFrom').value), to = toDate($('pmTo').value);
     if (!from || !to || to < from) return null;
-    const startsOnly = $('pmMode').value === 'starts';
+    const startsOnly = $('pmMode').value === 'starts', includeTbc = $('pmTbc').checked;
     let tbc = 0;
     const inRange = allJobs().filter(j => {
       if (cols.status != null && !statusOn.has(j.status || 'Not set')) return false;
-      if (!j.start) { tbc++; return false; }
+      if (!j.start) { tbc++; return includeTbc; }
       const s = j.start, e = j.end || j.start;
       return startsOnly ? (s >= from && s <= to) : (s <= to && e >= from);
     });
-    return { from, to, jobs: inRange, tbc };
+    return { from, to, jobs: inRange, tbc, includeTbc };
   }
   let refreshTimer = null, runId = 0;
   function refresh(){ clearTimeout(refreshTimer); refreshTimer = setTimeout(doRefresh, 150); }
@@ -2218,7 +2259,7 @@ function startPm(){
     const f = filtered();
     if (!f) { $('pmCount').textContent = 'Pick a start and end date.'; $('pmPreview').textContent = ''; $('pmDl').disabled = true; return; }
     $('pmDl').disabled = true;
-    const base = `${f.jobs.length} job${f.jobs.length === 1 ? '' : 's'} between ${fmtDay(f.from, true)} and ${fmtDay(f.to, true)}` + (f.tbc ? ` (${f.tbc} with TBC dates left out)` : '');
+    const base = `${f.jobs.length} job${f.jobs.length === 1 ? '' : 's'} between ${fmtDay(f.from, true)} and ${fmtDay(f.to, true)}` + (f.tbc ? (f.includeTbc ? ` (including ${f.tbc} with TBC dates)` : ` (${f.tbc} with TBC dates left out)`) : '');
     $('pmCount').textContent = base + ' · finding locations…';
     await Promise.all([loadUkShapes().catch(() => null), geocodeJobs(f.jobs, (a, b) => { if (my === runId) $('pmCount').textContent = `${base} · finding locations ${a}/${b}…`; })]);
     if (my !== runId) return;
@@ -2256,7 +2297,8 @@ if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
 else if (qp.get('code')) startJoin(qp.get('code').replace(/\D/g,''));
 else if (qp.get('app') === 'engagement') show('landing');
-else if (qp.get('app') === 'pm') startPm();
+else if (qp.get('app') === 'pm' && qp.get('tool') === 'sitevisits') startPm();
+else if (qp.get('app') === 'pm') { show('pmhome'); document.title = 'PM Tools · GentiMeter'; }
 else show('hub');
 
 $('joinForm').onsubmit = e => {
@@ -2269,6 +2311,8 @@ $('hostBtn').onclick = () => nav('host=1');
 $('backHub').onclick = () => nav('');
 $('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTimeout(() => nav('app=engagement'), 420); };
 $('pmFolder').onclick = () => { $('pmFolder').classList.add('opening'); setTimeout(() => nav('app=pm'), 420); };
+$('svFolder').onclick = () => { $('svFolder').classList.add('opening'); setTimeout(() => nav('app=pm&tool=sitevisits'), 420); };
+$('backHub4').onclick = () => nav('');
 $('hubJoin').onsubmit = e => { e.preventDefault(); const c = $('hubCode').value.replace(/\D/g,''); if (c.length === 6) nav('code=' + c); else $('hubCode').focus(); };
 if (ss.get('cp_hostCode')) { $('hubResume').textContent = 'Session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Open Engagement to go back to it.'; $('hubResume').classList.remove('hidden'); }
 if (ss.get('cp_hostCode')) { $('resumeNote').textContent = 'Your session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Start hosting to go back to it.'; $('resumeNote').classList.remove('hidden'); }
