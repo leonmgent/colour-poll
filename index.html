@@ -133,7 +133,7 @@
   .wb-world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
   .wbo{position:absolute;left:0;top:0;transform-origin:0 0}
   .wbo.note{border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.12),0 10px 22px rgba(0,0,0,.1);display:flex;flex-direction:column;padding:14px 14px 6px}
-  .wbo.note .nt{flex:1;min-height:0;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.22;color:#1e1e24;outline:none;font-weight:600}
+  .wbo.note .nt{flex:1;min-height:0;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.22;color:#1e1e24;outline:none;font-weight:500}
   .wbo.note .nf{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;color:rgba(0,0,0,.5);font-weight:600;height:24px;flex:none}
   .wbo.note .nf span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wbo.note .like{border-radius:99px;padding:2px 8px;background:rgba(0,0,0,.07);font-size:12px;font-weight:700;color:rgba(0,0,0,.6);cursor:pointer;white-space:nowrap;flex:none}
@@ -189,6 +189,11 @@
   .wb-zoom .zl:hover{background:var(--surface2);color:var(--text)}
   .wb-selbar{left:0;top:0;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 20px);padding:4px}
   .wb-selbar .wb-sw{width:22px;height:22px}
+  .wb-selrow{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 12px 30px rgba(10,12,30,.28);width:max-content;max-width:calc(100vw - 20px)}
+  .wb-selrow.up{top:auto;bottom:calc(100% + 6px)}
+  .wb-font{padding:6px 11px;border-radius:9px;font-size:17px;color:var(--text);white-space:nowrap}
+  .wb-font:hover{background:var(--surface2)} .wb-font.on{background:var(--surface2);box-shadow:inset 0 0 0 2px var(--focus)}
+  .wb-tb .tcA{font-weight:800;font-size:17px;line-height:1;border-bottom:4px solid;padding:0 2px 1px;color:var(--text)}
   .wb-title{background:none;border:0;color:var(--text);font-weight:700;font-size:16px;width:220px;padding:8px 8px;border-radius:8px;outline:none;min-width:0}
   .wb-title:focus{background:var(--bg)}
   .wb-title:disabled{opacity:1}
@@ -2536,6 +2541,15 @@ const WB_NOTE = ['#fff27a','#ffc27a','#ff9ecd','#d4b5ff','#9ed8ff','#b4f0a4','#f
 const WB_HL = ['#ffe066','#8ce99a','#ff8fab','#74c0fc','#ffa94d'];
 const WB_SHAPES = { rect: 'Rectangle', round: 'Rounded box', ellipse: 'Circle', tri: 'Triangle', diamond: 'Diamond', star: 'Star', hex: 'Hexagon', para: 'Parallelogram', barrow: 'Block arrow', speech: 'Speech bubble' };
 const WB_LINES = { arrow: 'Arrow', darrow: 'Double arrow', line: 'Line' };
+const WB_FONTS = {
+  clean:  { name: 'Clean',       css: 'Outfit, system-ui, sans-serif' },
+  hand:   { name: 'Handwritten', css: '"Caveat", "Comic Sans MS", cursive', scale: 1.25 },
+  marker: { name: 'Marker',      css: '"Permanent Marker", "Comic Sans MS", cursive' },
+  serif:  { name: 'Fancy',       css: '"Playfair Display", Georgia, serif' },
+  mono:   { name: 'Typewriter',  css: '"Space Mono", "Courier New", monospace' },
+  poster: { name: 'Poster',      css: '"Bebas Neue", Impact, sans-serif', scale: 1.15 }
+};
+const wbFont = o => WB_FONTS[o.f] || WB_FONTS.clean;
 const newBoardCode = () => { let c = WB_ABC[Math.floor(Math.random() * WB_ABC.length)]; for (let i = 0; i < 5; i++) c += WB_CH[Math.floor(Math.random() * WB_CH.length)]; return c; };
 const cleanBoardCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const isBoardCode = c => /^[A-Z0-9]{6}$/.test(c) && /[A-Z]/.test(c);
@@ -2629,6 +2643,7 @@ function startWbHome(){
 
 function startBoard(code){
   show('board'); document.body.style.overflow = 'hidden';
+  if (!document.getElementById('wbFonts')) { const l = document.createElement('link'); l.id = 'wbFonts'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@500;700&family=Permanent+Marker&family=Playfair+Display:wght@500;800&family=Space+Mono:wght@400;700&display=swap'; document.head.append(l); }
   document.title = 'Whiteboard · GentiMeter';
   const B = WB_NS + code + '/';
   const joinUrl = location.origin + location.pathname + '?board=' + code + (qp.get('broker') ? '&broker=' + encodeURIComponent(qp.get('broker')) : '');
@@ -2644,6 +2659,9 @@ function startBoard(code){
   const view = { x: innerWidth / 2, y: innerHeight / 2, z: 1 };
   let userMoved = false, tool = 'select', shapeKind = 'rect', lineKind = 'arrow';
   const opt = { pen: WB_INK[0], penSize: 4, hl: WB_HL[0], hlSize: 22, note: WB_NOTE[0], text: WB_INK[0], shape: WB_INK[6], fill: 1, line: WB_INK[0], lineSize: 4 };
+  let selPanel = null;
+  const lastStyle = { note: {}, text: {}, shape: {} };
+  const remember = o => { lastStyle[o.t] = o.t === 'text' ? { f: o.f, b: o.b } : { f: o.f, b: o.b, tc: o.tc }; };
   let sel = new Set(), act = null, pinch = null, editing = null, spaceDown = false, lastTap = null, clip = null, maxZ = 0;
   const active = new Set(), pend = new Map(), ptrs = new Map();
   const undoS = [], redoS = [];
@@ -2748,13 +2766,14 @@ function startBoard(code){
     }
     r.x = num(o.x); r.y = num(o.y); r.w = num(o.w, 1, 20000); r.h = num(o.h, 0, 20000) || 0;
     if (r.x === null || r.y === null || r.w === null) return null;
-    if (t === 'note') { r.col = safeCol(o.col) || WB_NOTE[0]; r.txt = str(o.txt); r.likes = Array.isArray(o.likes) ? o.likes.filter(x => typeof x === 'string').slice(0, 300).map(x => x.slice(0, 20)) : []; }
-    else if (t === 'text') { r.col = safeCol(o.col) || WB_INK[0]; r.txt = str(o.txt); r.fs = num(o.fs, 8, 400) || 28; r.b = !!o.b; }
-    else if (t === 'shape') { r.k = WB_SHAPES[o.k] ? o.k : 'rect'; r.col = safeCol(o.col) || WB_INK[6]; r.fill = [0, 1, 2].includes(o.fill) ? o.fill : 1; r.sw = num(o.sw, 1, 30) || 3; r.txt = str(o.txt); }
+    if (t === 'note') { r.col = safeCol(o.col) || WB_NOTE[0]; r.txt = str(o.txt); r.likes = Array.isArray(o.likes) ? o.likes.filter(x => typeof x === 'string').slice(0, 300).map(x => x.slice(0, 20)) : []; r.fs = num(o.fs, 8, 200) || 0; txtStyle(r, o); }
+    else if (t === 'text') { r.col = safeCol(o.col) || WB_INK[0]; r.txt = str(o.txt); r.fs = num(o.fs, 8, 400) || 28; r.b = !!o.b; r.f = WB_FONTS[o.f] ? o.f : 'clean'; }
+    else if (t === 'shape') { r.k = WB_SHAPES[o.k] ? o.k : 'rect'; r.col = safeCol(o.col) || WB_INK[6]; r.fill = [0, 1, 2].includes(o.fill) ? o.fill : 1; r.sw = num(o.sw, 1, 30) || 3; r.txt = str(o.txt); txtStyle(r, o); }
     else if (t === 'path') { if (!Array.isArray(o.pts) || o.pts.length < 2) return null; r.col = safeCol(o.col) || WB_INK[0]; r.sw = num(o.sw, 1, 80) || 4; r.hl = !!o.hl; r.pts = o.pts.slice(0, 12000).map(n => num(n, -20000, 20000) || 0); if (r.pts.length % 2) r.pts.pop(); }
     else if (t === 'img') { if (typeof o.src !== 'string' || !/^[a-z0-9]{4,40}$/.test(o.src)) return null; r.src = o.src; }
     return r;
   }
+  function txtStyle(r, o){ r.b = !!o.b; r.f = WB_FONTS[o.f] ? o.f : 'clean'; r.tc = safeCol(o.tc) || ''; }
   function recvObj(id, raw, c){
     const o = sanitize(raw, id); if (!o) return;
     const local = objs.get(id), lv = local ? local.v : (tomb.get(id) || 0);
@@ -2818,10 +2837,11 @@ function startBoard(code){
     else if (o.t === 'path') { const s = svgE('svg'); s.append(svgE('path', { class: 'p', fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), svgE('path', { class: 'hit', fill: 'none', stroke: 'rgba(0,0,0,0)', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })); e.append(s); }
     else if (o.t === 'img') { const i = el('img'); i.alt = ''; i.draggable = false; e.append(i); }
   }
+  const noteFs = o => (o.fs || Math.min(64, o.w / 6.5)) * (wbFont(o).scale || 1);
   function wbFit(box, maxFs, minFs = 8){
-    let fs = Math.max(minFs, Math.round(maxFs)); box.style.fontSize = fs + 'px';
+    let fs = Math.max(minFs, Math.round(maxFs)); box.style.fontSize = fs + 'px'; box.style.overflowWrap = 'normal';
     while (fs > minFs && (box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1)) { fs = Math.max(minFs, fs - Math.max(1, Math.round(fs * .08))); box.style.fontSize = fs + 'px'; }
-    box.dataset.fs = fs;
+    box.style.overflowWrap = ''; box.dataset.fs = fs;
   }
   function render(o){
     let e = els.get(o.id);
@@ -2844,25 +2864,26 @@ function startBoard(code){
       if (o.t === 'note') {
         e.style.background = o.col;
         const nt = e.children[0], by = e.children[1].children[0], like = e.children[1].children[1];
+        nt.style.fontFamily = wbFont(o).css; nt.style.fontWeight = o.b ? 800 : 500; nt.style.color = o.tc || '#1e1e24';
         if (!isEd) nt.textContent = o.txt;
         by.textContent = o.by || '';
         const n = o.likes.length, mine = o.likes.includes(me.pid);
         like.textContent = '👍' + (n ? ' ' + n : ''); like.classList.toggle('on', mine); like.title = mine ? 'Remove your like' : 'Like this note';
-        wbFit(nt, Math.min(64, o.w / 6.5), 9);
+        wbFit(nt, noteFs(o), 9);
       } else if (o.t === 'text') {
         const tx = e.children[0];
-        tx.style.color = o.col; tx.style.fontSize = o.fs + 'px'; tx.style.fontWeight = o.b ? 800 : 500;
+        tx.style.color = o.col; tx.style.fontSize = o.fs * (wbFont(o).scale || 1) + 'px'; tx.style.fontWeight = o.b ? 800 : 500; tx.style.fontFamily = wbFont(o).css;
         if (!isEd) tx.textContent = o.txt;
       } else if (o.t === 'shape') {
         const s = e.children[0], p = s.firstChild, lbl = e.children[1];
         s.setAttribute('width', o.w); s.setAttribute('height', o.h);
         p.setAttribute('d', wbShapeD(o.k, o.w, o.h)); p.setAttribute('stroke', o.col); p.setAttribute('stroke-width', o.sw);
         p.setAttribute('fill', o.fill === 2 ? o.col : o.fill === 1 ? o.col + '2e' : 'none');
-        lbl.style.color = o.fill === 2 && wbIsDark(o.col) ? '#ffffff' : '#1e1e24';
+        lbl.style.color = o.tc || (o.fill === 2 && wbIsDark(o.col) ? '#ffffff' : '#1e1e24'); lbl.style.fontFamily = wbFont(o).css; lbl.style.fontWeight = o.b ? 800 : 500;
         lbl.style.paddingTop = o.k === 'speech' ? '6%' : ''; lbl.style.paddingBottom = o.k === 'speech' ? '26%' : o.k === 'tri' ? '4%' : '';
         if (o.k === 'tri') lbl.style.paddingTop = '38%';
         if (!isEd) lbl.textContent = o.txt;
-        wbFit(lbl, Math.min(40, Math.min(o.w, o.h) / 4), 8);
+        wbFit(lbl, Math.min(40, Math.min(o.w, o.h) / 4) * (wbFont(o).scale || 1), 8);
       } else if (o.t === 'path') {
         const s = e.firstChild, d = wbPathD(o.pts);
         s.setAttribute('width', o.w); s.setAttribute('height', Math.max(1, o.h));
@@ -2922,7 +2943,7 @@ function startBoard(code){
   }
 
   /* ---------- Selection ---------- */
-  function setSel(ids){ sel = new Set(ids.filter(id => objs.has(id))); drawSel(); buildSelBar(); }
+  function setSel(ids){ selPanel = null; sel = new Set(ids.filter(id => objs.has(id))); drawSel(); buildSelBar(); }
   function clearSel(){ if (!sel.size) return; sel = new Set(); drawSel(); buildSelBar(); }
   function drawSel(){
     ov.querySelectorAll('.wb-h').forEach(h => h.remove());
@@ -2949,6 +2970,7 @@ function startBoard(code){
     if (y + bh > innerHeight - 8) y = Math.max(76, Math.min(innerHeight - bh - 90, sy + 10));
     x = clamp(x, 10, innerWidth - bw - 10);
     selBar.style.transform = `translate(${x}px,${y}px)`;
+    const pr = selBar.querySelector('.wb-selrow'); if (pr) pr.classList.toggle('up', y + bh + pr.offsetHeight + 16 > innerHeight);
   }
   function change(fn){
     const ch = [];
@@ -2972,14 +2994,34 @@ function startBoard(code){
       selBar.append(b);
     }
     if (only('line')) { const k = list[0].k, nx = { arrow: 'darrow', darrow: 'line', line: 'arrow' }[k]; selBar.append(tbtn(k === 'arrow' ? '→' : k === 'darrow' ? '↔' : '—', 'Change to ' + WB_LINES[nx].toLowerCase(), () => change(o => { o.k = nx; }), 'txt')); }
-    if (only('text')) {
-      selBar.append(tbtn('A−', 'Smaller text', () => change(o => { o.fs = clamp(Math.round(o.fs / 1.2), 10, 300); }), 'txt'), tbtn('A+', 'Bigger text', () => change(o => { o.fs = clamp(Math.round(o.fs * 1.2), 10, 300); }), 'txt'));
-      const bb = tbtn('bold', 'Bold', () => change(o => { o.b = !list[0].b; })); if (list[0].b) bb.classList.add('on'); selBar.append(bb);
-    }
+    if (only('text')) selBar.append(tbtn('A−', 'Smaller text', () => change(o => { o.fs = clamp(Math.round(o.fs / 1.2), 10, 300); }), 'txt'), tbtn('A+', 'Bigger text', () => change(o => { o.fs = clamp(Math.round(o.fs * 1.2), 10, 300); }), 'txt'));
+    const wordy = list.filter(o => ['note', 'text', 'shape'].includes(o.t)); let panelRow = null;
     if (single && ['note', 'text', 'shape'].includes(single.t)) selBar.append(tbtn('edit', 'Edit text', () => startEdit(single.id)));
+    if (only('note')) {
+      const shown = o => { const b = els.get(o.id)?.querySelector('.nt'); return (+(b && b.dataset.fs) || noteFs(o)) / (wbFont(o).scale || 1); };
+      selBar.append(tbtn('A−', 'Smaller text', () => change(o => { o.fs = clamp(Math.round(shown(o) / 1.2), 8, 200); }), 'txt'), tbtn('A+', 'Bigger text', () => change(o => { o.fs = clamp(Math.round(shown(o) * 1.2), 8, 200); }), 'txt'));
+      if (list.some(o => o.fs)) selBar.append(tbtn('Auto', 'Size the text to fit the note automatically', () => change(o => { o.fs = 0; }), 'txt'));
+    }
+    if (wordy.length) {
+      const w0 = wordy[0], styled = fn => change(o => { if (!['note', 'text', 'shape'].includes(o.t)) return false; fn(o); remember(o); });
+      const bb = tbtn('bold', 'Bold text', () => styled(o => { o.b = !w0.b; })); if (w0.b) bb.classList.add('on'); selBar.append(bb);
+      const tcNow = w0.t === 'text' ? w0.col : (w0.tc || (w0.t === 'shape' && w0.fill === 2 && wbIsDark(w0.col) ? '#ffffff' : '#1e1e24'));
+      const cb = tbtn('', 'Text colour', () => { selPanel = selPanel === 'tc' ? null : 'tc'; buildSelBar(); }, 'tcb' + (selPanel === 'tc' ? ' on' : ''));
+      const A = el('span', 'tcA', 'A'); A.style.borderBottomColor = tcNow; cb.append(A); selBar.append(cb);
+      const fb = tbtn('Aa', 'Font', () => { selPanel = selPanel === 'font' ? null : 'font'; buildSelBar(); }, 'txt' + (selPanel === 'font' ? ' on' : '')); fb.style.fontFamily = wbFont(w0).css; selBar.append(fb);
+      if (selPanel === 'tc') {
+        const row = panelRow = el('div', 'wb-selrow');
+        WB_INK.forEach(c => row.append(swatch(c, tcNow === c, () => styled(o => { if (o.t === 'text') o.col = c; else o.tc = c; }))));
+        if (wordy.some(o => o.t !== 'text' && o.tc)) { const au = el('button', 'wb-font', 'Auto'); au.type = 'button'; au.title = 'Automatic text colour'; au.onclick = () => styled(o => { if (o.t !== 'text') o.tc = ''; }); row.append(au); }
+      } else if (selPanel === 'font') {
+        const row = panelRow = el('div', 'wb-selrow');
+        Object.entries(WB_FONTS).forEach(([k, f]) => { const b = el('button', 'wb-font' + ((w0.f || 'clean') === k ? ' on' : ''), f.name); b.type = 'button'; b.style.fontFamily = f.css; b.onclick = () => styled(o => { o.f = k; }); row.append(b); });
+      }
+    }
     if (only('note') && single) { const mine = single.likes.includes(me.pid); selBar.append(tbtn(mine ? '👍 Liked' : '👍 Like', mine ? 'Remove your like' : 'Like this note', () => toggleLike(single.id), 'txt' + (mine ? ' on' : ''))); }
     selBar.append(el('span', 'wb-sep'));
     selBar.append(tbtn('front', 'Bring to front', () => zOrder(1)), tbtn('back', 'Send to back', () => zOrder(-1)), tbtn('dup', 'Duplicate (Ctrl+D)', duplicate), tbtn('del', 'Delete', deleteSel, 'danger'));
+    if (panelRow) selBar.append(panelRow);
     drawSel();
   }
   function zOrder(dir){
@@ -3025,7 +3067,7 @@ function startBoard(code){
     box.oninput = () => {
       const cur = objs.get(id); if (!cur) return;
       cur.txt = box.innerText.replace(/\n$/, '').slice(0, 2000); stamp(cur);
-      if (cur.t === 'note') wbFit(box, Math.min(64, cur.w / 6.5), 9); else if (cur.t === 'shape') wbFit(box, Math.min(40, Math.min(cur.w, cur.h) / 4), 8);
+      if (cur.t === 'note') wbFit(box, noteFs(cur), 9); else if (cur.t === 'shape') wbFit(box, Math.min(40, Math.min(cur.w, cur.h) / 4) * (wbFont(cur).scale || 1), 8);
       pubSoon(id, 250); queueSel();
     };
     box.onblur = () => setTimeout(() => { if (editing && editing.id === id && document.activeElement !== box) endEdit(); }, 0);
@@ -3152,7 +3194,7 @@ function startBoard(code){
       let w = Math.abs(wx - act.wx), h = Math.abs(wy - act.wy);
       if (e.shiftKey) w = h = Math.max(w, h);
       const x = wx < act.wx ? act.wx - w : act.wx, y = wy < act.wy ? act.wy - h : act.wy;
-      if (!act.id) { act.id = rid(); active.add(act.id); setObj({ id: act.id, t: 'shape', k: shapeKind, x, y, w: Math.max(w, 1), h: Math.max(h, 1), col: opt.shape, fill: opt.fill, sw: 3, txt: '', z: topZ(), by: me.name }, 'soon'); }
+      if (!act.id) { act.id = rid(); active.add(act.id); setObj({ id: act.id, t: 'shape', k: shapeKind, x, y, w: Math.max(w, 1), h: Math.max(h, 1), col: opt.shape, fill: opt.fill, sw: 3, txt: '', z: topZ(), by: me.name, ...lastStyle.shape }, 'soon'); }
       else { const o = objs.get(act.id); if (!o) return; Object.assign(o, { x: wbR1(x), y: wbR1(y), w: wbR1(Math.max(w, 1)), h: wbR1(Math.max(h, 1)) }); setObj(o, 'soon'); }
     } else if (act.k === 'line') {
       if (!act.id && Math.hypot(dxs, dys) < 5) return;
@@ -3182,15 +3224,15 @@ function startBoard(code){
     else if (a.k === 'erase') { record(a.ch); }
     else if (a.k === 'place') {
       if (tool === 'note') {
-        const w = 220, o = { id: rid(), t: 'note', x: wbR1(a.wx - w / 2), y: wbR1(a.wy - w / 2), w, h: w, col: opt.note, txt: '', likes: [], z: topZ(), by: me.name };
+        const w = 220, o = { id: rid(), t: 'note', x: wbR1(a.wx - w / 2), y: wbR1(a.wy - w / 2), w, h: w, col: opt.note, txt: '', likes: [], z: topZ(), by: me.name, ...lastStyle.note };
         setObj(o); setTool('select'); startEdit(o.id, true);
       } else {
-        const o = { id: rid(), t: 'text', x: wbR1(a.wx), y: wbR1(a.wy - 18), w: 340, col: opt.text, txt: '', fs: 32, b: false, z: topZ(), by: me.name, h: 0 };
+        const o = { id: rid(), t: 'text', x: wbR1(a.wx), y: wbR1(a.wy - 18), w: 340, col: opt.text, txt: '', fs: 32, b: false, z: topZ(), by: me.name, h: 0, ...lastStyle.text };
         setObj(o, 'none'); setTool('select'); startEdit(o.id, true);
       }
     } else if (a.k === 'shape') {
       let id = a.id;
-      if (!id) { const sq = ['ellipse', 'star', 'hex', 'diamond'].includes(shapeKind), w = sq ? 150 : 180, h = sq ? 150 : 120; id = rid(); setObj({ id, t: 'shape', k: shapeKind, x: wbR1(a.wx - w / 2), y: wbR1(a.wy - h / 2), w, h, col: opt.shape, fill: opt.fill, sw: 3, txt: '', z: topZ(), by: me.name }); }
+      if (!id) { const sq = ['ellipse', 'star', 'hex', 'diamond'].includes(shapeKind), w = sq ? 150 : 180, h = sq ? 150 : 120; id = rid(); setObj({ id, t: 'shape', k: shapeKind, x: wbR1(a.wx - w / 2), y: wbR1(a.wy - h / 2), w, h, col: opt.shape, fill: opt.fill, sw: 3, txt: '', z: topZ(), by: me.name, ...lastStyle.shape }); }
       else { active.delete(id); pubObj(id); }
       record([{ id, before: null, after: snap(id) }]); setTool('select'); setSel([id]);
     } else if (a.k === 'line') {
@@ -3501,6 +3543,11 @@ function startBoard(code){
   document.addEventListener('pointerdown', e => { if (!e.target.closest('#wbMenu,#wbPList,#wbMenuBtn,#wbPeople')) closePops(); }, true);
 
   /* ---------- Export & files ---------- */
+  function wbTextBlock(ctx, o, text, x, y, maxW, size, color, lh, max){
+    ctx.font = `${o.b ? 800 : 500} ${size}px ${wbFont(o).css}`; ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    let lines = wrapLines(ctx, text, maxW); if (max && lines.length > max) { lines = lines.slice(0, max); lines[max - 1] += '…'; }
+    lines.forEach((l, i) => ctx.fillText(l, x, y + i * size * lh));
+  }
   function drawObj(ctx, o, fsOf){
     ctx.save();
     if (o.t === 'path') {
@@ -3515,8 +3562,8 @@ function startBoard(code){
       if (o.fill) { ctx.fillStyle = o.fill === 2 ? o.col : o.col + '2e'; ctx.fill(p); }
       ctx.strokeStyle = o.col; ctx.lineWidth = o.sw; ctx.lineJoin = 'round'; ctx.stroke(p);
       if (o.txt) {
-        const fs = fsOf(o, 20), col = o.fill === 2 && wbIsDark(o.col) ? '#ffffff' : '#1e1e24';
-        ctx.font = RF(fs, 600); const lines = wrapLines(ctx, o.txt, o.w * .76), lh = fs * 1.2;
+        const fs = fsOf(o, 20), col = o.tc || (o.fill === 2 && wbIsDark(o.col) ? '#ffffff' : '#1e1e24');
+        ctx.font = `${o.b ? 800 : 500} ${fs}px ${wbFont(o).css}`; const lines = wrapLines(ctx, o.txt, o.w * .76), lh = fs * 1.2;
         const top = o.k === 'tri' ? o.h * .38 : 0, bottom = o.k === 'speech' ? o.h * .78 : o.h;
         const y0 = top + (bottom - top - lines.length * lh) / 2;
         ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; lines.forEach((l, i) => ctx.fillText(l, o.w / 2, y0 + i * lh + fs * .05));
@@ -3524,12 +3571,12 @@ function startBoard(code){
     } else if (o.t === 'note') {
       ctx.translate(o.x, o.y); ctx.shadowColor = 'rgba(0,0,0,.14)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6;
       ctx.fillStyle = o.col; rrect(ctx, 0, 0, o.w, o.h, 4); ctx.fill(); ctx.shadowColor = 'transparent';
-      const fs = fsOf(o, 24); textBlock(ctx, o.txt, 14, 14, o.w - 28, fs, 600, '#1e1e24', { lh: 1.22, max: Math.max(1, Math.floor((o.h - 44) / (fs * 1.22))) });
+      const fs = fsOf(o, 24); wbTextBlock(ctx, o, o.txt, 14, 14, o.w - 28, fs, o.tc || '#1e1e24', 1.22, Math.max(1, Math.floor((o.h - 44) / (fs * 1.22))));
       ctx.font = RF(12, 600); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
       ctx.fillText(fitText(ctx, o.by || '', o.w - 80), 14, o.h - 17);
       if (o.likes.length) { ctx.textAlign = 'right'; ctx.fillText('👍 ' + o.likes.length, o.w - 14, o.h - 17); }
     } else if (o.t === 'text') {
-      textBlock(ctx, o.txt, o.x, o.y, o.w, o.fs, o.b ? 800 : 500, o.col, { lh: 1.2 });
+      wbTextBlock(ctx, o, o.txt, o.x, o.y, o.w, o.fs * (wbFont(o).scale || 1), o.col, 1.2);
     } else if (o.t === 'img') {
       const i = els.get(o.id)?.firstChild; if (i && i.complete && i.naturalWidth) ctx.drawImage(i, o.x, o.y, o.w, o.h);
     }
@@ -3576,6 +3623,7 @@ function startBoard(code){
 
   /* ---------- Go ---------- */
   setTool('select'); applyView(); applyMeta(); renderPeople(); afterChange();
+  try { document.fonts.addEventListener('loadingdone', () => objs.forEach(o => { if (o.t === 'note' || o.t === 'shape' || o.t === 'text') render(o); })); } catch {}
   $('wbEmpty').classList.toggle('hidden', objs.size > 0);
   connect();
   if (!me.name) askName(false);
