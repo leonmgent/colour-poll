@@ -44,10 +44,47 @@
 
   .av{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:17px;line-height:1;flex:none;color:#10111c;font-weight:800}
 
+  /* ---------- Hub (GentiMeter home) ---------- */
+  .hub{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:70px 16px 40px;gap:42px;text-align:center;
+    background:radial-gradient(circle at 15% 10%,rgba(79,172,254,.16),transparent 40%),radial-gradient(circle at 85% 90%,rgba(166,108,255,.18),transparent 45%),var(--bg)}
+  .hub h1{font-size:clamp(52px,11vw,110px);font-weight:800;letter-spacing:-.03em;line-height:1}
+  .hub .sub{color:var(--muted);font-size:clamp(17px,2.4vw,21px);margin-top:14px}
+  .folders{display:flex;flex-wrap:wrap;justify-content:center;gap:44px 36px;padding-top:20px}
+  .folder{position:relative;width:260px;height:200px;cursor:pointer;perspective:900px;background:none;text-align:left;animation:rise .5s ease both}
+  .folder .back{position:absolute;inset:0;border-radius:8px 18px 18px 18px;background:#3d6fd8;box-shadow:0 24px 50px rgba(0,0,0,.45)}
+  .folder .back::before{content:'';position:absolute;left:0;top:-20px;width:112px;height:28px;border-radius:12px 16px 0 0;background:#3d6fd8}
+  .folder .paper{position:absolute;left:18px;right:18px;top:14px;height:130px;border-radius:10px;background:#fff;transition:transform .35s cubic-bezier(.3,1.4,.5,1);display:flex;align-items:flex-end;gap:8px;padding:14px 16px}
+  .folder .paper i{flex:1;border-radius:5px 5px 2px 2px}
+  .folder .paper2{top:24px;left:30px;right:10px;background:#e8ecf7;transform:rotate(4deg)}
+  .folder .cover{position:absolute;left:0;right:0;bottom:0;height:76%;border-radius:14px 14px 18px 18px;transform-origin:bottom center;transition:transform .35s cubic-bezier(.3,1.3,.5,1);
+    background:linear-gradient(155deg,#5aa2ff,#8b6cff 70%,#a66cff);display:flex;flex-direction:column;justify-content:flex-end;padding:18px 20px;color:#fff;box-shadow:inset 0 2px 0 rgba(255,255,255,.35)}
+  .folder .cover b{font-size:26px;font-weight:800;letter-spacing:-.01em}
+  .folder .cover small{font-size:14px;opacity:.9;font-weight:600}
+  .folder .cover .fi{position:absolute;top:16px;right:18px;font-size:30px}
+  .folder:hover .paper{transform:translateY(-26px)} .folder:hover .paper2{transform:translateY(-14px) rotate(6deg)}
+  .folder:hover .cover{transform:rotateX(-22deg)}
+  .folder:focus-visible{outline:3px solid var(--focus);outline-offset:10px;border-radius:18px}
+  .folder.opening .cover{transform:rotateX(-70deg)} .folder.opening .paper{transform:translateY(-60px) scale(1.08)}
+  .folder.opening{animation:folderGo .5s ease forwards}
+  @keyframes folderGo{60%{transform:scale(1.05)}100%{transform:scale(1.15);opacity:0}}
+  .folder.soon{cursor:default;opacity:.55}
+  .folder.soon .back,.folder.soon .back::before{background:#2a2f48}
+  .folder.soon .cover{background:linear-gradient(155deg,#343a5a,#2a2f48);border:2px dashed #4a5178}
+  .folder.soon:hover .cover{transform:none} .folder.soon:hover .paper{transform:none}
+  .hubjoin{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 10px 10px 18px;flex-wrap:wrap;justify-content:center}
+  .hubjoin span{color:var(--muted);font-weight:600}
+  .hubjoin .field{width:170px;font-size:18px;padding:10px 12px}
+  .hubjoin .btn{padding:11px 18px}
+  .hubresume{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.35);color:var(--good);border-radius:99px;padding:8px 16px;font-weight:600;font-size:15px}
+  .backbtn{position:fixed;top:18px;left:18px;display:inline-flex;align-items:center;gap:8px;background:var(--surface2);border-radius:12px;padding:10px 14px 10px 10px;font-weight:700;font-size:15px;z-index:5}
+  .backbtn:hover{background:#2a2f4a}
+  .backbtn svg{width:20px;height:20px}
+  .crumb{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+
   /* ---------- Landing ---------- */
   .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
   .landing h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.02em}
-  .landing p.sub{color:var(--muted);font-size:18px}
+  .landing p.sub{color:var(--muted);font-size:18px;margin-top:10px}
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;width:100%;max-width:640px}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;text-align:left}
   .card h2{font-size:20px;font-weight:600}
@@ -473,9 +510,36 @@
 </svg>
 
 <!-- ===== Landing ===== -->
-<section id="landing" class="landing hidden">
+<section id="hub" class="hub hidden">
   <div>
     <h1><span class="rainbow-text">GentiMeter</span></h1>
+    <p class="sub">Pick a folder to get started.</p>
+  </div>
+  <div class="hubresume hidden" id="hubResume"></div>
+  <div class="folders">
+    <button class="folder" id="engFolder" type="button" aria-label="Open Engagement">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper"><i style="height:45%;background:#ff5f6d"></i><i style="height:80%;background:#ffc371"></i><i style="height:60%;background:#47e5bc"></i><i style="height:95%;background:#4facfe"></i></div>
+      <div class="cover"><span class="fi">📊</span><b>Engagement</b><small>Live polls, quizzes &amp; word clouds</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.1s">
+      <div class="back"></div>
+      <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More tools on the way</small></div>
+    </div>
+  </div>
+  <form class="hubjoin" id="hubJoin">
+    <span>Got a code?</span>
+    <input class="field code-field" id="hubCode" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="000000">
+    <button class="btn rain" type="submit">Join</button>
+  </form>
+</section>
+
+<section id="landing" class="landing hidden">
+  <button class="backbtn" id="backHub" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>GentiMeter home</button>
+  <div>
+    <div class="crumb rainbow-text">GentiMeter</div>
+    <h1><span class="rainbow-text">Engagement</span></h1>
     <p class="sub">Live answers, straight onto the big screen.</p>
   </div>
   <div class="cards">
@@ -755,7 +819,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['landing','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','landing','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -972,7 +1036,7 @@ function createSynth(){
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain(); master.gain.value = 0;
     const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
-    bus = ctx.createGain(); bus.gain.value = .9; bus.connect(master);
+    bus = ctx.createGain(); bus.gain.value = 1.6; bus.connect(master);
     noise = ctx.createBuffer(1, ctx.sampleRate * .5, ctx.sampleRate);
     const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     return ctx;
@@ -1060,7 +1124,12 @@ function createMusicPlayer(){
       current = null;
     },
     get current(){ return current; },
-    async unlock(){ return synth.unlock(); },
+    async preload(){ if (!audio) { const blob = await idbGet('custom').catch(() => null); if (blob) { audio = new Audio(URL.createObjectURL(blob)); audio.loop = true; audio.volume = 0; } } },
+    // call straight from a click/keypress so the browser allows sound
+    unlock(wantCustom){
+      if (wantCustom && audio && audio.paused) { audio.volume = 0; const p = audio.play(); if (p) p.then(() => { if (current !== 'custom') audio.pause(); }).catch(() => {}); }
+      return synth.unlock();
+    },
     resetCustom(){ if (audio) { audio.pause(); URL.revokeObjectURL(audio.src); audio = null; } if (current === 'custom') current = null; }
   };
 }
@@ -1069,7 +1138,7 @@ const sceneOf = s => s.type === 'lobby' ? 'lobby' : s.type === 'leaderboard' ? '
 function cleanMusic(m){
   m = m && typeof m === 'object' ? m : {};
   const scenes = {}; MUSIC_SCENES.forEach(([k]) => scenes[k] = m.scenes && typeof m.scenes[k] === 'boolean' ? m.scenes[k] : true);
-  return { track: m.track === 'custom' || MUSIC_TRACKS[m.track] ? m.track : 'off', volume: Math.min(100, Math.max(0, parseInt(m.volume ?? 40) || 0)), scenes, customName: String(m.customName || '').slice(0, 80) };
+  return { track: m.track === 'custom' || MUSIC_TRACKS[m.track] ? m.track : 'off', volume: Math.min(100, Math.max(0, parseInt(m.volume ?? 60) || 0)), scenes, customName: String(m.customName || '').slice(0, 80) };
 }
 
 /* ================= Results report (PDF) ================= */
@@ -1555,7 +1624,8 @@ async function exportResults(btn){
 if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
 else if (qp.get('code')) startJoin(qp.get('code').replace(/\D/g,''));
-else show('landing');
+else if (qp.get('app') === 'engagement') show('landing');
+else show('hub');
 
 $('joinForm').onsubmit = e => {
   e.preventDefault();
@@ -1563,7 +1633,11 @@ $('joinForm').onsubmit = e => {
   if (code.length === 6) nav('code=' + code); else $('codeInput').focus();
 };
 $('hostBtn').onclick = () => nav('host=1');
-['homeAdmin','homeHost','homeJoin'].forEach(id => { $(id).onclick = () => nav(''); });
+['homeAdmin','homeHost','homeJoin'].forEach(id => { $(id).onclick = () => nav('app=engagement'); });
+$('backHub').onclick = () => nav('');
+$('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTimeout(() => nav('app=engagement'), 420); };
+$('hubJoin').onsubmit = e => { e.preventDefault(); const c = $('hubCode').value.replace(/\D/g,''); if (c.length === 6) nav('code=' + c); else $('hubCode').focus(); };
+if (ss.get('cp_hostCode')) { $('hubResume').textContent = 'Session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Open Engagement to go back to it.'; $('hubResume').classList.remove('hidden'); }
 if (ss.get('cp_hostCode')) { $('resumeNote').textContent = 'Your session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Start hosting to go back to it.'; $('resumeNote').classList.remove('hidden'); }
 $('adminBtn').onclick = () => nav('admin=1');
 
@@ -1613,6 +1687,7 @@ function startAdmin(){
 
   /* ---- background music ---- */
   const preview = createMusicPlayer(); let previewing = null;
+  if (settings.music.customName) preview.preload();
   function stopPreview(){ preview.stop(); previewing = null; }
   function renderMusic(){
     const M = settings.music, box = $('musicBox'); box.textContent = '';
@@ -1632,7 +1707,7 @@ function startAdmin(){
         pv.onclick = async e => {
           e.stopPropagation();
           if (previewing === id) { stopPreview(); return renderMusic(); }
-          stopPreview(); await preview.unlock(); previewing = id; renderMusic();
+          stopPreview(); await preview.unlock(id === 'custom'); previewing = id; M.track = id; save(); renderMusic();
           const ok = await preview.play(id, Math.max(.05, M.volume / 100)); if (!ok) { previewing = null; renderMusic(); }
         };
         card.append(pv);
@@ -1663,7 +1738,7 @@ function startAdmin(){
     const f = $('audioFile').files[0]; $('audioFile').value = ''; if (!f) return;
     if (f.size > 40 * 1024 * 1024) return alert('That file is too big. Please use a song under 40 MB.');
     try {
-      await idbPut('custom', f); stopPreview(); preview.resetCustom();
+      await idbPut('custom', f); stopPreview(); preview.resetCustom(); preview.preload();
       settings.music.customName = f.name; settings.music.track = 'custom'; save(); renderMusic();
     } catch { alert("Couldn't save that song in this browser."); }
   };
@@ -2564,7 +2639,8 @@ function startHost(){
   function syncMusicBtn(){
     const sp = $('musicBtn').querySelector('span');
     sp.textContent = musicBlocked && !musicMuted ? 'Click to start music' : musicMuted ? 'Music off' : 'Music on';
-    $('musicBtn').classList.toggle('good', !musicMuted && !musicBlocked); $('musicBtn').classList.toggle('ghost', musicMuted || musicBlocked);
+    $('musicBtn').classList.toggle('good', !musicMuted && !musicBlocked); $('musicBtn').classList.toggle('ghost', musicMuted);
+    $('musicBtn').classList.toggle('live', musicBlocked && !musicMuted);
   }
   async function syncMusic(){
     if (M.track === 'off') return;
@@ -2574,10 +2650,15 @@ function startHost(){
     musicBlocked = !ok; syncMusicBtn();
   }
   // browsers only allow sound after the page has been clicked or a key pressed
-  const unlockMusic = async () => { await player.unlock(); if (musicBlocked) { player.stop(); syncMusic(); } };
+  if (M.track === 'custom') player.preload();
+  const unlockMusic = async e => {
+    if (e && e.target && e.target.closest && e.target.closest('#musicBtn')) return;   // the music button handles itself
+    await player.unlock(M.track === 'custom');
+    if (musicBlocked) { player.stop(); syncMusic(); }
+  };
   document.addEventListener('pointerdown', unlockMusic); document.addEventListener('keydown', unlockMusic);
   $('musicBtn').onclick = async () => {
-    await player.unlock();
+    await player.unlock(M.track === 'custom');
     if (musicBlocked && !musicMuted) { player.stop(); return syncMusic(); }
     musicMuted = !musicMuted; ss.set('cp_musicMute', musicMuted); syncMusic();
   };
@@ -2762,7 +2843,7 @@ function startHost(){
     if (!confirm('End the session? Everyone will be disconnected and the results will be cleared.\n\nWant to keep them? Press Cancel, then use Export results (PDF) in this menu first.')) return;
     clients.forEach(c => { if (c.connected) { c.publish(hTopic, '', { retain: true, qos: 1 }); c.publish(cTopic, '', { retain: true, qos: 1 }); } });
     ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked','cp_stealOn','cp_broadcast'].forEach(k => ss.del(k));
-    setTimeout(() => nav(''), 400);
+    setTimeout(() => nav('app=engagement'), 400);
   };
   $('fullBtn').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
 
@@ -2791,7 +2872,7 @@ function startJoin(code){
   const timeout = setTimeout(() => {
     if (st) return;
     msg("Can't find a session with code " + fmtCode(code) + '. Check the code on the screen.', true);
-    const b = el('button', 'btn ghost', 'Try another code'); b.onclick = () => nav(''); $('joinPanel').append(b);
+    const b = el('button', 'btn ghost', 'Try another code'); b.onclick = () => nav('app=engagement'); $('joinPanel').append(b);
   }, 9000);
 
   function send(payload){
