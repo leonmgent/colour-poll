@@ -103,7 +103,7 @@
   .pmdate{width:auto;color-scheme:dark}
   .pmcount{font-weight:700;font-size:17px}
   .pmprev{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .pmprev img{width:100%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.4);background:#fff}
+  .pmprev img{width:100%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.4);background:#fff;cursor:pointer}
   .pmprev .pmfirst{grid-column:1/-1}
   .genbtn{font-size:20px;padding:18px}
   .folder.pm-f .back,.folder.pm-f .back::before{background:#0f766e}
@@ -622,6 +622,7 @@
       <div class="chips" id="pmQuick"></div>
       <div class="row">Include <select class="sel" id="pmMode"><option value="overlap">jobs happening at any point in the range</option><option value="starts">only jobs that start in the range</option></select></div>
       <div class="row" style="align-items:flex-start">Statuses <div class="chips" id="pmStatus"></div></div>
+      <label class="row" style="cursor:pointer"><input type="checkbox" id="pmSites" checked style="width:20px;height:20px;accent-color:#3ddc97"> Add a page for every site, with all its details and a map</label>
       <input class="field sm" id="pmTitle" maxlength="80" value="Install report" placeholder="Report title">
     </div>
     <div class="pmcard hidden" id="pmStep3">
@@ -1703,10 +1704,10 @@ const PM_FIELDS = [
   ['engineer', 'Engineer / owner', h => /engineer|owner|assignee|lead|resource/i.test(h)],
   ['supplier', 'Supplier',     h => /supplier|vendor|contractor/i.test(h)],
   ['scheme',   'Scheme / ref', h => /scheme|ref|wo |work order/i.test(h)],
-  ['address',  'Address',      h => /address|location/i.test(h)]
+  ['address',  'Address',      h => /address|location|postcode/i.test(h)]
 ];
-const STATUS_COLOURS = [[/complete|done|closed/i, '#3ddc97'], [/schedul|booked|planned/i, '#ff8fd6'], [/pending|remed/i, '#4facfe'],
-  [/resourc/i, '#ffd84d'], [/await|survey|hold/i, '#ffc371'], [/cancel|n\/a|^na$/i, '#9aa0b8'], [/progress|active|live/i, '#a66cff']];
+const STATUS_COLOURS = [[/complete|done|closed/i, '#2fbf85'], [/schedul|booked|planned/i, '#ec6fc2'], [/pending|remed/i, '#3d97f0'],
+  [/resourc/i, '#f2c230'], [/await|survey|hold/i, '#f59e4c'], [/cancel|n\/a|^na$/i, '#9aa0b8'], [/progress|active|live/i, '#8b5cf6']];
 const statusColour = s => { for (const [re, c] of STATUS_COLOURS) if (re.test(s)) return c; return hashColour(s || '?').bg; };
 const DAY = 86400000;
 const dayStart = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -1722,118 +1723,258 @@ function toDate(v){
   const d = new Date(s); return isNaN(d) || !/\d{4}/.test(s) ? null : dayStart(d);
 }
 const fmtDay = (d, long) => d ? d.toLocaleDateString('en-GB', long ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: '2-digit', month: 'short', year: '2-digit' }) : 'TBC';
+const fmtDayW = d => d ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'TBC';
 const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const jobDays = j => j.start ? Math.round(((j.end || j.start) - j.start) / DAY) + 1 : 0;
 
-/* ---- build the PDF pages for a filtered set of jobs ---- */
+/* ---- free UK location lookup (postcodes.io, no key needed) ---- */
+const POSTCODE_RE = /\b([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})\b/i;
+const OUTCODE_RE = /\b([A-Z]{1,2}\d[A-Z\d]?)\s*$/i;
+async function fetchJson(url, body){
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 9000);
+  try { const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal } : { signal: ctl.signal }); return r.ok ? await r.json() : null; }
+  catch { return null; } finally { clearTimeout(t); }
+}
+async function geocodeJobs(jobs, onProgress){
+  const cache = ls.get('pm_geo') || {};
+  const done = () => ls.set('pm_geo', cache);
+  const need = jobs.filter(j => !j.geo);
+  // 1) full postcodes in bulk
+  const pcs = [...new Set(need.map(j => j.postcode).filter(p => p && !(p in cache)))];
+  for (let i = 0; i < pcs.length; i += 100) {
+    const res = await fetchJson('https://api.postcodes.io/postcodes', { postcodes: pcs.slice(i, i + 100) });
+    (res && res.result || []).forEach(x => { cache[x.query.toUpperCase()] = x.result ? { lat: x.result.latitude, lon: x.result.longitude, area: x.result.admin_district || '', region: x.result.region || x.result.country || '', how: 'postcode' } : null; });
+    onProgress && onProgress(Math.min(pcs.length, i + 100), pcs.length);
+  }
+  let n = 0;
+  for (const j of need) {
+    if (j.postcode && cache[j.postcode]) { j.geo = cache[j.postcode]; continue; }
+    // 2) postcode area (e.g. "BS1") then 3) the town / site name
+    const oc = (j.postcode || '').split(' ')[0] || (j.address.match(OUTCODE_RE) || [])[1];
+    if (oc) {
+      const k = 'oc:' + oc.toUpperCase();
+      if (!(k in cache)) { const r = await fetchJson('https://api.postcodes.io/outcodes/' + encodeURIComponent(oc)); cache[k] = r && r.result && r.result.latitude ? { lat: r.result.latitude, lon: r.result.longitude, area: (r.result.admin_district || [])[0] || '', region: (r.result.region || r.result.country || [])[0] || '', how: 'area' } : null; }
+      if (cache[k]) { j.geo = cache[k]; continue; }
+    }
+    const town = String(j.site || '').replace(/\(.*?\)/g, '').replace(/\b(LONDON|NORTH|SOUTH|EAST|WEST|CENTRAL|EXCHANGE|TE|BT)\b/gi, ' ').trim().split(/\s+/).slice(0, 2).join(' ');
+    if (town) {
+      const k = 'pl:' + town.toUpperCase();
+      if (!(k in cache)) { const r = await fetchJson('https://api.postcodes.io/places?limit=1&q=' + encodeURIComponent(town)); const p = r && r.result && r.result[0]; cache[k] = p ? { lat: p.latitude, lon: p.longitude, area: p.county_unitary || p.district_borough || p.name_1 || '', region: p.region || p.country || '', how: 'town' } : null; }
+      if (cache[k]) j.geo = cache[k];
+    }
+    onProgress && onProgress(++n, need.length, true);
+  }
+  done();
+}
+
+/* ---- UK map (outline from the free world-atlas dataset) ---- */
+let UK_SHAPES = null;
+async function loadUkShapes(){
+  if (UK_SHAPES) return UK_SHAPES;
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js', () => window.topojson);
+  const w = await fetchJson('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+  if (!w) throw new Error('map');
+  const feats = topojson.feature(w, w.objects.countries).features;
+  UK_SHAPES = { uk: feats.find(f => f.id === '826'), other: feats.filter(f => ['372', '250', '056', '528', '208', '578'].includes(f.id)) };
+  return UK_SHAPES;
+}
+// equirectangular with a latitude correction, good enough for the UK
+function ukProjector(x, y, w, h, bounds = { lon0: -8.8, lon1: 2.2, lat0: 49.7, lat1: 60.95 }){
+  const k = Math.cos(54.5 * Math.PI / 180), bw = (bounds.lon1 - bounds.lon0) * k, bh = bounds.lat1 - bounds.lat0;
+  const s = Math.min(w / bw, h / bh), ox = x + (w - bw * s) / 2, oy = y + (h - bh * s) / 2;
+  return (lon, lat) => [ox + (lon - bounds.lon0) * k * s, oy + (bounds.lat1 - lat) * s];
+}
+function drawUkMap(ctx, x, y, w, h, pins, o = {}){
+  ctx.save();
+  rrect(ctx, x, y, w, h, 18); ctx.fillStyle = '#e9f2fb'; ctx.fill(); ctx.clip();
+  const P = ukProjector(x + 10, y + 10, w - 20, h - 20, o.bounds);
+  const drawFeat = (f, fill, stroke) => {
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    ctx.beginPath();
+    polys.forEach(poly => poly.forEach(ring => ring.forEach(([lo, la], i) => { const [px, py] = P(lo, la); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); })));
+    ctx.fillStyle = fill; ctx.fill('evenodd'); ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke();
+  };
+  if (UK_SHAPES) { UK_SHAPES.other.forEach(f => drawFeat(f, '#f4f6fa', '#d5dbe6')); drawFeat(UK_SHAPES.uk, '#ffffff', '#9fb0c9'); }
+  else { ctx.fillStyle = '#9aa0b8'; ctx.font = RF(18, 600); ctx.textAlign = 'center'; ctx.fillText('Map unavailable offline', x + w / 2, y + h / 2); }
+  const size = o.pinSize || 14;
+  pins.forEach(p => {
+    const [px, py] = P(p.lon, p.lat);
+    if (o.big) {
+      // teardrop pin with a pulse ring
+      ctx.beginPath(); ctx.arc(px, py, size * 2.6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,95,109,.14)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, size * 1.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,95,109,.22)'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.bezierCurveTo(px - size * .9, py - size * 1.4, px - size * 1.3, py - size * 2.2, px - size * 1.3, py - size * 2.8);
+      ctx.arc(px, py - size * 2.8, size * 1.3, Math.PI, 0); ctx.bezierCurveTo(px + size * 1.3, py - size * 2.2, px + size * .9, py - size * 1.4, px, py);
+      ctx.fillStyle = p.colour || '#ff5f6d'; ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.arc(px, py - size * 2.8, size * .55, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+      if (p.label) { ctx.font = RF(20, 800); const tw = ctx.measureText(p.label).width, ly = py - size * 3.6; let lx = px + size * 2; if (lx + tw + 30 > x + w) lx = Math.max(x + 10, px - size * 2 - tw - 20);
+        rrect(ctx, lx, ly - 18, tw + 20, 34, 10); ctx.fillStyle = '#14151f'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.label, lx + 10, ly - 1); }
+    } else {
+      ctx.beginPath(); ctx.arc(px, py, size / 2, 0, Math.PI * 2); ctx.fillStyle = p.colour || '#ff5f6d'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+
+/* ---- build the PDF pages ---- */
 async function buildPmPages(o){
-  // o: { title, from, to, fileName, jobs:[{status,site,type,start,end,engineer,supplier,scheme,address}], tbc, cols }
+  // o: { title, from, to, fileName, jobs, tbc, cols, headers, sitePages }
   try { await Promise.all([document.fonts.load(RF(40, 800)), document.fonts.load(RF(40, 600)), document.fonts.load(RF(40, 700))]); } catch {}
-  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee';
+  const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee', SOFT = '#f5f6fa';
   const pages = []; let ctx, y, pageTitle = '';
   const rangeTxt = `${fmtDay(o.from, true)} – ${fmtDay(o.to, true)}`;
-  function newPage(title){
+  const jobs = [...o.jobs].sort((a, b) => a.start - b.start || String(a.site).localeCompare(String(b.site)));
+  function newPage(title, sub){
     const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
     const g = ctx.createLinearGradient(0, 0, PW, 0); RAINBOW.forEach((c, i) => g.addColorStop(i / 4, c)); ctx.fillStyle = g; ctx.fillRect(0, 0, PW, 12);
     ctx.font = RF(30, 800); const tw = ctx.measureText('GentiMeter').width;
     const g2 = ctx.createLinearGradient(M, 0, M + tw, 0); RAINBOW.forEach((c, i) => g2.addColorStop(i / 4, c));
     ctx.fillStyle = g2; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('GentiMeter', M, 40);
-    textBlock(ctx, `PM Tools  ·  ${rangeTxt}`, M + tw + 24, 48, 1000, 20, 600, MUTED);
+    textBlock(ctx, `PM Tools  ·  ${o.title}  ·  ${rangeTxt}`, M + tw + 24, 48, 1100, 20, 600, MUTED, { max: 1 });
     textBlock(ctx, 'Created by Leon Gent', PW - M, 48, 400, 18, 600, '#b3b7c8', { align: 'right' });
-    pageTitle = title; y = textBlock(ctx, title, M, 100, PW - 2 * M, 44, 800, INK, { max: 1 }) + 18;
+    pageTitle = title;
+    if (title) y = textBlock(ctx, title, M, 100, PW - 2 * M, 44, 800, INK, { max: 1 }) + 14; else y = 100;
+    if (sub) y = textBlock(ctx, sub, M, y - 6, PW - 2 * M, 21, 600, MUTED, { max: 1 }) + 18;
     pages.push(cv);
   }
   const room = h => { if (y + h > PH - 70) { newPage(pageTitle.replace(/ \(continued\)$/, '') + ' (continued)'); return true; } return false; };
   const heading = (t, x = M, w = PW - 2 * M) => textBlock(ctx, t, x, y, w, 26, 800, INK) + 14;
-  const count = (key) => { const m = new Map(); o.jobs.forEach(j => { const k = (j[key] || 'Not set').toString().trim() || 'Not set'; m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const count = (key, list = jobs) => { const m = new Map(); list.forEach(j => { const k = (j[key] || 'Not set').toString().trim() || 'Not set'; m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const catCol = (name, i) => PALETTE[i % PALETTE.length];
   function hbars(x, w, entries, colourFn, max = 8){
     const total = entries.reduce((a, e) => a + e[1], 0) || 1, top = Math.max(1, ...entries.map(e => e[1]));
     entries.slice(0, max).forEach(([name, n], i) => {
-      const lw = Math.min(260, w * .38), bw = w - lw - 120;
-      ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, name, lw - 10), x, y + 18);
+      const lw = Math.min(300, w * .42), bw = w - lw - 120;
+      ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, name, lw - 12), x, y + 18);
       rrect(ctx, x + lw, y + 6, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
       rrect(ctx, x + lw, y + 6, Math.max(8, bw * n / top), 24, 8); ctx.fillStyle = colourFn(name, i); ctx.fill();
-      ctx.font = RF(20, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(`${n}  (${Math.round(n / total * 100)}%)`, x + w, y + 18);
+      ctx.font = RF(19, 800); ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.fillText(`${n}  (${Math.round(n / total * 100)}%)`, x + w, y + 18);
       y += 40;
     });
-    if (entries.length > max) { y = textBlock(ctx, `+ ${entries.length - max} more`, x, y, w, 18, 600, MUTED) + 6; }
+    if (entries.length > max) y = textBlock(ctx, `+ ${entries.length - max} more`, x, y, w, 17, 600, MUTED) + 6;
   }
-  const catCol = (name, i) => PALETTE[i % PALETTE.length];
-
-  /* ---- page 1: summary ---- */
-  newPage(o.title || 'Install report');
-  y = textBlock(ctx, `${rangeTxt}  ·  from ${o.fileName}`, M, y - 10, PW - 2 * M, 22, 600, MUTED) + 24;
-  const byStatus = count('status');
-  const engineers = new Set(o.jobs.map(j => j.engineer).filter(e => e && !/^tbc$/i.test(e))).size;
-  const tiles = [[o.jobs.length, 'Jobs in range']];
-  byStatus.slice(0, 3).forEach(([s, n]) => tiles.push([n, s]));
-  if (o.cols.engineer != null) tiles.push([engineers, 'Engineers / owners']);
-  const tw2 = (PW - 2 * M - 24 * (tiles.length - 1)) / tiles.length;
-  tiles.forEach(([num, lab], i) => {
-    const x = M + i * (tw2 + 24);
-    rrect(ctx, x, y, tw2, 140, 18); ctx.fillStyle = '#f5f6fa'; ctx.fill();
-    ctx.fillStyle = i === 0 ? RAINBOW[3] : statusColour(lab); rrect(ctx, x, y, 8, 140, 4); ctx.fill();
-    textBlock(ctx, String(num), x + 30, y + 22, tw2 - 40, 58, 800, INK, { max: 1 });
-    textBlock(ctx, lab, x + 30, y + 94, tw2 - 40, 19, 600, MUTED, { max: 1 });
-  });
-  y += 170;
-  if (!o.jobs.length) {
-    textBlock(ctx, 'No jobs found in this date range.', M, y + 40, PW - 2 * M, 30, 700, MUTED);
-  } else {
-    const colW = (PW - 2 * M - 80) / 2, y0 = y;
-    // status donut
-    y = heading('By status');
-    const R = 150, cx = M + R + 10, cy = y + R + 10, total = o.jobs.length; let a0 = -Math.PI / 2;
-    byStatus.forEach(([s, n]) => { const a1 = a0 + n / total * Math.PI * 2; ctx.beginPath(); ctx.arc(cx, cy, R * .78, a0, a1); ctx.lineWidth = R * .44; ctx.strokeStyle = statusColour(s); ctx.stroke(); a0 = a1; });
-    textBlock(ctx, String(total), cx, cy - 36, 200, 56, 800, INK, { align: 'center' });
-    textBlock(ctx, 'jobs', cx, cy + 22, 200, 20, 600, MUTED, { align: 'center' });
-    let ly = cy - Math.min(byStatus.length, 7) * 22;
-    byStatus.slice(0, 7).forEach(([s, n]) => {
-      const lx = cx + R + 40; rrect(ctx, lx, ly + 4, 20, 20, 5); ctx.fillStyle = statusColour(s); ctx.fill();
-      ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(fitText(ctx, s, colW - R * 2 - 150), lx + 32, ly + 3);
-      ctx.font = RF(20, 800); ctx.textAlign = 'right'; ctx.fillText(String(n), M + colW, ly + 3); ly += 44;
+  function tiles(list){
+    const tw = (PW - 2 * M - 22 * (list.length - 1)) / list.length;
+    list.forEach(([num, lab, col], i) => {
+      const x = M + i * (tw + 22);
+      rrect(ctx, x, y, tw, 130, 18); ctx.fillStyle = SOFT; ctx.fill();
+      ctx.fillStyle = col || RAINBOW[i % 5]; rrect(ctx, x, y, 8, 130, 4); ctx.fill();
+      textBlock(ctx, String(num), x + 28, y + 20, tw - 36, 52, 800, INK, { max: 1 });
+      textBlock(ctx, lab, x + 28, y + 86, tw - 36, 18, 600, MUTED, { max: 1 });
     });
-    const yLeftEnd = cy + R + 20;
-    // engineers
-    y = y0;
-    const rx = M + colW + 80;
-    if (o.cols.engineer != null) { y = heading('Jobs per engineer / owner', rx, colW); hbars(rx, colW, count('engineer'), catCol, 7); }
-    else if (o.cols.type != null) { y = heading('By type of work', rx, colW); hbars(rx, colW, count('type'), catCol, 7); }
-    y = Math.max(y, yLeftEnd) + 16;
+    y += 156;
+  }
+  function donut(cx, cy, R, entries, total, label){
+    let a0 = -Math.PI / 2;
+    entries.forEach(([s, n]) => { const a1 = a0 + n / total * Math.PI * 2; ctx.beginPath(); ctx.arc(cx, cy, R * .78, a0, a1); ctx.lineWidth = R * .44; ctx.strokeStyle = statusColour(s); ctx.stroke(); a0 = a1; });
+    textBlock(ctx, String(total), cx, cy - 34, 200, 52, 800, INK, { align: 'center' });
+    textBlock(ctx, label, cx, cy + 20, 200, 18, 600, MUTED, { align: 'center' });
+  }
+  const located = jobs.filter(j => j.geo);
+  const today = dayStart(new Date());
+
+  /* ================= 1. Overview ================= */
+  newPage(o.title, `${rangeTxt}  ·  from ${o.fileName}  ·  made ${fmtDay(today, true)}`);
+  const byStatus = count('status');
+  const sites = new Set(jobs.map(j => j.site)).size;
+  const engineers = new Set(jobs.map(j => j.engineer).filter(e => e && !/^tbc$/i.test(e))).size;
+  const done = jobs.filter(j => /complete|done|closed/i.test(j.status)).length;
+  tiles([[jobs.length, 'Jobs in range'], [sites, 'Different sites'], [engineers || '–', 'Engineers / owners'],
+         [jobs.length ? Math.round(done / jobs.length * 100) + '%' : '–', 'Complete', statusColour('complete')],
+         [byStatus.filter(([s]) => /schedul/i.test(s)).reduce((a, e) => a + e[1], 0), 'Scheduled', statusColour('scheduled')]]);
+  if (!jobs.length) textBlock(ctx, 'No jobs found in this date range.', M, y + 40, PW - 2 * M, 30, 700, MUTED);
+  else {
+    const y0 = y, leftW = 880;
+    // status donut + legend
+    y = heading('By status');
+    const R = 135, cx = M + R + 6, cy = y + R + 6;
+    donut(cx, cy, R, byStatus, jobs.length, 'jobs');
+    let ly = cy - Math.min(byStatus.length, 7) * 21;
+    byStatus.slice(0, 7).forEach(([s, n]) => {
+      const lx = cx + R + 36; rrect(ctx, lx, ly + 3, 20, 20, 5); ctx.fillStyle = statusColour(s); ctx.fill();
+      ctx.font = RF(19, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(fitText(ctx, s, leftW - R * 2 - 150), lx + 30, ly + 3);
+      ctx.font = RF(19, 800); ctx.textAlign = 'right'; ctx.fillText(String(n), M + leftW, ly + 3); ly += 42;
+    });
+    y = cy + R + 34;
     // jobs per day
     const days = Math.round((o.to - o.from) / DAY) + 1;
-    if (days <= 62 && y + 260 < PH - 70) {
-      y = heading(`Jobs happening each day`);
-      const ch = PH - 90 - y - 40, cw = PW - 2 * M, bw = cw / days, perDay = [];
-      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); perDay.push(o.jobs.filter(j => { const s = j.start || j.end, e = j.end || j.start; return s && s <= d && e >= d; }).length); }
+    if (days <= 62) {
+      y = heading('Jobs on site each day', M, leftW);
+      const ch = PH - 100 - y - 30, bw = leftW / days, perDay = [];
+      for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); perDay.push(jobs.filter(j => j.start <= d && (j.end || j.start) >= d).length); }
       const top = Math.max(1, ...perDay);
       perDay.forEach((n, i) => {
-        const d = new Date(o.from.getTime() + i * DAY), wk = d.getDay() === 0 || d.getDay() === 6, h = n / top * (ch - 30);
-        if (wk) { ctx.fillStyle = '#f7f7fb'; ctx.fillRect(M + i * bw, y, bw, ch); }
-        if (n) { rrect(ctx, M + i * bw + bw * .15, y + ch - h, bw * .7, h, 6); const g = ctx.createLinearGradient(0, y + ch - h, 0, y + ch); g.addColorStop(0, '#4facfe'); g.addColorStop(1, '#a66cff'); ctx.fillStyle = g; ctx.fill();
-          if (bw > 22) textBlock(ctx, String(n), M + i * bw + bw / 2, y + ch - h - 24, bw, 16, 800, INK, { align: 'center' }); }
-        if (days <= 31 || i % Math.ceil(days / 31) === 0) textBlock(ctx, String(d.getDate()), M + i * bw + bw / 2, y + ch + 8, bw + 10, 15, 600, wk ? '#b3b7c8' : MUTED, { align: 'center' });
+        const d = new Date(o.from.getTime() + i * DAY), wk = d.getDay() === 0 || d.getDay() === 6, h = n / top * (ch - 26);
+        if (wk) { ctx.fillStyle = '#f5f5fa'; ctx.fillRect(M + i * bw, y, bw, ch); }
+        if (n) { rrect(ctx, M + i * bw + bw * .15, y + ch - h, bw * .7, h, 5); const g = ctx.createLinearGradient(0, y + ch - h, 0, y + ch); g.addColorStop(0, '#4facfe'); g.addColorStop(1, '#a66cff'); ctx.fillStyle = g; ctx.fill();
+          if (bw > 20) textBlock(ctx, String(n), M + i * bw + bw / 2, y + ch - h - 22, bw, 15, 800, INK, { align: 'center' }); }
+        if (days <= 31 || i % Math.ceil(days / 31) === 0) textBlock(ctx, String(d.getDate()), M + i * bw + bw / 2, y + ch + 6, bw + 10, 14, 600, wk ? '#b3b7c8' : MUTED, { align: 'center' });
       });
-      y += ch + 34;
     }
+    // map of every site
+    const mx = M + leftW + 60, mw = PW - M - mx, mh = PH - 90 - y0 - 50;
+    y = y0; y = heading(`Where the work is (${located.length} of ${jobs.length} located)`, mx, mw);
+    drawUkMap(ctx, mx, y, mw, mh, located.map(j => ({ lat: j.geo.lat, lon: j.geo.lon, colour: statusColour(j.status) })), { pinSize: 16 });
   }
-  if (o.tbc) textBlock(ctx, `${o.tbc} job${o.tbc === 1 ? ' has' : 's have'} TBC or missing dates, so ${o.tbc === 1 ? "isn't" : "aren't"} included.`, M, PH - 64, 1200, 17, 600, MUTED);
+  if (o.tbc) textBlock(ctx, `${o.tbc} job${o.tbc === 1 ? ' has' : 's have'} TBC or missing dates, so ${o.tbc === 1 ? "isn't" : "aren't"} included.`, M, PH - 62, 1200, 16, 600, MUTED);
 
-  if (o.jobs.length) {
-    /* ---- page 2: breakdowns + timeline ---- */
-    newPage('Breakdown & timeline');
-    const colW = (PW - 2 * M - 80) / 2, y0 = y;
-    const leftKey = o.cols.type != null ? 'type' : o.cols.status != null ? 'status' : null;
-    const rightKey = o.cols.supplier != null ? 'supplier' : o.cols.scheme != null ? null : null;
-    let yl = y, yr = y;
-    if (leftKey) { y = heading(leftKey === 'type' ? 'By type of work' : 'By status', M, colW); hbars(M, colW, count(leftKey), leftKey === 'status' ? statusColour : catCol, 5); yl = y; }
-    if (rightKey) { y = y0; y = heading('By supplier', M + colW + 80, colW); hbars(M + colW + 80, colW, count(rightKey), catCol, 5); yr = y; }
-    y = Math.max(yl, yr) + 20;
-    // Gantt timeline, split across pages
-    const jobs = [...o.jobs].sort((a, b) => (a.start || a.end) - (b.start || b.end) || String(a.site).localeCompare(String(b.site)));
-    const days = Math.round((o.to - o.from) / DAY) + 1, LW = 420, gx = M + LW, gw = PW - M - gx, RH = 34, dw = gw / days;
+  if (jobs.length) {
+    /* ================= 2. Insights ================= */
+    newPage('Insights', 'The useful numbers at a glance');
+    const colW = (PW - 2 * M - 80) / 2, rx = M + colW + 80;
+    // key facts
+    const perDayMap = new Map(); jobs.forEach(j => { for (let d = j.start.getTime(); d <= (j.end || j.start).getTime(); d += DAY) if (d >= o.from.getTime() && d <= o.to.getTime()) perDayMap.set(d, (perDayMap.get(d) || 0) + 1); });
+    const busiest = [...perDayMap.entries()].sort((a, b) => b[1] - a[1])[0];
+    const longest = [...jobs].sort((a, b) => jobDays(b) - jobDays(a))[0];
+    const avgLen = jobs.reduce((a, j) => a + jobDays(j), 0) / jobs.length;
+    const repeat = count('site').filter(([, n]) => n > 1);
+    const overdue = jobs.filter(j => !/complete|done|closed|n\/a|cancel/i.test(j.status) && (j.end || j.start) < today);
+    const upcoming = jobs.filter(j => j.start >= today);
+    const facts = [
+      ['Busiest day', busiest ? `${fmtDayW(new Date(busiest[0]))} with ${busiest[1]} jobs on site` : '–'],
+      ['Average job length', `${avgLen.toFixed(1)} day${avgLen >= 1.05 ? 's' : ''}`],
+      ['Longest job', longest ? `${longest.site} (${jobDays(longest)} days)` : '–'],
+      ['Sites visited more than once', repeat.length ? repeat.slice(0, 4).map(([s, n]) => `${s} ×${n}`).join(', ') + (repeat.length > 4 ? ` +${repeat.length - 4} more` : '') : 'None'],
+      ['Not complete and past their end date', overdue.length ? `${overdue.length}: ` + overdue.slice(0, 4).map(j => j.site).join(', ') + (overdue.length > 4 ? '…' : '') : 'None'],
+      ['Still to start (from today)', String(upcoming.length)]
+    ];
+    y = heading('Key facts', M, colW); const fy0 = y;
+    facts.forEach(([k, v]) => { rrect(ctx, M, y, colW, 78, 14); ctx.fillStyle = SOFT; ctx.fill(); textBlock(ctx, k, M + 20, y + 12, colW - 40, 16, 700, MUTED); textBlock(ctx, v, M + 20, y + 36, colW - 40, 21, 800, INK, { max: 1 }); y += 90; });
+    const yL = y;
+    // regions + suppliers + types on the right
+    y = fy0 - 40;
+    if (located.length) { y = heading('By region', rx, colW); hbars(rx, colW, count('region', located.map(j => ({ region: j.geo.region || 'Unknown' }))), catCol, 6); y += 10; }
+    if (o.cols.supplier != null) { y = heading('By supplier', rx, colW); hbars(rx, colW, count('supplier'), catCol, 5); y += 10; }
+    if (o.cols.type != null) { y = heading('By type of work', rx, colW); hbars(rx, colW, count('type'), catCol, 4); }
+    y = Math.max(y, yL) + 10;
+    // engineer workload table
+    if (o.cols.engineer != null) {
+      if (y + 200 > PH - 70) newPage('Insights (continued)');
+      y = heading('Engineer workload');
+      const engs = count('engineer').filter(([e]) => !/^tbc$|not set/i.test(e));
+      const topStatuses = byStatus.slice(0, 4).map(([s]) => s);
+      const cols0 = [['Engineer', .24], ['Jobs', .08], ...topStatuses.map(s => [s, .12]), ['Days on site', .1], ['Share of days', .16]];
+      const cw = cols0.reduce((a, c) => a + c[1], 0), cols = cols0.map(([l, w]) => [l, w / cw]);
+      const TW = PW - 2 * M, RH = 40, totD = jobs.reduce((a, j) => a + jobDays(j), 0) || 1;
+      const head = () => { rrect(ctx, M, y, TW, RH, 10); ctx.fillStyle = '#f1f2f7'; ctx.fill(); let x = M; cols.forEach(([l, w]) => { ctx.font = RF(15, 700); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, l.toUpperCase(), w * TW - 20), x + 12, y + RH / 2); x += w * TW; }); y += RH; };
+      head();
+      engs.forEach(([e, n], i) => {
+        if (room(RH)) head();
+        const mine = jobs.filter(j => j.engineer === e), d = mine.reduce((a, j) => a + jobDays(j), 0);
+        if (i % 2) { ctx.fillStyle = '#fafbfd'; ctx.fillRect(M, y, TW, RH); }
+        const vals = [e, n, ...topStatuses.map(s => mine.filter(j => (j.status || 'Not set') === s).length || '–'), d];
+        let x = M;
+        vals.forEach((v, k) => { ctx.font = RF(17, k === 0 ? 700 : 600); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, String(v), cols[k][1] * TW - 20), x + 12, y + RH / 2); x += cols[k][1] * TW; });
+        const sw = cols[cols.length - 1][1] * TW - 30; rrect(ctx, x + 12, y + 13, sw, 14, 7); ctx.fillStyle = '#eef0f6'; ctx.fill(); rrect(ctx, x + 12, y + 13, Math.max(6, sw * d / totD), 14, 7); ctx.fillStyle = catCol(e, i); ctx.fill();
+        y += RH;
+      });
+    }
+
+    /* ================= 3. Timeline ================= */
+    newPage('Timeline', 'Every job in the range, coloured by status');
+    const days = Math.round((o.to - o.from) / DAY) + 1, LW = 440, gx = M + LW, gw = PW - M - gx, RH = 34, dw = gw / days;
     const axis = () => {
-      y = heading('Timeline');
       for (let i = 0; i < days; i++) {
         const d = new Date(o.from.getTime() + i * DAY);
         if (days <= 31 || i % Math.ceil(days / 31) === 0 || d.getDate() === 1)
@@ -1841,65 +1982,117 @@ async function buildPmPages(o){
       }
       y += 26;
     };
-    const drawRow = (j, ry) => {
-      const s = j.start || j.end, e = j.end || j.start;
-      const si = Math.max(0, (s - o.from) / DAY), ei = Math.min(days - 1, (e - o.from) / DAY);
-      ctx.font = RF(17, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(fitText(ctx, j.site || '(no name)', LW - 180), M + 8, ry + RH / 2);
-      ctx.font = RF(14, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, j.engineer || '', 160), M + LW - 170, ry + RH / 2);
-      const bx = gx + si * dw + 2, bw = Math.max(dw - 4, (ei - si + 1) * dw - 4);
-      rrect(ctx, bx, ry + 6, bw, RH - 12, 7); ctx.fillStyle = statusColour(j.status || ''); ctx.fill();
-      ctx.fillStyle = INK;
-      if (s < o.from) { ctx.beginPath(); ctx.moveTo(bx - 3, ry + RH / 2); ctx.lineTo(bx + 7, ry + 9); ctx.lineTo(bx + 7, ry + RH - 9); ctx.fill(); }
-      if (e > o.to) { ctx.beginPath(); ctx.moveTo(bx + bw + 3, ry + RH / 2); ctx.lineTo(bx + bw - 7, ry + 9); ctx.lineTo(bx + bw - 7, ry + RH - 9); ctx.fill(); }
-    };
     let rest = jobs;
     while (rest.length) {
-      const cap = Math.floor((PH - 110 - y - 46 - 26) / RH);
-      if (cap < 3) { newPage('Timeline (continued)'); continue; }
+      const cap = Math.floor((PH - 120 - y - 26) / RH);
       const chunk = rest.slice(0, cap); rest = rest.slice(cap);
       axis(); const top = y, h = chunk.length * RH;
       chunk.forEach((j, i) => { if (i % 2) { ctx.fillStyle = 'rgba(20,21,31,.03)'; ctx.fillRect(M, top + i * RH, PW - 2 * M, RH); } });
       for (let i = 0; i < days; i++) { const d = new Date(o.from.getTime() + i * DAY); if (d.getDay() === 0 || d.getDay() === 6) { ctx.fillStyle = 'rgba(20,21,31,.04)'; ctx.fillRect(gx + i * dw, top, dw, h); } }
-      ctx.fillStyle = LINE; ctx.fillRect(gx, top, 1, h);
-      const today = dayStart(new Date()); if (today >= o.from && today <= o.to) { ctx.fillStyle = '#ff5f6d'; ctx.fillRect(gx + ((today - o.from) / DAY + .5) * dw - 1, top, 2, h); }
-      chunk.forEach((j, i) => drawRow(j, top + i * RH));
-      y = top + h;
+      if (today >= o.from && today <= o.to) { ctx.fillStyle = '#ff5f6d'; ctx.fillRect(gx + ((today - o.from) / DAY + .5) * dw - 1, top, 2, h); }
+      chunk.forEach((j, i) => {
+        const ry = top + i * RH, s = j.start, e = j.end || j.start;
+        const si = Math.max(0, (s - o.from) / DAY), ei = Math.min(days - 1, (e - o.from) / DAY);
+        ctx.font = RF(16, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(fitText(ctx, j.site || '(no name)', LW - 190), M + 8, ry + RH / 2);
+        ctx.font = RF(14, 600); ctx.fillStyle = MUTED; ctx.fillText(fitText(ctx, j.engineer || '', 170), M + LW - 180, ry + RH / 2);
+        const bx = gx + si * dw + 2, bw = Math.max(dw - 4, (ei - si + 1) * dw - 4);
+        rrect(ctx, bx, ry + 6, bw, RH - 12, 7); ctx.fillStyle = statusColour(j.status || ''); ctx.fill();
+        ctx.fillStyle = INK;
+        if (s < o.from) { ctx.beginPath(); ctx.moveTo(bx - 3, ry + RH / 2); ctx.lineTo(bx + 7, ry + 9); ctx.lineTo(bx + 7, ry + RH - 9); ctx.fill(); }
+        if (e > o.to) { ctx.beginPath(); ctx.moveTo(bx + bw + 3, ry + RH / 2); ctx.lineTo(bx + bw - 7, ry + 9); ctx.lineTo(bx + bw - 7, ry + RH - 9); ctx.fill(); }
+      });
+      y = top + h + 12;
+      let lx = M; byStatus.forEach(([s]) => { ctx.font = RF(16, 700); const w = ctx.measureText(s).width; if (lx + w + 50 > PW - M) return; rrect(ctx, lx, y + 2, 18, 18, 4); ctx.fillStyle = statusColour(s); ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(s, lx + 26, y + 2); lx += w + 56; });
       if (rest.length) newPage('Timeline (continued)');
     }
-    // legend
-    room(40); y += 14;
-    let lx = M; count('status').forEach(([s]) => { ctx.font = RF(17, 700); const w = ctx.measureText(s).width; if (lx + w + 50 > PW - M) return; rrect(ctx, lx, y + 2, 18, 18, 4); ctx.fillStyle = statusColour(s); ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(s, lx + 26, y + 2); lx += w + 60; });
-    y += 34;
 
-    /* ---- job list ---- */
-    newPage('All jobs in range');
-    const cols = [['Status', 'status', .14], ['Site', 'site', .2], ['Type of work', 'type', .18], ['Start', 'start', .08], ['End', 'end', .08], ['Engineer', 'engineer', .12], ['Supplier', 'supplier', .08], ['Scheme / ref', 'scheme', .12]]
-      .filter(c => o.cols[c[1]] != null);
-    const tot = cols.reduce((a, c) => a + c[2], 0), TW = PW - 2 * M, RH2 = 42;
-    const head = () => {
-      rrect(ctx, M, y, TW, RH2, 10); ctx.fillStyle = '#f1f2f7'; ctx.fill(); let x = M;
-      cols.forEach(c => { const w = c[2] / tot * TW; ctx.font = RF(16, 700); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(c[0].toUpperCase(), x + 12, y + RH2 / 2); x += w; });
-      y += RH2;
-    };
+    /* ================= 4. One page per site ================= */
+    if (o.sitePages) {
+      for (let idx = 0; idx < jobs.length; idx++) {
+        const j = jobs[idx];
+        newPage(null);
+        // header band
+        const sc = statusColour(j.status || '');
+        textBlock(ctx, `SITE ${idx + 1} OF ${jobs.length}`, M, y, 600, 16, 800, MUTED);
+        y = textBlock(ctx, j.site || '(no name)', M, y + 24, 1000, 50, 800, INK, { max: 2, lh: 1.1 }) + 12;
+        if (j.status) { ctx.font = RF(20, 800); const tw = ctx.measureText(j.status).width; rrect(ctx, M, y, tw + 34, 40, 20); ctx.fillStyle = sc; ctx.globalAlpha = .18; ctx.fill(); ctx.globalAlpha = 1;
+          ctx.beginPath(); ctx.arc(M + 18, y + 20, 6, 0, Math.PI * 2); ctx.fillStyle = sc; ctx.fill(); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(j.status, M + 30, y + 21); }
+        y += 60;
+        // when: dates + a strip showing where it sits in the range
+        const cardW = 1000;
+        rrect(ctx, M, y, cardW, 120, 18); ctx.fillStyle = SOFT; ctx.fill();
+        const dd = jobDays(j);
+        [['Start', fmtDayW(j.start)], ['End', fmtDayW(j.end || j.start)], ['Length', dd + (dd === 1 ? ' day' : ' days')]].forEach(([k, v], i) => {
+          textBlock(ctx, k, M + 24 + i * 320, y + 16, 300, 15, 700, MUTED); textBlock(ctx, v, M + 24 + i * 320, y + 38, 300, 23, 800, INK, { max: 1 });
+        });
+        const sx = M + 24, sw = cardW - 48, days2 = Math.round((o.to - o.from) / DAY) + 1;
+        rrect(ctx, sx, y + 86, sw, 14, 7); ctx.fillStyle = '#e3e6ef'; ctx.fill();
+        const a = Math.max(0, (j.start - o.from) / DAY), b = Math.min(days2, ((j.end || j.start) - o.from) / DAY + 1);
+        rrect(ctx, sx + sw * a / days2, y + 86, Math.max(10, sw * (b - a) / days2), 14, 7); ctx.fillStyle = sc; ctx.fill();
+        y += 150;
+        // every column from the spreadsheet
+        textBlock(ctx, 'All details', M, y, 400, 24, 800, INK); y += 40;
+        const fields = o.headers.map((h, i) => [h, j.raw[i]]).filter(([h, v]) => v !== '' && v != null && h);
+        const colW2 = (cardW - 24) / 2; let col = 0, rowY = y, rowH = 0;
+        const put = (h, v, full) => {
+          const txt = v instanceof Date ? fmtDayW(dayStart(v)) : String(v);
+          ctx.font = RF(19, 700); const w = full ? cardW - 40 : colW2 - 40;
+          const lines = Math.min(4, wrapLines(ctx, txt, w).length), hh = 44 + lines * 25;
+          if (full && col === 1) { rowY += rowH + 12; col = 0; rowH = 0; }
+          if (rowY + hh > PH - 80) return false;
+          const x = M + (full ? 0 : col * (colW2 + 24));
+          rrect(ctx, x, rowY, full ? cardW : colW2, hh, 14); ctx.fillStyle = SOFT; ctx.fill();
+          textBlock(ctx, h.toUpperCase(), x + 18, rowY + 12, w, 14, 800, MUTED, { max: 1 });
+          textBlock(ctx, txt, x + 18, rowY + 34, w, 19, 700, INK, { max: 4, lh: 1.3 });
+          if (full) { rowY += hh + 12; }
+          else { rowH = Math.max(rowH, hh); if (col === 1) { rowY += rowH + 12; rowH = 0; col = 0; } else col = 1; }
+          return true;
+        };
+        const shown = v => v instanceof Date ? fmtDayW(dayStart(v)) : String(v);
+        const longOnes = fields.filter(([h, v]) => shown(v).length > 38 || /address|note|comment|description/i.test(h));
+        const shortOnes = fields.filter(f => !longOnes.includes(f));
+        shortOnes.forEach(([h, v]) => put(h, v, false));
+        if (col === 1) { rowY += rowH + 12; col = 0; rowH = 0; }
+        longOnes.forEach(([h, v]) => put(h, v, true));
+        // related jobs in the same report
+        let ay = rowY + (col === 1 ? rowH + 12 : 0) + 14;
+        const sameSite = jobs.filter(x => x !== j && x.site === j.site), sameEng = j.engineer && !/^tbc$/i.test(j.engineer) ? jobs.filter(x => x !== j && x.engineer === j.engineer) : [];
+        if ((sameSite.length || sameEng.length) && ay + 90 < PH - 80) {
+          ay = textBlock(ctx, 'Related in this report', M, ay, cardW, 20, 800, INK) + 8;
+          const rel = (label, list, fmt) => { if (!list.length || ay + 50 > PH - 80) return; ay = textBlock(ctx, label, M, ay, cardW, 15, 700, MUTED) + 2; ay = textBlock(ctx, list.slice(0, 6).map(fmt).join('   ·   ') + (list.length > 6 ? `   +${list.length - 6} more` : ''), M, ay, cardW, 17, 600, INK, { max: 2, lh: 1.35 }) + 10; };
+          rel('Other visits to this site', sameSite, x => `${fmtDay(x.start)} (${x.status || 'no status'})`);
+          rel(`${j.engineer}'s other jobs`, sameEng, x => `${x.site.split('(')[0].trim()} ${fmtDay(x.start)}`);
+        }
+        // map with a pin
+        const mx = M + cardW + 50, mw = PW - M - mx, my = 110, mh = PH - 90 - my - 150;
+        drawUkMap(ctx, mx, my, mw, mh, j.geo ? [{ lat: j.geo.lat, lon: j.geo.lon, colour: '#ff5f6d', label: (j.site || '').split('(')[0].trim().slice(0, 24) }] : [], { big: true, pinSize: 13 });
+        let iy = my + mh + 18;
+        if (j.geo) {
+          iy = textBlock(ctx, [j.geo.area, j.geo.region].filter(Boolean).join(', ') || 'Located', mx, iy, mw, 22, 800, INK, { max: 1 }) + 4;
+          textBlock(ctx, `${j.postcode ? j.postcode + '  ·  ' : ''}${j.geo.lat.toFixed(4)}, ${j.geo.lon.toFixed(4)}${j.geo.how !== 'postcode' ? `  ·  approximate (from ${j.geo.how === 'area' ? 'postcode area' : 'town name'})` : ''}`, mx, iy, mw, 16, 600, MUTED, { max: 2 });
+        } else textBlock(ctx, "Couldn't find this location. Add a full postcode to the address to show it on the map.", mx, iy, mw, 17, 600, MUTED, { max: 3 });
+      }
+    }
+
+    /* ================= 5. Full list ================= */
+    newPage('All jobs in range', 'Everything in one table');
+    const listCols = [['Status', 'status', .12], ['Site', 'site', .16], ['Address', 'address', .25], ['Start', 'start', .07], ['End', 'end', .07], ['Engineer', 'engineer', .11], ['Supplier', 'supplier', .07], ['Scheme / ref', 'scheme', .15]].filter(c => o.cols[c[1]] != null);
+    const tot = listCols.reduce((a, c) => a + c[2], 0), TW = PW - 2 * M;
+    const head = () => { rrect(ctx, M, y, TW, 40, 10); ctx.fillStyle = '#f1f2f7'; ctx.fill(); let x = M; listCols.forEach(c => { const w = c[2] / tot * TW; ctx.font = RF(15, 700); ctx.fillStyle = MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(c[0].toUpperCase(), x + 10, y + 20); x += w; }); y += 40; };
     head();
     jobs.forEach((j, ri) => {
+      // wrap long cells onto up to 3 lines
+      ctx.font = RF(15, 600);
+      const cells = listCols.map(c => { const v = j[c[1]]; const t = v instanceof Date ? fmtDay(v) : String(v || (c[1] === 'start' || c[1] === 'end' ? 'TBC' : '–')); return wrapLines(ctx, t, c[2] / tot * TW - 22).slice(0, 3); });
+      const RH2 = Math.max(40, 14 + Math.max(...cells.map(l => l.length)) * 20);
       if (room(RH2)) head();
       if (ri % 2) { ctx.fillStyle = '#fafbfd'; ctx.fillRect(M, y, TW, RH2); }
       ctx.fillStyle = LINE; ctx.fillRect(M, y + RH2 - 1, TW, 1);
       let x = M;
-      cols.forEach(c => {
-        const w = c[2] / tot * TW, v = j[c[1]];
-        ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-        if (c[1] === 'status') {
-          ctx.font = RF(15, 700); const t = fitText(ctx, v || '–', w - 34), tw = ctx.measureText(t).width;
-          rrect(ctx, x + 8, y + 8, tw + 20, RH2 - 16, 13); ctx.fillStyle = statusColour(v || ''); ctx.globalAlpha = .28; ctx.fill(); ctx.globalAlpha = 1;
-          ctx.fillStyle = INK; ctx.fillText(t, x + 18, y + RH2 / 2);
-        } else {
-          ctx.font = RF(16, c[1] === 'site' ? 700 : 600); ctx.fillStyle = INK;
-          const txt = v instanceof Date ? fmtDay(v) : (v ?? '');
-          ctx.fillText(fitText(ctx, String(txt || (c[1] === 'start' || c[1] === 'end' ? 'TBC' : '–')), w - 20), x + 12, y + RH2 / 2);
-        }
+      listCols.forEach((c, k) => {
+        const w = c[2] / tot * TW;
+        if (c[1] === 'status') { const t = fitText((ctx.font = RF(14, 700), ctx), j.status || '–', w - 34), tw = ctx.measureText(t).width; rrect(ctx, x + 6, y + 9, tw + 20, 24, 12); ctx.fillStyle = statusColour(j.status || ''); ctx.globalAlpha = .22; ctx.fill(); ctx.globalAlpha = 1; ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + 16, y + 21); }
+        else { ctx.font = RF(15, c[1] === 'site' ? 700 : 600); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; cells[k].forEach((l, li) => ctx.fillText(l, x + 10, y + 10 + li * 20)); }
         x += w;
       });
       y += RH2;
@@ -1913,7 +2106,7 @@ function startPm(){
   show('pm');
   document.title = 'PM Tools · GentiMeter';
   $('backHub3').onclick = () => nav('');
-  let wb = null, sheetRows = [], headerIdx = 0, headers = [], cols = {}, fileName = '', statusOn = new Set(), pages = null;
+  let wb = null, sheetRows = [], headerIdx = 0, headers = [], cols = {}, fileName = '', statusOn = new Set(), pages = null, geoState = '';
 
   const setMsg = t => { $('pmMsg').textContent = t; $('pmMsg').classList.toggle('hidden', !t); };
   async function loadFile(f){
@@ -1926,39 +2119,43 @@ function startPm(){
       const sel = $('pmSheet'); sel.textContent = '';
       wb.SheetNames.forEach(n => { const o = el('option', null, n); o.value = n; sel.append(o); });
       $('pmSheetRow').classList.toggle('hidden', wb.SheetNames.length < 2);
-      // choose the sheet with most rows
       let best = wb.SheetNames[0], most = 0;
       wb.SheetNames.forEach(n => { const r = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1 }).length; if (r > most) { most = r; best = n; } });
       sel.value = best; useSheet(best); setMsg('');
     } catch (e) { console.error(e); setMsg(e && e.message === 'load' ? "Couldn't load the Excel reader. Check your internet connection." : "Sorry, that file couldn't be read. Try saving it as .xlsx or .csv."); }
   }
+  let jobCache = null;
   function useSheet(name){
     sheetRows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '', raw: true });
-    // header row = first row (in the first 15) matching the most known column names
     let bestI = 0, bestScore = -1;
     sheetRows.slice(0, 15).forEach((r, i) => { const sc = PM_FIELDS.filter(([, , t]) => r.some(h => typeof h === 'string' && t(h))).length; if (sc > bestScore) { bestScore = sc; bestI = i; } });
-    headerIdx = bestI; headers = (sheetRows[headerIdx] || []).map((h, i) => String(h || `Column ${i + 1}`).trim());
+    headerIdx = bestI; headers = (sheetRows[headerIdx] || []).map((h, i) => String(h || '').trim());
     cols = {};
-    PM_FIELDS.forEach(([k, , t]) => { const i = headers.findIndex((h, hi) => t(h) && !Object.values(cols).includes(hi)); if (i >= 0) cols[k] = i; });
-    if (cols.start == null) { // guess a date column from the data
-      const i = headers.findIndex((h, hi) => sheetRows.slice(headerIdx + 1, headerIdx + 20).filter(r => toDate(r[hi])).length >= 5); if (i >= 0) cols.start = i;
-    }
+    PM_FIELDS.forEach(([k, , t]) => { const i = headers.findIndex((h, hi) => h && t(h) && !Object.values(cols).includes(hi)); if (i >= 0) cols[k] = i; });
+    if (cols.start == null) { const i = headers.findIndex((h, hi) => sheetRows.slice(headerIdx + 1, headerIdx + 20).filter(r => toDate(r[hi])).length >= 5); if (i >= 0) cols.start = i; }
+    jobCache = null; statusOn = new Set(); $('pmStatus').textContent = '';
     renderMapping(); renderFileInfo(); guessRange(); refresh();
   }
   $('pmSheet').onchange = () => useSheet($('pmSheet').value);
   function allJobs(){
-    return sheetRows.slice(headerIdx + 1).filter(r => r.some(v => v !== '' && v != null)).map(r => {
+    if (jobCache) return jobCache;
+    jobCache = sheetRows.slice(headerIdx + 1).filter(r => r.some(v => v !== '' && v != null)).map(r => {
       const g = k => cols[k] != null ? r[cols[k]] : '';
-      return { status: String(g('status') || '').trim(), site: String(g('site') || '').trim(), type: String(g('type') || '').trim(),
-               start: toDate(g('start')), end: toDate(g('end')) || toDate(g('start')), engineer: String(g('engineer') || '').trim(),
-               supplier: String(g('supplier') || '').trim(), scheme: String(g('scheme') || '').trim(), address: String(g('address') || '').trim() };
-    }).map(j => ({ ...j, start: j.start || j.end }));
+      const address = String(g('address') || '').trim();
+      const pc = (address.match(POSTCODE_RE) || r.map(String).join(' ').match(POSTCODE_RE));
+      const j = { status: String(g('status') || '').trim(), site: String(g('site') || '').trim(), type: String(g('type') || '').trim(),
+                  start: toDate(g('start')), end: toDate(g('end')) || toDate(g('start')), engineer: String(g('engineer') || '').trim(),
+                  supplier: String(g('supplier') || '').trim(), scheme: String(g('scheme') || '').trim(), address,
+                  postcode: pc ? (pc[1] + ' ' + pc[2]).toUpperCase() : '', raw: r };
+      j.start = j.start || j.end; return j;
+    });
+    return jobCache;
   }
   function renderFileInfo(){
     const jobs = allJobs(), info = $('pmInfo'); info.textContent = ''; info.classList.remove('hidden');
     const found = PM_FIELDS.filter(([k]) => cols[k] != null).map(([, l]) => l.split(' /')[0]);
-    info.append(el('b', null, '📊 ' + fileName), el('span', null, `· ${jobs.length} rows`), cols.start != null ? el('span', 'ok', '✓ Dates found') : el('span', 'warn', '⚠ No date column found. Pick one under "Columns".'));
-    info.append(el('span', 'hint', 'Columns: ' + (found.join(', ') || 'none recognised')));
+    info.append(el('b', null, '📊 ' + fileName), el('span', null, `· ${jobs.length} rows · ${headers.filter(Boolean).length} columns`), cols.start != null ? el('span', 'ok', '✓ Dates found') : el('span', 'warn', '⚠ No date column found. Pick one under "Columns".'));
+    info.append(el('span', 'hint', 'Recognised: ' + (found.join(', ') || 'none') + '. Every column is shown on the site pages.'));
     $('pmStep2').classList.remove('hidden'); $('pmStep3').classList.remove('hidden');
   }
   function renderMapping(){
@@ -1966,12 +2163,11 @@ function startPm(){
     PM_FIELDS.forEach(([k, label]) => {
       const r = el('label', 'maprow'); r.append(el('span', null, label));
       const s = el('select', 'sel'); const none = el('option', null, '(not used)'); none.value = ''; s.append(none);
-      headers.forEach((h, i) => { const o = el('option', null, h); o.value = i; if (cols[k] === i) o.selected = true; s.append(o); });
-      s.onchange = () => { if (s.value === '') delete cols[k]; else cols[k] = +s.value; renderFileInfo(); renderStatusChips(); refresh(); };
+      headers.forEach((h, i) => { if (!h) return; const o = el('option', null, h); o.value = i; if (cols[k] === i) o.selected = true; s.append(o); });
+      s.onchange = () => { if (s.value === '') delete cols[k]; else cols[k] = +s.value; jobCache = null; statusOn = new Set(); $('pmStatus').textContent = ''; renderFileInfo(); refresh(); };
       r.append(s); box.append(r);
     });
   }
-  /* range */
   const setRange = (a, b) => { $('pmFrom').value = isoDay(a); $('pmTo').value = isoDay(b); refresh(); };
   function guessRange(){
     const jobs = allJobs().filter(j => j.start); if (!jobs.length) return;
@@ -1986,13 +2182,14 @@ function startPm(){
   quick.forEach(([l, f]) => { const b = el('button', 'chip', l); b.type = 'button'; b.onclick = () => setRange(...f()); $('pmQuick').append(b); });
   $('pmFrom').onchange = $('pmTo').onchange = () => refresh();
   $('pmMode').onchange = () => refresh();
+  $('pmSites').onchange = () => refresh();
   $('pmTitle').oninput = () => { clearTimeout(window.__pmT); window.__pmT = setTimeout(refresh, 400); };
 
   function renderStatusChips(){
     const box = $('pmStatus'); box.textContent = '';
     if (cols.status == null) { box.append(el('span', 'hint', 'No status column')); return; }
     const all = [...new Set(allJobs().map(j => j.status || 'Not set'))].sort();
-    if (!statusOn.size || [...statusOn].some(s => !all.includes(s))) statusOn = new Set(all);
+    if (!statusOn.size) statusOn = new Set(all);
     all.forEach(st => {
       const b = el('button', 'chip' + (statusOn.has(st) ? ' on' : ''), st); b.type = 'button';
       b.style.borderColor = statusOn.has(st) ? statusColour(st) : ''; b.onclick = () => { statusOn.has(st) ? statusOn.delete(st) : statusOn.add(st); renderStatusChips(); refresh(); };
@@ -2003,8 +2200,8 @@ function startPm(){
     const from = toDate($('pmFrom').value), to = toDate($('pmTo').value);
     if (!from || !to || to < from) return null;
     const startsOnly = $('pmMode').value === 'starts';
-    const jobs = allJobs(); let tbc = 0;
-    const inRange = jobs.filter(j => {
+    let tbc = 0;
+    const inRange = allJobs().filter(j => {
       if (cols.status != null && !statusOn.has(j.status || 'Not set')) return false;
       if (!j.start) { tbc++; return false; }
       const s = j.start, e = j.end || j.start;
@@ -2012,17 +2209,25 @@ function startPm(){
     });
     return { from, to, jobs: inRange, tbc };
   }
-  let refreshTimer = null;
-  function refresh(){ clearTimeout(refreshTimer); refreshTimer = setTimeout(doRefresh, 120); }
+  let refreshTimer = null, runId = 0;
+  function refresh(){ clearTimeout(refreshTimer); refreshTimer = setTimeout(doRefresh, 150); }
   async function doRefresh(){
     if (!sheetRows.length) return;
+    const my = ++runId;
     if (!$('pmStatus').children.length) renderStatusChips();
     const f = filtered();
     if (!f) { $('pmCount').textContent = 'Pick a start and end date.'; $('pmPreview').textContent = ''; $('pmDl').disabled = true; return; }
-    $('pmCount').textContent = `${f.jobs.length} job${f.jobs.length === 1 ? '' : 's'} between ${fmtDay(f.from, true)} and ${fmtDay(f.to, true)}` + (f.tbc ? ` (${f.tbc} with TBC dates left out)` : '');
-    pages = await buildPmPages({ title: $('pmTitle').value.trim() || 'Install report', from: f.from, to: f.to, fileName, jobs: f.jobs, tbc: f.tbc, cols });
+    $('pmDl').disabled = true;
+    const base = `${f.jobs.length} job${f.jobs.length === 1 ? '' : 's'} between ${fmtDay(f.from, true)} and ${fmtDay(f.to, true)}` + (f.tbc ? ` (${f.tbc} with TBC dates left out)` : '');
+    $('pmCount').textContent = base + ' · finding locations…';
+    await Promise.all([loadUkShapes().catch(() => null), geocodeJobs(f.jobs, (a, b) => { if (my === runId) $('pmCount').textContent = `${base} · finding locations ${a}/${b}…`; })]);
+    if (my !== runId) return;
+    const found = f.jobs.filter(j => j.geo).length;
+    $('pmCount').textContent = base + (f.jobs.length ? ` · ${found} of ${f.jobs.length} located on the map` : '');
+    pages = await buildPmPages({ title: $('pmTitle').value.trim() || 'Install report', from: f.from, to: f.to, fileName, jobs: f.jobs, tbc: f.tbc, cols, headers, sitePages: $('pmSites').checked });
+    if (my !== runId) return;
     const pv = $('pmPreview'); pv.textContent = '';
-    pages.forEach((cv, i) => { const img = el('img'); img.src = cv.toDataURL('image/jpeg', .8); img.alt = 'Page ' + (i + 1); img.className = i === 0 ? 'pmfirst' : 'pmthumb'; pv.append(img); });
+    pages.forEach((cv, i) => { const img = el('img'); img.src = cv.toDataURL('image/jpeg', .75); img.alt = 'Page ' + (i + 1); img.className = i === 0 ? 'pmfirst' : 'pmthumb'; img.title = 'Page ' + (i + 1); img.onclick = () => { pv.querySelector('.pmfirst').src = img.src; }; pv.append(img); });
     $('pmDl').disabled = false;
   }
   $('pmDl').onclick = async () => {
@@ -2031,7 +2236,7 @@ function startPm(){
     try {
       await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
       const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-      pages.forEach((cv, i) => { if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', .9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST'); });
+      pages.forEach((cv, i) => { if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', .88), 'JPEG', 0, 0, 297, 210, undefined, 'FAST'); });
       const f = filtered();
       pdf.save(`${($('pmTitle').value.trim() || 'Install report')} ${isoDay(f.from)} to ${isoDay(f.to)}.pdf`);
       b.textContent = 'Downloaded!';
