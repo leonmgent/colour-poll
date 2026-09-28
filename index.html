@@ -391,6 +391,24 @@
   .me-av{width:96px;height:96px;font-size:56px;margin:0 auto}
   .msg{color:var(--muted);text-align:center}
   .err{color:var(--bad)}
+  /* broadcast */
+  .btn.live{background:var(--bad);color:#fff;animation:livepulse 1.6s ease-in-out infinite}
+  @keyframes livepulse{50%{box-shadow:0 0 0 6px rgba(255,107,107,.25)}}
+  .bc-pop{width:340px;padding:14px;gap:10px}
+  .bc-pop b{font-size:15px}
+  .bc-pop textarea{font-size:17px;min-height:84px}
+  .bc-presets{display:flex;flex-wrap:wrap;gap:6px}
+  .bc-presets button{background:var(--surface2);border-radius:99px;padding:6px 10px!important;font-size:13px!important;font-weight:600}
+  .bc-pill{position:absolute;left:50%;top:calc(var(--top,130px) + 12px);transform:translateX(-50%);z-index:14;background:var(--bad);color:#fff;font-weight:700;border-radius:99px;padding:8px 16px;display:flex;gap:8px;align-items:center;max-width:70vw;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:toastIn .5s cubic-bezier(.2,1.4,.4,1) both}
+  .bc-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bcast{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:32px 22px;text-align:center;color:#10111c;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#47e5bc,#4facfe,#a66cff,#ff5f6d);background-size:400% 400%;animation:bgmove 10s ease infinite,bcIn .5s cubic-bezier(.2,1.2,.4,1) both}
+  .bcast .bc-inner{display:flex;flex-direction:column;align-items:center;gap:18px;max-width:560px}
+  .bcast svg{width:96px;height:96px;animation:megapulse 1.2s ease-in-out infinite}
+  .bcast .bc-from{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+  .bcast h1{font-size:clamp(34px,10vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.02em;overflow-wrap:anywhere}
+  @keyframes bcIn{from{opacity:0;transform:scale(1.08)}}
+  @keyframes megapulse{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}
   .chatfab{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--rainbow);color:#10111c;font-weight:800;border-radius:99px;padding:14px 20px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
   .chatfab .badge{background:#10111c;color:#fff;border-radius:99px;font-size:12px;padding:2px 7px}
   .chatfab .badge:empty{display:none}
@@ -421,6 +439,7 @@
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6a8 8 0 0 1 0 12"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
@@ -498,6 +517,15 @@
       </div>
       <button class="btn ghost sm hidden" id="pauseBtn" title="Pause (P)"><svg class="i"><use href="#i-pause"/></svg><span>Pause</span></button>
       <button class="btn good sm hidden" id="revealBtn" title="Reveal the answer now (R)"><svg class="i"><use href="#i-eye"/></svg><span>Reveal answer</span></button>
+      <div class="menu">
+        <button class="btn ghost sm" id="bcBtn" title="Show a message on every phone"><svg class="i"><use href="#i-mega"/></svg><span>Broadcast</span></button>
+        <div class="menu-pop bc-pop hidden" id="bcPop">
+          <b>Show a message on every phone</b>
+          <textarea class="field" id="bcText" maxlength="120" rows="3">Everyone look up at the screen!</textarea>
+          <div class="bc-presets" id="bcPresets"></div>
+          <button class="btn rain sm" id="bcSend"><svg class="i"><use href="#i-mega"/></svg>Send to all phones</button>
+        </div>
+      </div>
       <button class="btn ghost sm" id="copyBtn"><svg class="i"><use href="#i-link"/></svg><span>Copy link</span></button>
       <button class="btn ghost sm" id="chatBtn"><svg class="i"><use href="#i-chat"/></svg><span>Chat off</span></button>
       <button class="btn ghost sm" id="fullBtn">Fullscreen</button>
@@ -534,6 +562,7 @@
   <div class="feed" id="feed"></div>
   <div class="hchat hidden" id="hchat"></div>
   <div class="toasts" id="toasts"></div>
+  <div class="bc-pill hidden" id="bcPill"><svg class="i"><use href="#i-mega"/></svg><span id="bcPillText"></span></div>
   <div class="pause-ov hidden" id="pauseOv"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><h2>Paused</h2><p>Scores and timers are frozen. Press Resume or P to carry on.</p></div>
 </section>
 
@@ -612,6 +641,7 @@
     <div class="tlist" id="targetList"></div>
   </div>
 
+  <div class="bcast hidden" id="bcast" role="alert"><div class="bc-inner"><svg viewBox="0 0 24 24" fill="none" stroke="#10111c" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6a8 8 0 0 1 0 12"/></svg><div class="bc-from">Message from the host</div><h1 id="bcMsg"></h1></div></div>
   <button class="chatfab hidden" id="chatFab"><svg class="i"><use href="#i-chat"/></svg>Chat <span class="badge" id="chatBadge"></span></button>
   <div class="sheet hidden" id="chatSheet">
     <div class="sheet-head">Chat <button class="iconbtn" id="chatClose" title="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
@@ -1691,7 +1721,28 @@ function startHost(){
     setTimeout(() => sp.textContent = 'Copy link', 1600);
   };
   $('moreBtn').onclick = e => { e.stopPropagation(); $('morePop').classList.toggle('hidden'); };
-  document.addEventListener('click', () => $('morePop').classList.add('hidden'));
+  document.addEventListener('click', () => { $('morePop').classList.add('hidden'); $('bcPop').classList.add('hidden'); });
+
+  /* ---- Broadcast: take over every phone with a message ---- */
+  let broadcast = ss.get('cp_broadcast') || '';
+  ['Everyone look up at the screen!', 'Quick break, back in 5 minutes', 'Phones down for a moment please', 'Get ready…'].forEach(t => {
+    const b = el('button', null, t); b.type = 'button'; b.onclick = () => { $('bcText').value = t; }; $('bcPresets').append(b);
+  });
+  function syncBc(){
+    $('bcBtn').classList.toggle('live', !!broadcast); $('bcBtn').classList.toggle('ghost', !broadcast);
+    $('bcBtn').querySelector('span').textContent = broadcast ? 'Stop broadcast' : 'Broadcast';
+    $('bcPill').classList.toggle('hidden', !broadcast); $('bcPillText').textContent = 'On every phone: “' + broadcast + '”';
+  }
+  function setBroadcast(t){ broadcast = t; ss.set('cp_broadcast', t); syncBc(); publishState(); }
+  $('bcPop').onclick = e => e.stopPropagation();
+  $('bcBtn').onclick = e => {
+    e.stopPropagation(); $('morePop').classList.add('hidden');
+    if (broadcast) return setBroadcast('');
+    $('bcPop').classList.toggle('hidden'); if (!$('bcPop').classList.contains('hidden')) { $('bcText').focus(); $('bcText').select(); }
+  };
+  $('bcSend').onclick = () => { const t = $('bcText').value.replace(/\s+/g, ' ').trim().slice(0, 120); if (!t) return $('bcText').focus(); $('bcPop').classList.add('hidden'); setBroadcast(t); };
+  $('bcText').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('bcSend').click(); } };
+  syncBc();
   $('namesBtn').classList.toggle('hidden', namesMode === 'off');
   const syncNamesBtn = () => { $('namesBtn').textContent = showNames ? 'Hide names' : 'Show names'; };
   syncNamesBtn();
@@ -2358,6 +2409,7 @@ function startHost(){
       st.reveal = { answer: answerText(s), pts: r.pts, tot, ok: r.ok || {} };
     }
     if (s.scored && r.revealed && stealOn) st.chests = true;
+    if (broadcast) st.broadcast = broadcast;
     if (st.reveal) Object.keys(players).forEach(pid => st.reveal.tot[pid] = players[pid].score);
     if (s.type === 'leaderboard') { const rk = {}; ranking().forEach((p, i) => rk[p.pid] = [i + 1, p.score]); st.ranks = rk; }
     return JSON.stringify(st);
@@ -2439,7 +2491,7 @@ function startHost(){
   $('endBtn').onclick = () => {
     if (!confirm('End the session? Everyone will be disconnected and the results will be cleared.\n\nWant to keep them? Press Cancel, then use Export results (PDF) in this menu first.')) return;
     clients.forEach(c => { if (c.connected) { c.publish(hTopic, '', { retain: true, qos: 1 }); c.publish(cTopic, '', { retain: true, qos: 1 }); } });
-    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked','cp_stealOn'].forEach(k => ss.del(k));
+    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked','cp_stealOn','cp_broadcast'].forEach(k => ss.del(k));
     setTimeout(() => nav(''), 400);
   };
   $('fullBtn').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
@@ -2580,8 +2632,9 @@ function startJoin(code){
     if (slide.scored && st.reveal) {
       const p = st.reveal.pts ? st.reveal.pts[pid] : undefined;
       if (st.reveal.tot && st.reveal.tot[pid] != null) { myScore = st.reveal.tot[pid]; ss.set('cp_score_' + code, myScore); }
+      const right = st.reveal.ok ? !!st.reveal.ok[pid] : p > 0;
       if (p == null) showDone("Time's up!", `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
-      else if (p > 0) showDone('Correct!', `+${p} points · ${myScore} total`, false, 'good');
+      else if (right) showDone('Correct!', `+${p} points · ${myScore} total`, false, 'good');
       else showDone('Not quite', `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
       if (st.chests) { if (st.reveal.ok && st.reveal.ok[pid]) renderChests(); else noChest(); }
       return;
@@ -2761,7 +2814,7 @@ function startJoin(code){
         return;
       }
       if (topic !== hTopic) return;
-      if (!m) { clearTimeout(timeout); st = st || {}; slide = null; msg('This session has ended. Thanks for taking part!'); $('chatFab').classList.add('hidden'); $('chatSheet').classList.add('hidden'); return; }
+      if (!m) { clearTimeout(timeout); st = st || {}; slide = null; msg('This session has ended. Thanks for taking part!'); $('bcast').classList.add('hidden'); $('chatFab').classList.add('hidden'); $('chatSheet').classList.add('hidden'); return; }
       let d; try { d = JSON.parse(m); } catch { return; }
       if (!d || !d.open || !d.slide || typeof d.slide.id !== 'string') return;
       const s = d.slide;
@@ -2775,6 +2828,8 @@ function startJoin(code){
              left: typeof d.left === 'number' ? d.left : null, timeUp: !!d.timeUp, reveal: d.reveal && typeof d.reveal === 'object' ? d.reveal : null,
              ranks: d.ranks && typeof d.ranks === 'object' ? d.ranks : null, paused: !!d.paused };
       if (firstState) hello();
+      const bc = typeof d.broadcast === 'string' ? d.broadcast.slice(0, 120) : '';
+      $('bcMsg').textContent = bc; $('bcast').classList.toggle('hidden', !bc);
       if (st.reveal && st.reveal.tot && st.reveal.tot[pid] != null) { myScore = st.reveal.tot[pid]; ss.set('cp_score_' + code, myScore); }
       st.chests = !!d.chests;
       const key = JSON.stringify([slide.id, slide.q, slide.text, slide.type, slide.options, st.names, st.quiz, st.timeUp, !!st.reveal, !!st.ranks, st.paused, st.chests]);
