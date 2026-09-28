@@ -116,7 +116,13 @@
   .folder .paper.notes i{position:absolute;width:48px;height:46px;border-radius:3px;box-shadow:0 3px 7px rgba(0,0,0,.18)}
   .wbrecent{width:100%;max-width:640px;display:flex;flex-direction:column;gap:8px;text-align:left}
   .wbrecent h3{font-size:14px;color:var(--muted);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
-  .wbrec{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;text-align:left;transition:border-color .2s}
+  .wbrec{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;text-align:left;transition:border-color .2s}
+  .wbrec .wbopen{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;text-align:left}
+  .wbrec .wbdel{width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+  .wbrec .wbdel:hover{background:rgba(255,107,107,.12);color:var(--bad)}
+  .wbrec.ask{padding:8px 8px 8px 16px;border-color:rgba(255,107,107,.5)}
+  .wbrec.ask b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wbnote{color:var(--muted);font-size:14px;font-weight:600;padding:4px 2px}
   .wbrec:hover{border-color:var(--focus)}
   .wbrec b{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wbrec span{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -241,6 +247,102 @@
     .wb-lock{bottom:18px;white-space:normal;text-align:center;width:max-content;max-width:calc(100% - 24px)}
   }
   @keyframes wbToast{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+
+  /* ---------- Meeting Minutes ---------- */
+  .folder.mm-f .back,.folder.mm-f .back::before{background:#9d174d}
+  .folder.mm-f .cover{background:linear-gradient(155deg,#ff8fd6,#e93d82 55%,#a66cff)}
+  .folder .paper.lines{display:block;padding:14px 16px;background:#fffdf5}
+  .folder .paper.lines i{display:block;height:7px;border-radius:4px;margin:0 0 9px;background:#d8dbe6}
+  .mmhome{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:80px 16px 50px;gap:24px;text-align:center}
+  .mmhome h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  .mmhome .sub{color:var(--muted);font-size:18px;margin-top:10px}
+  .mmwrap{width:100%;max-width:680px;display:flex;flex-direction:column;gap:16px;text-align:left}
+  .mmcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px;animation:rise .4s ease both}
+  .mmcard h2{font-size:21px;font-weight:800}
+  .mmstep{display:flex;flex-direction:column;gap:8px}
+  .mmstep>label{font-weight:700;font-size:15px;color:var(--muted)}
+  .mmadd{display:flex;gap:8px}
+  .mmadd .field{flex:1}
+  .mmchips{display:flex;flex-wrap:wrap;gap:8px;min-height:10px}
+  .mmchip{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:6px 8px 6px 14px;font-weight:700;font-size:15px;color:#fff;animation:rise .25s ease both}
+  .mmchip button{width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.2);display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+  .mmchip button:hover{background:rgba(0,0,0,.35)}
+  .mmlens{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .mmlens button{padding:9px 14px;border-radius:11px;background:var(--bg);border:2px solid var(--line);font-weight:700;color:var(--muted)}
+  .mmlens button.on{border-color:var(--focus);color:var(--text)}
+  .mmlens input{width:90px}
+  .mmhint{color:var(--muted);font-size:14px}
+
+  .mins{min-height:100%;background:var(--bg);padding:0 0 150px}
+  .mmtop{position:sticky;top:0;z-index:6;background:rgba(13,14,26,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .mmbar{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:28px 14px 10px}
+  .mmbar .wb-title{flex:1;width:auto;font-size:19px}
+  .mmbar .wb-people{padding:0 10px;color:var(--muted);font-weight:700;font-size:14px;gap:6px}
+  .mmtimer{max-width:900px;margin:0 auto;padding:4px 14px 12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .mmclock{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1}
+  .mmclock small{font-size:16px;color:var(--muted);font-weight:700;margin-left:6px;letter-spacing:0}
+  .mmclock.warn{color:#ffc371} .mmclock.over{color:var(--bad)} .mmclock.done{color:var(--muted);font-size:26px}
+  .mmmeta{flex:1;min-width:180px;display:flex;flex-direction:column;gap:6px}
+  .mmmeta span{color:var(--muted);font-size:14px;font-weight:600}
+  .mmprog{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+  .mmprog i{display:block;height:100%;border-radius:99px;background:var(--rainbow);transition:width 1s linear}
+  .mmprog.over i{background:var(--bad)}
+  .mmtbtns{display:flex;gap:6px}
+  .mmparts{max-width:900px;margin:0 auto;padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .mmp{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 12px;font-weight:700;font-size:14px;color:#fff;border:2px solid transparent;transition:opacity .2s,transform .15s}
+  .mmp small{opacity:.8;font-weight:700}
+  .mmp.dim{opacity:.35} .mmp.on{border-color:#fff}
+  .mmp.add{background:var(--surface2);color:var(--muted)}
+  .mmpaper{max-width:900px;margin:18px auto 0;padding:0 14px}
+  .mmlist{background:#fbfaf6;color:#1e1e24;border-radius:18px;padding:10px 0;min-height:240px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  .mmempty{color:#8a8d99;text-align:center;padding:60px 20px;font-weight:600;line-height:1.5}
+  .mmempty b{display:block;color:#4d505c;font-size:22px;margin-bottom:6px}
+  .mmnote{display:grid;grid-template-columns:78px 1fr auto;gap:0 12px;padding:12px 16px;border-bottom:1px solid #ecebe4;animation:rise .3s ease both;position:relative}
+  .mmnote:last-child{border-bottom:0}
+  .mmnote.hide{display:none}
+  .mmwhen{font-variant-numeric:tabular-nums;color:#80838f;font-size:13px;font-weight:700;line-height:1.35;padding-top:3px}
+  .mmwhen b{display:block;color:#3d404c;font-size:15px}
+  .mmbody{border-left:4px solid #c9ccd6;padding:2px 0 2px 12px;border-radius:2px;min-width:0}
+  .mmtags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;align-items:center}
+  .mmtag{border-radius:99px;padding:2px 10px;font-size:13px;font-weight:800;color:#fff;cursor:pointer}
+  .mmtag.none{background:#e6e6ee;color:#6b6e7b}
+  .mmtype{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:2px 7px}
+  .mmtype.action{background:#fff1c7;color:#8a5a00} .mmtype.decision{background:#e3f0ff;color:#0b5cad}
+  .mmtxt{font-size:17px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;outline:none;border-radius:6px;cursor:text}
+  .mmtxt[contenteditable]{background:#fff;box-shadow:0 0 0 2px #4f7cff;padding:2px 4px}
+  .mmdel{width:30px;height:30px;border-radius:8px;color:#a0a3ae;opacity:0;display:inline-flex;align-items:center;justify-content:center;transition:opacity .15s}
+  .mmnote:hover .mmdel,.mmdel:focus{opacity:1} .mmdel:hover{background:#ffe3e3;color:#d9363e}
+  @media (hover:none){.mmdel{opacity:.6}}
+  .mmcomp{position:fixed;left:0;right:0;bottom:0;z-index:7;background:linear-gradient(to top,var(--bg) 70%,transparent);padding:16px 14px 14px}
+  .mmcompin{max-width:900px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+  .mmcrow{display:flex;gap:8px;align-items:flex-end}
+  .mmcrow textarea{flex:1;resize:none;min-height:48px;max-height:180px;font-size:17px;border-radius:12px;padding:12px 14px}
+  .mmtypes{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .mmtypes button{padding:5px 11px;border-radius:99px;font-size:13px;font-weight:700;color:var(--muted);background:var(--bg);border:1px solid var(--line)}
+  .mmtypes button.on{color:#10111c;background:var(--text);border-color:var(--text)}
+  .mmtypes .mmstamp{margin-left:auto;color:var(--muted);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .mmpick{max-width:900px;margin:0 auto 10px;background:var(--surface);border:1px solid var(--focus);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;animation:rise .2s ease both;box-shadow:0 16px 40px rgba(0,0,0,.45)}
+  .mmpick h3{font-size:18px;font-weight:800}
+  .mmpick .mmpq{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mmpick .mmopts{display:flex;flex-wrap:wrap;gap:8px}
+  .mmpick .mmopts button{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;font-weight:800;font-size:16px;color:#fff;border:3px solid transparent;transition:transform .12s}
+  .mmpick .mmopts button:hover{transform:translateY(-2px)}
+  .mmpick .mmopts button.sel{border-color:#fff;box-shadow:0 0 0 2px var(--focus)}
+  .mmpick .mmopts button kbd{font:inherit;font-size:12px;background:rgba(0,0,0,.22);border-radius:5px;padding:1px 6px}
+  .mmpick .mmopts .ev{background:var(--surface2)} .mmpick .mmopts .no{background:var(--bg);color:var(--muted);border-color:var(--line)}
+  .mmpick .row2{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .mmmenu{position:fixed;top:74px;right:max(12px,calc(50% - 440px));z-index:9}
+  .mmtoast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:12;display:flex;gap:12px;align-items:center;background:var(--text);color:var(--bg);padding:10px 12px 10px 16px;border-radius:12px;font-weight:700;animation:wbToast .25s ease both;white-space:nowrap}
+  .mmtoast button{color:#4f7cff;font-weight:800;padding:2px 6px}
+  .mmbanner{position:fixed;left:50%;top:120px;transform:translateX(-50%);z-index:12;background:var(--bad);color:#fff;font-weight:800;font-size:20px;padding:14px 22px;border-radius:14px;animation:wbToast .3s ease both;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+  @media (max-width:640px){
+    .mmnote{grid-template-columns:58px 1fr auto;padding:10px 10px;gap:0 8px}
+    .mmclock{font-size:32px}
+    .mmbar{padding-top:26px}
+    .mmbar .btn span{display:none}
+    .mmbar .wb-people{display:none}
+    .mmtxt{font-size:16px}
+  }
 
   /* ---------- Landing ---------- */
   .landing{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:28px;text-align:center}
@@ -690,7 +792,13 @@
       <div class="paper" style="flex-direction:column;align-items:stretch;justify-content:center;gap:7px;padding:14px 18px"><i style="flex:0 0 10px;width:60%;background:#34d399"></i><i style="flex:0 0 10px;width:45%;background:#14b8a6;margin-left:25%"></i><i style="flex:0 0 10px;width:55%;background:#0ea5e9;margin-left:40%"></i></div>
       <div class="cover"><span class="fi">📋</span><b>PM Tools</b><small>Spreadsheet to date-range report</small></div>
     </button>
-    <div class="folder soon" aria-hidden="true" style="animation-delay:.16s">
+    <button class="folder mm-f" id="mmFolder" type="button" aria-label="Open Meeting Minutes" style="animation-delay:.16s">
+      <div class="back"></div>
+      <div class="paper paper2"></div>
+      <div class="paper lines"><i style="width:70%;background:#e5484d"></i><i style="width:90%"></i><i style="width:55%;background:#0090ff"></i><i style="width:80%"></i></div>
+      <div class="cover"><span class="fi">📝</span><b>Meeting Minutes</b><small>Shared notes with a countdown</small></div>
+    </button>
+    <div class="folder soon" aria-hidden="true" style="animation-delay:.24s">
       <div class="back"></div>
       <div class="cover"><span class="fi">✨</span><b>Coming soon</b><small>More tools on the way</small></div>
     </div>
@@ -832,6 +940,92 @@
   </div>
   <input type="file" id="wbImgIn" accept="image/*" multiple class="hidden">
   <input type="file" id="wbFileIn" accept=".json,application/json" class="hidden">
+</section>
+
+<!-- ===== Meeting Minutes start page ===== -->
+<section id="mmhome" class="mmhome hidden">
+  <button class="backbtn" id="backHub6" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>GentiMeter home</button>
+  <div>
+    <div class="crumb rainbow-text">GentiMeter</div>
+    <h1><span class="rainbow-text">Meeting Minutes</span></h1>
+    <p class="sub">A shared notepad with a countdown, time stamps and colours for each person.</p>
+  </div>
+  <div class="mmwrap">
+    <div class="mmcard">
+      <h2>Start a meeting</h2>
+      <div class="mmstep">
+        <label for="mmTitle">Meeting name</label>
+        <input class="field sm" id="mmTitle" maxlength="60" placeholder="e.g. Weekly project catch-up">
+      </div>
+      <div class="mmstep">
+        <label for="mmPartIn">Who are the meeting participants?</label>
+        <form class="mmadd" id="mmPartForm"><input class="field sm" id="mmPartIn" maxlength="20" placeholder="Type a name, then press Enter" autocomplete="off"><button class="btn ghost sm" type="submit"><svg class="i"><use href="#i-plus"/></svg>Add</button></form>
+        <div class="mmchips" id="mmParts"></div>
+        <span class="mmhint" id="mmPartHint">Each person gets their own colour so you can see who each note is for.</span>
+      </div>
+      <div class="mmstep">
+        <label>How long is the meeting?</label>
+        <div class="mmlens" id="mmLens"><input class="field sm" id="mmLenIn" type="number" min="1" max="600" inputmode="numeric" placeholder="mins"></div>
+      </div>
+      <button class="btn rain" id="mmStart" type="button" disabled><svg class="i"><use href="#i-play"/></svg>Start meeting</button>
+    </div>
+    <form class="mmcard" id="mmJoin">
+      <h2>Join a meeting</h2>
+      <p class="mmhint">Type the code from the host's screen, or scan their QR code.</p>
+      <div class="mmadd"><input class="field code-field" id="mmCode" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="7" placeholder="4AB 7CD"><button class="btn rain" type="submit">Join</button></div>
+      <div class="wbmsg" id="mmMsg"></div>
+    </form>
+    <div class="wbrecent hidden" id="mmRecent" style="max-width:none"></div>
+  </div>
+</section>
+
+<!-- ===== Meeting Minutes notepad ===== -->
+<section id="mins" class="mins hidden">
+  <div class="mmtop">
+    <div class="mmbar">
+      <button class="wb-tb" id="mmBack" type="button" title="Leave the meeting"><svg><use href="#i-home"/></svg></button>
+      <input class="wb-title" id="mmName" maxlength="60" placeholder="Untitled meeting" aria-label="Meeting name" autocomplete="off">
+      <span class="wb-dot" id="mmDot" title="Connecting…"></span>
+      <span class="wb-people" id="mmPeople"></span>
+      <button class="btn rain sm" id="mmShareBtn" type="button"><svg class="i"><use href="#i-link"/></svg><span>Invite</span></button>
+      <button class="wb-tb" id="mmMenuBtn" type="button" title="More"><svg><use href="#i-more"/></svg></button>
+    </div>
+    <div class="mmtimer">
+      <div class="mmclock" id="mmClock">--:--</div>
+      <div class="mmmeta"><div class="mmprog" id="mmProg"><i></i></div><span id="mmTimes"></span></div>
+      <div class="mmtbtns"><button class="btn ghost sm" id="mmPlus" type="button">+5 min</button><button class="btn ghost sm" id="mmEnd" type="button">End meeting</button></div>
+    </div>
+    <div class="mmparts" id="mmPartBar"></div>
+  </div>
+  <div class="mmpaper"><div class="mmlist" id="mmList"></div></div>
+  <div class="mmcomp" id="mmComp">
+    <div class="mmpick hidden" id="mmPick"></div>
+    <div class="mmcompin">
+      <div class="mmtypes" id="mmTypes"></div>
+      <div class="mmcrow">
+        <textarea class="field" id="mmInput" rows="1" maxlength="2000" placeholder="Type a note, then press Enter"></textarea>
+        <button class="btn rain" id="mmSend" type="button" title="Add note">Add</button>
+      </div>
+    </div>
+  </div>
+  <div class="wb-bar wb-menu mmmenu hidden" id="mmMenu"></div>
+  <div class="wb-modal hidden" id="mmShare" style="position:fixed">
+    <div class="wb-card">
+      <h2>Invite people</h2>
+      <p>Scan the QR code, or open Meeting Minutes on GentiMeter and type this code.</p>
+      <div class="wb-code" id="mmShareCode"></div>
+      <div class="wb-qr" id="mmQr"></div>
+      <div class="wb-link" id="mmLink"></div>
+      <div class="wb-row"><button class="btn rain" id="mmCopy" type="button"><svg class="i"><use href="#i-copy"/></svg>Copy link</button><button class="btn ghost" id="mmShareClose" type="button">Done</button></div>
+    </div>
+  </div>
+  <div class="wb-modal hidden" id="mmConfirm" style="position:fixed">
+    <div class="wb-card">
+      <h2 id="mmConfH"></h2>
+      <p id="mmConfP"></p>
+      <div class="wb-row"><button class="btn ghost" id="mmConfNo" type="button">Cancel</button><button class="btn" id="mmConfYes" type="button" style="background:var(--bad);color:#fff"></button></div>
+    </div>
+  </div>
 </section>
 
 <!-- ===== PM Tools folder ===== -->
@@ -1156,7 +1350,7 @@ const FG = { light: '#f4f4f8', dark: '#14151f' };
 
 /* ================= Helpers ================= */
 const $ = id => document.getElementById(id);
-const show = id => ['hub','enghome','landing','wbhome','board','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+const show = id => ['hub','enghome','landing','wbhome','board','mmhome','mins','pmhome','pm','admin','host','join'].forEach(s => $(s).classList.toggle('hidden', s !== id));
 const rid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const store = (area) => ({
@@ -2552,7 +2746,7 @@ const WB_FONTS = {
 const wbFont = o => WB_FONTS[o.f] || WB_FONTS.clean;
 const newBoardCode = () => { let c = WB_ABC[Math.floor(Math.random() * WB_ABC.length)]; for (let i = 0; i < 5; i++) c += WB_CH[Math.floor(Math.random() * WB_CH.length)]; return c; };
 const cleanBoardCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-const isBoardCode = c => /^[A-Z0-9]{6}$/.test(c) && /[A-Z]/.test(c);
+const isBoardCode = c => /^[A-Z][A-Z0-9]{5}$/.test(c);
 const wbR1 = n => Math.round(n * 10) / 10;
 
 function wbShapeD(k, w, h){
@@ -2615,26 +2809,81 @@ const WB_IC = {
 };
 const wbIcon = (name, extra = '') => { const s = svgE('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }); s.innerHTML = WB_IC[name] + extra; return s; };
 
+const removeRecent = (code, key = 'wb_recent') => ls.set(key, (ls.get(key) || []).filter(r => r && r.c !== code));
+// Wipes a board or meeting from the live servers. Only works for the person who started it.
+const wipeBoard = code => wipeRoom(WB_NS, code);
+function wipeRoom(ns, code){
+  return new Promise(resolve => {
+    if (!window.mqtt) return resolve('offline');
+    const B = ns + code + '/', pid = ls.get('wb_pid'), topics = new Set(), cs = [];
+    let meta = null;
+    BROKERS.forEach(url => {
+      try {
+        const c = mqtt.connect(url, { clientId: 'gbw_' + rid(), reconnectPeriod: 0, connectTimeout: 8000, clean: true });
+        c.on('connect', () => c.subscribe(B + '#')); c.on('error', () => {});
+        c.on('message', (t, p) => {
+          const sub = t.slice(B.length); if (!p.length || sub === 'c') return;
+          if (sub === 'm') { try { const m = JSON.parse(p.toString()); if (!meta || (+m.v || 0) >= (+meta.v || 0)) meta = m; } catch {} }
+          else topics.add(sub);
+        });
+        cs.push(c);
+      } catch {}
+    });
+    setTimeout(() => {
+      const live = cs.filter(c => c.connected);
+      if (!live.length) { cs.forEach(c => c.end(true)); return resolve('offline'); }
+      if (meta && meta.deleted) { cs.forEach(c => c.end(true)); return resolve('deleted'); }
+      if (!meta || !meta.owner || meta.owner !== pid) { cs.forEach(c => c.end(true)); return resolve('notowner'); }
+      live.forEach(c => {
+        topics.forEach(sub => c.publish(B + sub, '', { retain: true, qos: 0 }));
+        c.publish(B + 'm', JSON.stringify({ deleted: 1, owner: meta.owner, v: Math.max(Date.now(), (+meta.v || 0) + 1) }), { retain: true, qos: 0 });
+      });
+      setTimeout(() => { cs.forEach(c => c.end()); resolve('deleted'); }, 800);
+    }, 2500);
+  });
+}
+function recentList(o){
+  const draw = note => {
+    const rec = (ls.get(o.key) || []).filter(r => r && o.valid(r.c)), box = o.box, untitled = 'Untitled ' + o.noun;
+    box.textContent = '';
+    if (!rec.length && !note) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    if (rec.length) box.append(el('h3', '', o.heading));
+    rec.forEach(r => {
+      const row = el('div', 'wbrec'), open = el('button', 'wbopen'), del = el('button', 'wbdel');
+      open.type = del.type = 'button';
+      open.append(el('span', 'fi', o.icon), el('b', '', r.t || untitled), el('span', '', fmtCode(r.c)));
+      open.onclick = () => o.open(r.c);
+      del.title = 'Delete this ' + o.noun; del.setAttribute('aria-label', 'Delete ' + (r.t || untitled)); del.append(icon('trash'));
+      del.onclick = () => {
+        row.textContent = ''; row.classList.add('ask');
+        const q = el('b', '', 'Delete “' + (r.t || untitled) + '”?');
+        const yes = el('button', 'btn sm', 'Delete'), no = el('button', 'btn ghost sm', 'Cancel');
+        yes.type = no.type = 'button'; yes.style.background = 'var(--bad)'; yes.style.color = '#fff';
+        no.onclick = () => draw();
+        yes.onclick = async () => {
+          yes.disabled = no.disabled = true; yes.textContent = 'Deleting…';
+          const res = await o.wipe(r.c);
+          removeRecent(r.c, o.key);
+          draw(res === 'deleted' ? '“' + (r.t || untitled) + '” has been deleted for everyone.'
+            : res === 'notowner' ? 'Removed from your list. Only the person who started a ' + o.noun + ' can delete it for everyone.'
+            : "Removed from your list. Couldn't reach the live server, so the " + o.noun + ' itself wasn\'t deleted.');
+        };
+        row.append(q, no, yes);
+      };
+      row.append(open, del); box.append(row);
+    });
+    if (note) box.append(el('p', 'wbnote', note));
+  };
+  draw();
+}
 function startWbHome(){
   show('wbhome'); document.title = 'Whiteboard · GentiMeter';
-  const rec = (ls.get('wb_recent') || []).filter(r => r && isBoardCode(r.c));
-  const box = $('wbRecent'); box.textContent = '';
-  if (rec.length) {
-    box.append(el('h3', '', 'Your recent boards'));
-    rec.forEach(r => {
-      const b = el('button', 'wbrec'); b.type = 'button';
-      b.append(el('span', 'fi', '🖍️'), el('b', '', r.t || 'Untitled board'), el('span', '', fmtCode(r.c)));
-      b.onclick = () => nav('board=' + r.c);
-      box.append(b);
-    });
-    box.classList.remove('hidden');
-  }
+  recentList({ box: $('wbRecent'), key: 'wb_recent', valid: isBoardCode, open: c => nav('board=' + c), wipe: wipeBoard, icon: '🖍️', noun: 'board', heading: 'Your recent boards' });
   $('wbJoin').onsubmit = e => {
     e.preventDefault();
     const c = cleanBoardCode($('wbCode').value);
-    if (isBoardCode(c)) nav('board=' + c);
-    else if (/^\d{6}$/.test(c)) nav('code=' + c);
-    else { $('wbMsg').textContent = 'Board codes have 6 letters and numbers, like ABC 234.'; $('wbCode').focus(); }
+    if (!goCode(c)) { $('wbMsg').textContent = 'Board codes have 6 letters and numbers, like ABC 234.'; $('wbCode').focus(); }
   };
   $('wbCode').oninput = () => { $('wbMsg').textContent = ''; };
   $('wbNew').onclick = () => { const c = newBoardCode(); ss.set('wb_newtitle', $('wbNewTitle').value.trim().slice(0, 60)); nav('board=' + c + '&new=1'); };
@@ -2677,7 +2926,18 @@ function startBoard(code){
   /* ---------- Connection ---------- */
   const clients = [], seen = new Map();
   let metaSent = false, healT = null;
+  let dead = false;
+  function boardGone(){
+    if (dead) return; dead = true; removeRecent(code); endEdit(); clearSel();
+    clients.forEach(c => { try { c.end(true); } catch {} });
+    document.querySelectorAll('#board .wb-modal').forEach(m => m.classList.add('hidden'));
+    $('wbConfH').textContent = 'This board has been deleted'; $('wbConfP').textContent = 'The person who started it has deleted it.';
+    $('wbConfNo').classList.add('hidden'); $('wbConfYes').textContent = 'Back to Whiteboard'; $('wbConfYes').style.background = 'var(--text)'; $('wbConfYes').style.color = 'var(--bg)';
+    $('wbConfYes').onclick = () => nav('app=engagement&tool=whiteboard');
+    $('wbConfirm').classList.remove('hidden');
+  }
   function pub(sub, data, retain = true, only){
+    if (dead) return;
     const s = typeof data === 'string' ? data : JSON.stringify(data);
     (only ? [only] : clients).forEach(c => { try { c.publish(B + sub, s, { retain, qos: 0 }); } catch {} });
   }
@@ -2723,6 +2983,7 @@ function startBoard(code){
       }
     } else if (sub === 'm') {
       let m; try { m = JSON.parse(s); } catch { return; }
+      if (m && m.deleted) { boardGone(); return; }
       if (m && typeof m === 'object' && (+m.v || 0) >= (meta.v || 0)) {
         meta = { title: str(m.title).slice(0, 60), owner: String(m.owner || '').slice(0, 20), locked: !!m.locked, v: +m.v || 0 };
         applyMeta();
@@ -3484,6 +3745,7 @@ function startBoard(code){
     saveRecent();
   }
   function saveRecent(){
+    if (dead) return;
     const rec = (ls.get('wb_recent') || []).filter(r => r && r.c !== code);
     rec.unshift({ c: code, t: meta.title, ts: Date.now() }); ls.set('wb_recent', rec.slice(0, 8));
   }
@@ -3498,6 +3760,11 @@ function startBoard(code){
     if (isOwner()) {
       item(meta.locked ? '🔓  Let everyone edit again' : '🔒  Lock editing (view only for others)', () => { meta.locked = !meta.locked; meta.v = Date.now(); pub('m', meta); applyMeta(); toast(meta.locked ? 'Board locked. Only you can edit.' : 'Everyone can edit again.'); });
       item('🗑️  Clear the whole board', () => confirmBox('Clear the whole board?', 'This removes everything for everyone. You can press Undo straight after if you change your mind.', 'Clear board', clearBoard), 'danger');
+      item('❌  Delete this board', () => confirmBox('Delete this board?', "This deletes it for everyone and it can't be undone. Save a board file first if you might want it again.", 'Delete board', async () => {
+        toast('Deleting…', 5000); clients.forEach(c => { try { c.publish(B + 'p/' + me.pid, '', { retain: true, qos: 0 }); } catch {} });
+        const res = await wipeBoard(code);
+        if (res === 'deleted') { dead = true; removeRecent(code); nav('app=engagement&tool=whiteboard'); } else toast("Couldn't delete it right now. Check your connection and try again.", 4000);
+      }), 'danger');
     }
     const tip = el('div', 'tip'); tip.textContent = 'Tips: drag with two fingers (or hold Space) to move around. Pinch or Ctrl + scroll to zoom. Double-tap a note, shape or text to edit it.'; m.append(tip);
     m.classList.remove('hidden');
@@ -3630,10 +3897,482 @@ function startBoard(code){
   window.__wb = { objs, view, sel: () => sel, meta: () => meta, me };
 }
 
+
+/* ================= Meeting Minutes ================= */
+const MM_NS = 'gentimins/v1/';
+const MM_COLS = ['#e5484d','#0090ff','#30a46c','#f76b15','#8e4ec6','#e93d82','#12a594','#ad7f58','#3e63dd','#c2298a','#5b5bd6','#7a6a3a'];
+const MM_TYPES = { note: '📝 Note', action: '✅ Action', decision: '💡 Decision' };
+const isMeetCode = c => /^[2-9][A-Z0-9]{5}$/.test(c) && /[A-Z]/.test(c);
+const newMeetCode = () => { let c; do { c = '23456789'[Math.floor(Math.random() * 8)]; for (let i = 0; i < 5; i++) c += WB_CH[Math.floor(Math.random() * WB_CH.length)]; } while (!/[A-Z]/.test(c)); return c; };
+const fmtHM = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const fmtDur = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+const fmtMins = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); };
+const goCode = raw => {
+  const c = cleanBoardCode(raw);
+  if (/^\d{6}$/.test(c)) { nav('code=' + c); return true; }
+  if (isMeetCode(c)) { nav('mins=' + c); return true; }
+  if (isBoardCode(c)) { nav('board=' + c); return true; }
+  return false;
+};
+
+function startMmHome(){
+  show('mmhome'); document.title = 'Meeting Minutes · GentiMeter';
+  $('backHub6').onclick = () => nav('');
+  const parts = []; let len = 30;
+  const drawParts = () => {
+    const box = $('mmParts'); box.textContent = '';
+    parts.forEach((p, i) => {
+      const c = el('span', 'mmchip', p); c.style.background = MM_COLS[i % MM_COLS.length];
+      const x = el('button', '', '×'); x.type = 'button'; x.title = 'Remove ' + p; x.setAttribute('aria-label', 'Remove ' + p);
+      x.onclick = () => { parts.splice(i, 1); drawParts(); };
+      c.append(x); box.append(c);
+    });
+    $('mmStart').disabled = !parts.length;
+    $('mmPartHint').textContent = parts.length ? parts.length + (parts.length === 1 ? ' person' : ' people') + ' added. Add more, or start the meeting.' : 'Each person gets their own colour so you can see who each note is for.';
+  };
+  const addParts = () => {
+    $('mmPartIn').value.split(',').map(cleanName).filter(Boolean).forEach(n => { if (parts.length < 24 && !parts.some(p => p.toLowerCase() === n.toLowerCase())) parts.push(n); });
+    $('mmPartIn').value = ''; drawParts();
+  };
+  $('mmPartForm').onsubmit = e => { e.preventDefault(); addParts(); $('mmPartIn').focus(); };
+  const lens = $('mmLens');
+  [15, 30, 45, 60, 90].forEach(m => { const b = el('button', m === len ? 'on' : '', m + ' min'); b.type = 'button'; b.dataset.m = m; b.onclick = () => { len = m; $('mmLenIn').value = ''; mark(); }; lens.insertBefore(b, $('mmLenIn')); });
+  const mark = () => lens.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.m === len && !$('mmLenIn').value));
+  $('mmLenIn').oninput = () => { const v = Math.round(+$('mmLenIn').value); if (v >= 1 && v <= 600) len = v; mark(); };
+  $('mmStart').onclick = () => {
+    if ($('mmPartIn').value.trim()) addParts();
+    if (!parts.length) { $('mmPartIn').focus(); return; }
+    ss.set('mm_new', { title: $('mmTitle').value.trim().slice(0, 60), parts: parts.slice(), len });
+    nav('mins=' + newMeetCode() + '&new=1');
+  };
+  $('mmJoin').onsubmit = e => { e.preventDefault(); if (!goCode($('mmCode').value)) { $('mmMsg').textContent = 'Meeting codes have 6 letters and numbers, like 4AB 7CD.'; $('mmCode').focus(); } };
+  $('mmCode').oninput = () => { $('mmMsg').textContent = ''; };
+  recentList({ box: $('mmRecent'), key: 'mm_recent', valid: isMeetCode, open: c => nav('mins=' + c), wipe: c => wipeRoom(MM_NS, c), icon: '📝', noun: 'meeting', heading: 'Your recent meetings' });
+  drawParts();
+}
+
+function startMins(code){
+  show('mins'); document.title = 'Meeting Minutes · GentiMeter';
+  const B = MM_NS + code + '/';
+  const brokerQ = qp.get('broker') ? '&broker=' + encodeURIComponent(qp.get('broker')) : '';
+  const joinUrl = location.origin + location.pathname + '?mins=' + code + brokerQ;
+  const pid = ls.get('wb_pid') || rid().slice(0, 12); ls.set('wb_pid', pid);
+  const setup = qp.get('new') === '1' ? ss.get('mm_new') : null;
+  if (qp.get('new') === '1') { ss.del('mm_new'); try { history.replaceState(null, '', location.pathname + '?mins=' + code + brokerQ); } catch {} }
+  const str = s => typeof s === 'string' ? s.slice(0, 2000) : '';
+  const num = (n, lo, hi) => { n = +n; return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : null; };
+  const safeCol = c => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c.toLowerCase() : null;
+  let meta = { title: '', parts: [], len: 30, start: 0, end: 0, owner: '', v: 0 };
+  if (setup && Array.isArray(setup.parts)) meta = { title: str(setup.title).slice(0, 60), parts: setup.parts.map((n, i) => ({ id: rid().slice(0, 8), n: cleanName(n), c: MM_COLS[i % MM_COLS.length] })).filter(p => p.n), len: num(setup.len, 1, 600) || 30, start: Date.now(), end: 0, owner: pid, v: Date.now() };
+  const notes = new Map(), tomb = new Map(), els = new Map(), people = new Map();
+  let dead = false, filter = null, editing = null, typingAt = 0, curType = 'note', pick = null, lastLeft = null;
+
+  /* ---------- Connection ---------- */
+  const clients = [], seen = new Map();
+  let metaSent = false, healT = null;
+  function pub(sub, data, retain = true, only){
+    if (dead) return; const s = typeof data === 'string' ? data : JSON.stringify(data);
+    (only ? [only] : clients).forEach(c => { try { c.publish(B + sub, s, { retain, qos: 0 }); } catch {} });
+  }
+  function connect(){
+    if (!window.mqtt) { toast("Couldn't load the live connection. Check your internet and refresh."); return; }
+    BROKERS.forEach(url => {
+      let c; try { c = mqtt.connect(url, { clientId: 'gm_' + rid(), reconnectPeriod: 3000, connectTimeout: 8000, clean: true, will: { topic: B + 'p/' + pid, payload: '', retain: true, qos: 0 } }); } catch { return; }
+      seen.set(c, new Set());
+      c.on('connect', () => {
+        seen.set(c, new Set()); c.subscribe(B + '#'); pub('p/' + pid, { t: Date.now() }, true, c);
+        if (setup && !metaSent) { metaSent = true; pub('m', meta); }
+        status(); clearTimeout(healT); healT = setTimeout(heal, 4000);
+      });
+      c.on('close', status); c.on('offline', status); c.on('error', () => {});
+      c.on('message', (t, p) => onMsg(t.slice(B.length), p.toString(), c));
+      clients.push(c);
+    });
+  }
+  function status(){ const n = clients.filter(c => c.connected).length; $('mmDot').classList.toggle('ok', n > 0); $('mmDot').title = n ? 'Live' : 'Connecting…'; }
+  setInterval(() => pub('p/' + pid, { t: Date.now() }), 60000);
+  addEventListener('pagehide', () => pub('p/' + pid, ''));
+  function heal(){
+    clients.forEach(c => {
+      if (!c.connected) return; const s = seen.get(c) || new Set();
+      if (meta.v && !s.has('m')) pub('m', meta, true, c);
+      notes.forEach((n, id) => { if (!s.has(id)) pub('n/' + id, n, true, c); });
+      tomb.forEach((v, id) => { if (!s.has(id)) pub('n/' + id, { id, del: 1, v, e: pid }, true, c); });
+    });
+  }
+  function onMsg(sub, s, c){
+    if (sub === 'm') {
+      seen.get(c)?.add('m'); if (!s) return;
+      let m; try { m = JSON.parse(s); } catch { return; }
+      if (!m || typeof m !== 'object') return;
+      if (m.deleted) { gone(); return; }
+      if ((+m.v || 0) < meta.v) { if ((+m.v || 0) < meta.v - 1) pub('m', meta, true, c); return; }
+      const parts = Array.isArray(m.parts) ? m.parts.slice(0, 30).map(p => ({ id: String(p && p.id || '').replace(/[^a-z0-9]/g, '').slice(0, 16), n: cleanName(p && p.n), c: safeCol(p && p.c) || '#8b8d98' })).filter(p => p.id && p.n) : [];
+      meta = { title: str(m.title).slice(0, 60), parts, len: num(m.len, 1, 600) || 30, start: num(m.start, 0, 1e15) || 0, end: num(m.end, 0, 1e15) || 0, owner: String(m.owner || '').slice(0, 20), v: +m.v || 0 };
+      applyMeta();
+    } else if (sub.startsWith('n/')) {
+      const id = sub.slice(2); if (!/^[a-z0-9]{4,40}$/.test(id)) return;
+      seen.get(c)?.add(id); if (!s) return;
+      let o; try { o = JSON.parse(s); } catch { return; }
+      o = clean(o, id); if (!o) return;
+      const local = notes.get(id), lv = local ? local.v : (tomb.get(id) || 0);
+      if (lv >= o.v) { if (lv > o.v && !(o.e === pid)) pub('n/' + id, local || { id, del: 1, v: lv, e: pid }, true, c); return; }
+      if (editing && editing.id === id) return;
+      if (o.del) { tomb.set(id, o.v); notes.delete(id); } else { tomb.delete(id); notes.set(id, o); }
+      renderList();
+    } else if (sub.startsWith('p/')) {
+      const p = sub.slice(2).slice(0, 20);
+      if (!s) people.delete(p); else { try { const x = JSON.parse(s); if (Date.now() - (+x.t || 0) < 150000) people.set(p, Date.now()); } catch {} }
+      drawPeople();
+    }
+  }
+  function clean(o, id){
+    if (!o || typeof o !== 'object') return null;
+    const v = num(o.v, 1, 1e15); if (!v) return null;
+    if (o.del) return { id, del: 1, v };
+    return { id, v, e: String(o.e || '').slice(0, 20), txt: str(o.txt), type: MM_TYPES[o.type] ? o.type : 'note', at: num(o.at, 0, 1e15) || v, who: Array.isArray(o.who) ? o.who.filter(x => typeof x === 'string').slice(0, 30).map(x => x.slice(0, 16)) : [] };
+  }
+  const stamp = o => { o.v = Math.max(Date.now(), (o.v || 0) + 1, (tomb.get(o.id) || 0) + 1); o.e = pid; return o; };
+  function saveNote(o){ stamp(o); tomb.delete(o.id); notes.set(o.id, o); pub('n/' + o.id, o); renderList(); }
+  function delNote(id){ const o = notes.get(id); if (!o) return; const v = Math.max(Date.now(), o.v + 1); notes.delete(id); tomb.set(id, v); pub('n/' + id, { id, del: 1, v, e: pid }); renderList(); }
+  function saveMeta(){ meta.v = Math.max(Date.now(), meta.v + 1); pub('m', meta); applyMeta(); }
+  function gone(){
+    if (dead) return; dead = true; removeRecent(code, 'mm_recent');
+    clients.forEach(c => { try { c.end(true); } catch {} });
+    $('mmConfH').textContent = 'This meeting has been deleted'; $('mmConfP').textContent = 'The person who started it has deleted it.';
+    $('mmConfNo').classList.add('hidden'); $('mmConfYes').textContent = 'Back to Meeting Minutes'; $('mmConfYes').style.background = 'var(--text)'; $('mmConfYes').style.color = 'var(--bg)';
+    $('mmConfYes').onclick = () => nav('app=minutes'); $('mmConfirm').classList.remove('hidden');
+  }
+
+  /* ---------- Rendering ---------- */
+  const partOf = id => meta.parts.find(p => p.id === id);
+  const whoCol = o => { const p = o.who.length && o.who[0] !== 'all' ? partOf(o.who[0]) : null; return p ? p.c : o.who[0] === 'all' ? '#5b5e6b' : null; };
+  const since = t => { if (!meta.start) return ''; const d = t - meta.start; return d < 0 ? 'before start' : fmtDur(d) + ' in'; };
+  function applyMeta(){
+    if (document.activeElement !== $('mmName')) $('mmName').value = meta.title;
+    document.title = (meta.title || 'Meeting') + ' · Meeting Minutes';
+    drawParts(); renderList(); tick(); saveRecent();
+  }
+  function saveRecent(){
+    if (dead || !meta.v) return;
+    const rec = (ls.get('mm_recent') || []).filter(r => r && r.c !== code);
+    rec.unshift({ c: code, t: meta.title || 'Untitled meeting', ts: Date.now() }); ls.set('mm_recent', rec.slice(0, 10));
+  }
+  function drawParts(){
+    const bar = $('mmPartBar'); bar.textContent = '';
+    const counts = {}; notes.forEach(n => n.who.forEach(w => { counts[w] = (counts[w] || 0) + 1; }));
+    meta.parts.forEach(p => {
+      const b = el('button', 'mmp' + (filter && filter !== p.id ? ' dim' : '') + (filter === p.id ? ' on' : '')); b.type = 'button'; b.style.background = p.c;
+      b.append(el('span', '', p.n)); if (counts[p.id]) b.append(el('small', '', counts[p.id]));
+      b.title = filter === p.id ? 'Show everyone\'s notes' : 'Only show notes for ' + p.n;
+      b.onclick = () => { filter = filter === p.id ? null : p.id; drawParts(); renderList(); };
+      bar.append(b);
+    });
+    const add = el('button', 'mmp add', '+ Add person'); add.type = 'button';
+    add.onclick = () => {
+      const f = el('form', 'mmadd'); const i = el('input', 'field sm'); i.maxLength = 20; i.placeholder = 'Name'; i.style.width = '150px'; i.style.padding = '6px 10px';
+      f.append(i); add.replaceWith(f); i.focus();
+      const done = () => { const n = cleanName(i.value); if (n && !meta.parts.some(p => p.n.toLowerCase() === n.toLowerCase()) && meta.parts.length < 30) { const used = new Set(meta.parts.map(p => p.c)); meta.parts.push({ id: rid().slice(0, 8), n, c: MM_COLS.find(c => !used.has(c)) || MM_COLS[meta.parts.length % MM_COLS.length] }); saveMeta(); } else drawParts(); };
+      f.onsubmit = e => { e.preventDefault(); done(); }; i.onblur = () => setTimeout(done, 0);
+      i.onkeydown = e => { if (e.key === 'Escape') { i.onblur = null; drawParts(); } };
+    };
+    bar.append(add);
+  }
+  function renderList(){
+    const list = $('mmList');
+    const sorted = [...notes.values()].sort((a, b) => a.at - b.at || a.v - b.v);
+    const alive = new Set(sorted.map(n => n.id));
+    els.forEach((e, id) => { if (!alive.has(id)) { e.remove(); els.delete(id); } });
+    let empty = list.querySelector('.mmempty');
+    if (!sorted.length) {
+      if (!empty) { empty = el('div', 'mmempty'); empty.append(el('b', '', 'No notes yet')); empty.append(el('span', '', 'Type in the box at the bottom and press Enter. You\'ll then pick who the note is for.')); list.append(empty); }
+    } else if (empty) empty.remove();
+    sorted.forEach(n => { let e = els.get(n.id); if (!e) { e = buildNote(n.id); els.set(n.id, e); } fillNote(e, n); list.append(e); });
+    drawPartsCounts();
+  }
+  let countsT = null;
+  const drawPartsCounts = () => { clearTimeout(countsT); countsT = setTimeout(() => { if (!document.querySelector('#mmPartBar form')) drawParts(); }, 50); };
+  function buildNote(id){
+    const e = el('div', 'mmnote'), when = el('div', 'mmwhen'), body = el('div', 'mmbody'), tags = el('div', 'mmtags'), txt = el('div', 'mmtxt'), del = el('button', 'mmdel');
+    del.type = 'button'; del.title = 'Delete note'; del.setAttribute('aria-label', 'Delete note'); del.append(icon('trash'));
+    body.append(tags, txt); e.append(when, body, del);
+    txt.onclick = () => startEdit(id);
+    del.onclick = () => { const snap = JSON.parse(JSON.stringify(notes.get(id) || null)); if (!snap) return; delNote(id); toast('Note deleted', 6000, 'Undo', () => saveNote(snap)); };
+    return e;
+  }
+  function fillNote(e, n){
+    const [when, body, del] = e.children, [tags, txt] = body.children;
+    when.textContent = ''; when.append(el('b', '', fmtHM(n.at)), el('span', '', since(n.at)));
+    when.title = 'Started typing at ' + new Date(n.at).toLocaleTimeString('en-GB');
+    const col = whoCol(n);
+    body.style.borderLeftColor = col || '#c9ccd6'; e.style.background = col ? col + '12' : '';
+    tags.textContent = '';
+    if (n.type !== 'note') tags.append(el('span', 'mmtype ' + n.type, n.type === 'action' ? 'Action' : 'Decision'));
+    const whoList = n.who.map(w => w === 'all' ? { n: 'Everyone', c: '#5b5e6b' } : partOf(w)).filter(Boolean);
+    if (whoList.length) whoList.forEach(p => { const t = el('span', 'mmtag', p.n); t.style.background = p.c; t.title = 'Change who this is for'; t.onclick = () => openPick({ mode: 'edit', id: n.id }); tags.append(t); });
+    else { const t = el('span', 'mmtag none', '+ who is this for?'); t.title = 'Pick who this note is for'; t.onclick = () => openPick({ mode: 'edit', id: n.id }); tags.append(t); }
+    if (!(editing && editing.id === n.id)) txt.textContent = n.txt;
+    e.classList.toggle('hide', !!filter && !n.who.includes(filter));
+  }
+  function startEdit(id){
+    const n = notes.get(id), e = els.get(id); if (!n || !e || (editing && editing.id === id)) return;
+    endEdit(); const txt = e.children[1].children[1];
+    editing = { id, txt };
+    txt.setAttribute('contenteditable', 'plaintext-only'); if (txt.contentEditable !== 'plaintext-only') txt.setAttribute('contenteditable', 'true');
+    txt.focus();
+    try { const r = document.createRange(); r.selectNodeContents(txt); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } catch {}
+    txt.onkeydown = ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); txt.blur(); } else if (ev.key === 'Escape') { ev.preventDefault(); txt.textContent = n.txt; txt.blur(); } };
+    txt.onblur = () => endEdit();
+  }
+  function endEdit(){
+    if (!editing) return; const { id, txt } = editing; editing = null;
+    txt.removeAttribute('contenteditable'); txt.onkeydown = txt.onblur = null;
+    const n = notes.get(id); if (!n) return;
+    const t = txt.innerText.replace(/\n+$/, '').slice(0, 2000);
+    if (!t.trim()) { const snap = JSON.parse(JSON.stringify(n)); delNote(id); toast('Note deleted', 6000, 'Undo', () => saveNote(snap)); return; }
+    if (t !== n.txt) { n.txt = t; saveNote(n); } else renderList();
+  }
+
+  /* ---------- Timer ---------- */
+  let audio = null;
+  function chime(){
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); const t = audio.currentTime;
+      [880, 1175, 1568].forEach((f, i) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t + i * .18); g.gain.linearRampToValueAtTime(.25, t + i * .18 + .02); g.gain.exponentialRampToValueAtTime(.001, t + i * .18 + .6); o.connect(g).connect(audio.destination); o.start(t + i * .18); o.stop(t + i * .18 + .7); });
+    } catch {}
+  }
+  function banner(msg){ const b = el('div', 'mmbanner', msg); document.body.append(b); setTimeout(() => b.remove(), 4000); }
+  function tick(){
+    const clock = $('mmClock'), prog = $('mmProg'), times = $('mmTimes');
+    if (!meta.start) { clock.textContent = '--:--'; times.textContent = 'Loading the meeting…'; return; }
+    const now = Date.now(), plan = meta.len * 60000, endPlan = meta.start + plan;
+    clock.className = 'mmclock'; prog.classList.remove('over');
+    if (meta.end) {
+      clock.textContent = 'Meeting ended'; clock.classList.add('done');
+      prog.firstChild.style.width = '100%';
+      times.textContent = `Started ${fmtHM(meta.start)} · ended ${fmtHM(meta.end)} · lasted ${fmtMins(meta.end - meta.start)} (planned ${fmtMins(plan)})`;
+      $('mmPlus').classList.add('hidden'); $('mmEnd').textContent = 'Reopen';
+      lastLeft = null; return;
+    }
+    $('mmPlus').classList.remove('hidden'); $('mmEnd').textContent = 'End meeting';
+    const left = endPlan - now;
+    clock.textContent = '';
+    if (left >= 0) { clock.append(fmtDur(left + 999), el('small', '', 'left')); if (left < 5 * 60000) clock.classList.add('warn'); }
+    else { clock.append('+' + fmtDur(-left), el('small', '', 'over')); clock.classList.add('over'); prog.classList.add('over'); }
+    prog.firstChild.style.width = Math.min(100, Math.max(0, (now - meta.start) / plan * 100)) + '%';
+    times.textContent = `Started ${fmtHM(meta.start)} · planned to end ${fmtHM(endPlan)} (${fmtMins(plan)})`;
+    if (lastLeft !== null) {
+      if (lastLeft >= 5 * 60000 && left < 5 * 60000 && left >= 0 && plan > 5 * 60000) { chime(); toast('5 minutes left'); }
+      if (lastLeft >= 0 && left < 0) { chime(); banner("⏰ Time's up!"); }
+    }
+    lastLeft = left;
+  }
+  setInterval(tick, 500);
+  $('mmPlus').onclick = () => { meta.len = Math.min(600, meta.len + 5); saveMeta(); toast('Added 5 minutes'); };
+  $('mmEnd').onclick = () => { meta.end = meta.end ? 0 : Date.now(); saveMeta(); };
+
+  /* ---------- Composer & picker ---------- */
+  const input = $('mmInput');
+  const types = $('mmTypes');
+  const stampLbl = el('span', 'mmstamp');
+  function drawTypes(){
+    types.textContent = '';
+    Object.entries(MM_TYPES).forEach(([k, lab]) => { const b = el('button', k === curType ? 'on' : '', lab); b.type = 'button'; b.onclick = () => { curType = k; drawTypes(); input.focus(); }; types.append(b); });
+    types.append(stampLbl);
+  }
+  function drawStamp(){ stampLbl.textContent = typingAt ? 'Time stamp ' + fmtHM(typingAt) + (meta.start ? ' · ' + since(typingAt) : '') : ''; }
+  const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(180, input.scrollHeight + 4) + 'px'; };
+  input.oninput = () => {
+    if (input.value.trim() && !typingAt) typingAt = Date.now();
+    if (!input.value.trim()) typingAt = 0;
+    drawStamp(); grow();
+    if (pick && pick.mode === 'new') closePick();
+  };
+  input.onkeydown = e => {
+    if (pick) return;
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); e.stopPropagation(); submit(); }
+  };
+  $('mmSend').onclick = () => submit();
+  function submit(){
+    const txt = input.value.trim().slice(0, 2000); if (!txt) { input.focus(); return; }
+    const draft = { txt, at: typingAt || Date.now(), type: curType };
+    if (!meta.parts.length) { commit(draft, []); return; }
+    openPick({ mode: 'new', draft });
+  }
+  function commit(draft, who){
+    const n = { id: rid(), txt: draft.txt, at: draft.at, type: draft.type, who };
+    saveNote(n);
+    input.value = ''; typingAt = 0; curType = 'note'; drawTypes(); drawStamp(); grow(); closePick(); input.focus();
+    requestAnimationFrame(() => { const e = els.get(n.id); if (e && !filter) e.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+  }
+  function openPick(p){
+    endEdit(); pick = p;
+    const box = $('mmPick'); box.textContent = ''; box.classList.remove('hidden');
+    const note = p.mode === 'edit' ? notes.get(p.id) : null;
+    if (p.mode === 'edit' && !note) { closePick(); return; }
+    const sel = new Set(note ? note.who : []);
+    box.append(el('h3', '', 'Who is this for?'), el('div', 'mmpq', '“' + (note ? note.txt : p.draft.txt) + '”'));
+    const opts = el('div', 'mmopts');
+    const finish = who => { if (p.mode === 'new') commit(p.draft, who); else { const n = notes.get(p.id); if (n) { n.who = who; saveNote(n); } closePick(); } };
+    meta.parts.forEach((pt, i) => {
+      const b = el('button', sel.has(pt.id) ? 'sel' : ''); b.type = 'button'; b.style.background = pt.c;
+      if (i < 9) b.append(el('kbd', '', String(i + 1)));
+      b.append(el('span', '', pt.n));
+      b.onclick = () => {
+        if (p.mode === 'new') finish([pt.id]);
+        else { sel.delete('all'); if (sel.has(pt.id)) sel.delete(pt.id); else sel.add(pt.id); b.classList.toggle('sel', sel.has(pt.id)); ev.classList.remove('sel'); }
+      };
+      opts.append(b);
+    });
+    const ev = el('button', 'ev' + (sel.has('all') ? ' sel' : '')); ev.type = 'button'; ev.append(el('kbd', '', 'E'), el('span', '', 'Everyone')); ev.onclick = () => finish(['all']);
+    const no = el('button', 'no'); no.type = 'button'; no.append(el('kbd', '', 'Enter'), el('span', '', 'No one in particular')); no.onclick = () => finish([]);
+    opts.append(ev, no); box.append(opts);
+    const row = el('div', 'row2');
+    const back = el('button', 'btn ghost sm', p.mode === 'new' ? 'Back to editing (Esc)' : 'Cancel'); back.type = 'button'; back.onclick = () => { closePick(); input.focus(); };
+    row.append(back);
+    if (p.mode === 'edit') { const done = el('button', 'btn rain sm', 'Done'); done.type = 'button'; done.onclick = () => finish([...sel]); row.append(done); }
+    box.append(row);
+    pick.finish = finish; pick.sel = sel;
+    if (p.mode === 'new') input.blur();
+  }
+  function closePick(){ pick = null; $('mmPick').classList.add('hidden'); $('mmPick').textContent = ''; }
+  addEventListener('keydown', e => {
+    if (!pick || $('mins').classList.contains('hidden')) return;
+    if (e.target.closest && e.target.closest('input:not(#mmInput),[contenteditable]')) return;
+    const k = e.key;
+    if (k === 'Escape') { e.preventDefault(); closePick(); input.focus(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^[1-9]$/.test(k) && meta.parts[+k - 1]) { e.preventDefault(); if (pick.mode === 'new') pick.finish([meta.parts[+k - 1].id]); else { const b = $('mmPick').querySelectorAll('.mmopts button')[+k - 1]; b && b.click(); } return; }
+    if (k.toLowerCase() === 'e') { e.preventDefault(); pick.finish(['all']); return; }
+    if (k === 'Enter') { e.preventDefault(); pick.finish(pick.mode === 'new' ? [] : [...pick.sel]); return; }
+    if (k.length === 1) e.preventDefault();
+  });
+
+  /* ---------- Top bar, menu, sharing ---------- */
+  let titleT = null;
+  $('mmName').oninput = () => { clearTimeout(titleT); titleT = setTimeout(() => { meta.title = $('mmName').value.trim().slice(0, 60); saveMeta(); }, 500); };
+  $('mmName').onkeydown = e => { if (e.key === 'Enter' || e.key === 'Escape') $('mmName').blur(); };
+  function drawPeople(){ const n = Math.max(1, [...people.keys()].filter(p => p !== pid).length + 1); $('mmPeople').textContent = n === 1 ? '● Just you' : '● ' + n + ' here'; }
+  setInterval(() => { const now = Date.now(); let ch = false; people.forEach((t, p) => { if (now - t > 150000) { people.delete(p); ch = true; } }); if (ch) drawPeople(); }, 10000);
+  let toastT = null;
+  function toast(msg, ms = 2400, action, fn){
+    document.querySelectorAll('.mmtoast').forEach(t => t.remove());
+    const t = el('div', 'mmtoast', msg);
+    if (action) { const b = el('button', '', action); b.type = 'button'; b.onclick = () => { t.remove(); fn(); }; t.append(b); }
+    document.body.append(t); clearTimeout(toastT); toastT = setTimeout(() => t.remove(), ms);
+  }
+  $('mmBack').onclick = () => { endEdit(); pub('p/' + pid, ''); setTimeout(() => nav('app=minutes'), 120); };
+  $('mmShareBtn').onclick = () => {
+    $('mmShareCode').textContent = fmtCode(code); $('mmLink').textContent = joinUrl;
+    const q = $('mmQr'); q.textContent = '';
+    if (window.QRCode) { try { new QRCode(q, { text: joinUrl, width: 200, height: 200, colorDark: '#0d0e1a', colorLight: '#ffffff' }); } catch { q.classList.add('hidden'); } } else q.classList.add('hidden');
+    $('mmShare').classList.remove('hidden');
+  };
+  $('mmShareClose').onclick = () => $('mmShare').classList.add('hidden');
+  $('mmShare').onclick = e => { if (e.target === $('mmShare')) $('mmShare').classList.add('hidden'); };
+  $('mmCopy').onclick = async () => { try { await navigator.clipboard.writeText(joinUrl); toast('Link copied'); } catch { toast('Copy the link above'); } };
+  const closeMenu = () => $('mmMenu').classList.add('hidden');
+  $('mmMenuBtn').onclick = e => {
+    e.stopPropagation(); const m = $('mmMenu'); if (!m.classList.contains('hidden')) { closeMenu(); return; }
+    m.textContent = '';
+    const item = (label, fn, cls) => { const b = el('button', cls || '', label); b.type = 'button'; b.onclick = () => { closeMenu(); fn(); }; m.append(b); };
+    item('📄  Download minutes (PDF)', exportPdf);
+    item('📋  Copy minutes as text', copyText);
+    if (meta.owner && meta.owner === pid) item('❌  Delete this meeting', () => {
+      $('mmConfH').textContent = 'Delete this meeting?'; $('mmConfP').textContent = "This deletes the notes for everyone and can't be undone. Download the PDF first if you want to keep them.";
+      $('mmConfYes').textContent = 'Delete meeting'; $('mmConfNo').classList.remove('hidden'); $('mmConfirm').classList.remove('hidden');
+      $('mmConfNo').onclick = () => $('mmConfirm').classList.add('hidden');
+      $('mmConfYes').onclick = async () => { $('mmConfYes').disabled = true; $('mmConfYes').textContent = 'Deleting…'; const r = await wipeRoom(MM_NS, code); if (r === 'deleted') { dead = true; removeRecent(code, 'mm_recent'); nav('app=minutes'); } else { $('mmConfirm').classList.add('hidden'); $('mmConfYes').disabled = false; toast("Couldn't delete it right now. Try again."); } };
+    }, 'danger');
+    const tip = el('div', 'tip'); tip.textContent = 'Tips: press Shift+Enter for a new line. When asked who a note is for, press 1–9, E for everyone or Enter for no one. Tap a name tag on a note to pick more than one person.'; m.append(tip);
+    m.classList.remove('hidden');
+  };
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('#mmMenu,#mmMenuBtn')) closeMenu(); }, true);
+
+  /* ---------- Export ---------- */
+  const sortedNotes = () => [...notes.values()].sort((a, b) => a.at - b.at || a.v - b.v);
+  const whoNames = n => n.who.map(w => w === 'all' ? 'Everyone' : partOf(w)?.n).filter(Boolean);
+  const dateLine = () => { if (!meta.start) return ''; const d = new Date(meta.start); return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + fmtHM(meta.start) + (meta.end ? '–' + fmtHM(meta.end) : '') + ' (planned ' + fmtMins(meta.len * 60000) + ')'; };
+  function asText(){
+    const L = [], list = sortedNotes();
+    L.push((meta.title || 'Meeting minutes').toUpperCase(), dateLine(), 'Participants: ' + meta.parts.map(p => p.n).join(', '), '');
+    const acts = list.filter(n => n.type === 'action'), decs = list.filter(n => n.type === 'decision');
+    if (acts.length) { L.push('ACTIONS'); acts.forEach(n => L.push('- ' + (whoNames(n).join(', ') || 'Unassigned') + ': ' + n.txt.replace(/\n+/g, ' '))); L.push(''); }
+    if (decs.length) { L.push('DECISIONS'); decs.forEach(n => L.push('- ' + n.txt.replace(/\n+/g, ' '))); L.push(''); }
+    L.push('MINUTES');
+    list.forEach(n => { const w = whoNames(n); L.push(fmtHM(n.at) + ' (' + since(n.at) + ')' + (n.type !== 'note' ? ' [' + (n.type === 'action' ? 'Action' : 'Decision') + ']' : '') + (w.length ? ' [' + w.join(', ') + ']' : '') + ' ' + n.txt); });
+    L.push('', 'Created by Leon Gent · GentiMeter Meeting Minutes');
+    return L.join('\n');
+  }
+  async function copyText(){
+    const t = asText();
+    try { await navigator.clipboard.writeText(t); toast('Minutes copied. Paste them into an email or document.'); }
+    catch { const a = el('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' })); a.download = (meta.title || 'Meeting minutes') + '.txt'; document.body.append(a); a.click(); a.remove(); toast('Downloaded as a text file'); }
+  }
+  async function exportPdf(){
+    toast('Making PDF…', 4000);
+    try { await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF); }
+    catch { toast("Couldn't load the PDF maker. Check your internet."); return; }
+    const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+    const W = 210, M = 16, TX = M + 26, TW = W - TX - M;
+    const safe = t => String(t || '').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-').replace(/…/g, '...').replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ]/g, '');
+    const rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    let y = 20;
+    const need = h => { if (y + h > 280) { pdf.addPage(); y = 20; } };
+    const tag = (x, yy, txt, col) => { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); const w = pdf.getTextWidth(txt) + 5; pdf.setFillColor(...rgb(col)); pdf.roundedRect(x, yy - 3.6, w, 5, 2.4, 2.4, 'F'); pdf.setTextColor(255, 255, 255); pdf.text(txt, x + 2.5, yy); return x + w + 2; };
+    RAINBOW.forEach((c, i) => { pdf.setFillColor(...rgb(c)); pdf.rect(i * W / 5, 0, W / 5 + .2, 3, 'F'); });
+    pdf.setTextColor(30, 30, 36); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(22);
+    pdf.splitTextToSize(safe(meta.title || 'Meeting minutes'), W - M * 2).forEach(l => { pdf.text(l, M, y + 4); y += 9; });
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5); pdf.setTextColor(100, 103, 115); pdf.text(safe(dateLine()), M, y + 2); y += 9;
+    let x = M; pdf.setFontSize(9); pdf.setTextColor(100, 103, 115); pdf.setFont('helvetica', 'bold'); pdf.text('PARTICIPANTS', M, y); y += 6;
+    meta.parts.forEach(p => { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); const w = pdf.getTextWidth(safe(p.n)) + 7; if (x + w > W - M) { x = M; y += 7; } x = tag(x, y, safe(p.n), p.c) + 1; });
+    y += 10;
+    const list = sortedNotes(), acts = list.filter(n => n.type === 'action'), decs = list.filter(n => n.type === 'decision');
+    const heading = t => { need(14); pdf.setDrawColor(230, 230, 236); pdf.line(M, y - 2, W - M, y - 2); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(30, 30, 36); pdf.text(t, M, y + 5); y += 11; };
+    const noteRow = (n, withBox) => {
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
+      const lines = pdf.splitTextToSize(safe(n.txt), TW), h = 6 + lines.length * 4.8 + 3;
+      need(h);
+      const col = whoCol(n);
+      if (col) { pdf.setFillColor(...rgb(col)); pdf.rect(TX - 4, y - 3.5, 1.2, h - 2, 'F'); }
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(60, 63, 76); pdf.text(fmtHM(n.at), M, y);
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(140, 143, 155); pdf.text(safe(since(n.at)), M, y + 4);
+      if (withBox) { pdf.setDrawColor(120, 123, 135); pdf.rect(M + 17, y - 3.2, 3.6, 3.6); }
+      let tx = TX;
+      if (n.type !== 'note' && !withBox) tx = tag(tx, y, n.type === 'action' ? 'ACTION' : 'DECISION', n.type === 'action' ? '#b7791f' : '#2b6cb0');
+      const w = n.who.map(id => id === 'all' ? { n: 'Everyone', c: '#5b5e6b' } : partOf(id)).filter(Boolean);
+      w.forEach(p => { tx = tag(tx, y, safe(p.n), p.c); });
+      if (!w.length && n.type === 'note') { tx = TX; }
+      const ty = (w.length || (n.type !== 'note' && !withBox)) ? y + 5 : y;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5); pdf.setTextColor(30, 30, 36);
+      lines.forEach((l, i) => pdf.text(l, TX, ty + i * 4.8));
+      y = ty + lines.length * 4.8 + 4;
+    };
+    if (acts.length) { heading('Actions'); acts.forEach(n => noteRow(n, true)); y += 3; }
+    if (decs.length) { heading('Decisions'); decs.forEach(n => noteRow(n, false)); y += 3; }
+    heading('Minutes');
+    if (!list.length) { pdf.setFont('helvetica', 'italic'); pdf.setFontSize(10.5); pdf.setTextColor(140, 143, 155); pdf.text('No notes were taken.', M, y); }
+    list.forEach(n => noteRow(n, false));
+    const pages = pdf.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) { pdf.setPage(i); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(150, 153, 165); pdf.text('Created by Leon Gent · GentiMeter Meeting Minutes', M, 290); pdf.text('Page ' + i + ' of ' + pages, W - M, 290, { align: 'right' }); }
+    const d = meta.start ? new Date(meta.start).toISOString().slice(0, 10) : '';
+    pdf.save(((meta.title || 'Meeting minutes') + ' ' + d).trim().replace(/[\\/:*?"<>|]+/g, '-') + '.pdf');
+    toast('PDF downloaded');
+  }
+
+  /* ---------- Go ---------- */
+  drawTypes(); drawStamp(); drawParts(); renderList(); drawPeople(); applyMeta(); tick();
+  connect();
+  setTimeout(() => { if (!meta.v && !dead) $('mmTimes').textContent = "Can't find this meeting yet. Check the code, or wait a moment."; }, 6000);
+  input.focus();
+  window.__mm = { notes, meta: () => meta };
+}
+
 /* ================= Router ================= */
 if (qp.has('admin')) startAdmin();
 else if (qp.has('host')) startHost();
 else if (qp.get('code')) startJoin(qp.get('code').replace(/\D/g,''));
+else if (qp.get('mins')) { const mc = cleanBoardCode(qp.get('mins')); if (isMeetCode(mc)) startMins(mc); else startMmHome(); }
+else if (qp.get('app') === 'minutes') startMmHome();
 else if (qp.get('board')) { const bc = cleanBoardCode(qp.get('board')); if (isBoardCode(bc)) startBoard(bc); else startWbHome(); }
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'polls') { show('landing'); document.title = 'Polls & Quizzes · GentiMeter'; }
 else if (qp.get('app') === 'engagement' && qp.get('tool') === 'whiteboard') startWbHome();
@@ -3657,7 +4396,8 @@ $('engFolder').onclick = () => { $('engFolder').classList.add('opening'); setTim
 $('pmFolder').onclick = () => { $('pmFolder').classList.add('opening'); setTimeout(() => nav('app=pm'), 420); };
 $('svFolder').onclick = () => { $('svFolder').classList.add('opening'); setTimeout(() => nav('app=pm&tool=sitevisits'), 420); };
 $('backHub4').onclick = () => nav('');
-$('hubJoin').onsubmit = e => { e.preventDefault(); const c = cleanBoardCode($('hubCode').value); if (/^\d{6}$/.test(c)) nav('code=' + c); else if (isBoardCode(c)) nav('board=' + c); else $('hubCode').focus(); };
+$('hubJoin').onsubmit = e => { e.preventDefault(); if (!goCode($('hubCode').value)) $('hubCode').focus(); };
+$('mmFolder').onclick = () => { $('mmFolder').classList.add('opening'); setTimeout(() => nav('app=minutes'), 420); };
 if (ss.get('cp_hostCode')) { $('hubResume').textContent = 'Session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Open Engagement, then Polls & Quizzes to go back to it.'; $('hubResume').classList.remove('hidden'); }
 if (ss.get('cp_hostCode')) { $('resumeNote').textContent = 'Your session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Start hosting to go back to it.'; $('resumeNote').classList.remove('hidden'); }
 $('adminBtn').onclick = () => nav('admin=1');
