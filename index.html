@@ -256,6 +256,52 @@
   .pause-ov p{font-size:20px;opacity:.75}
   @keyframes breathe{50%{transform:scale(.92);opacity:.7}}
 
+  /* home buttons */
+  .homebtn{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--text);flex:none;transition:background .15s,transform .15s}
+  .homebtn:hover{background:#2a2f4a}.homebtn:active{transform:scale(.94)}
+  .homebtn svg{width:20px;height:20px}
+  .join-top{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between}
+  .resume{font-size:14px;color:var(--good);font-weight:600}
+
+  /* host toasts */
+  .toasts{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:12;pointer-events:none;width:min(720px,90vw)}
+  .toast{background:rgba(10,11,20,.82);backdrop-filter:blur(8px);color:#fff;border-radius:99px;padding:9px 18px 9px 10px;font-size:clamp(15px,1.5vw,20px);font-weight:700;display:flex;gap:10px;align-items:center;animation:toastIn .55s cubic-bezier(.2,1.4,.4,1) both;border:2px solid rgba(255,255,255,.14);transition:opacity .6s,transform .6s}
+  .toast.good{border-color:var(--good)} .toast.bad{border-color:var(--bad)}
+  .toast.info{background:var(--rainbow);color:#10111c;border-color:transparent;padding-left:18px}
+  .toast.out{opacity:0;transform:translateY(10px)}
+  .toast .ti{font-size:1.3em}
+  @keyframes toastIn{from{opacity:0;transform:translateY(30px) scale(.9)}}
+
+  /* treasure chests (phones) */
+  .chestbox{width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}
+  .chestbox h3{font-size:22px;font-weight:800}
+  .chests{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+  .chest{position:relative;background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:132px;transition:transform .2s,border-color .2s,opacity .4s}
+  .chest svg{width:74px;height:64px;overflow:visible}
+  .chest .lid{transform-origin:10px 24px;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+  .chest.idle{animation:wobble 2.4s ease-in-out infinite}
+  .chest.idle:nth-child(2){animation-delay:.3s}.chest.idle:nth-child(3){animation-delay:.6s}
+  .chest.idle:hover{border-color:#ffd84d}
+  @keyframes wobble{0%,70%,100%{transform:rotate(0)}75%{transform:rotate(-4deg)}80%{transform:rotate(4deg)}85%{transform:rotate(-2deg)}90%{transform:rotate(0)}}
+  .chest.open .lid{transform:rotate(-38deg) translateY(-4px)}
+  .chest .ci{font-size:34px;line-height:1;animation:pop .6s cubic-bezier(.2,1.6,.4,1) both}
+  .chest .ct{font-size:13px;font-weight:700;text-align:center;line-height:1.15}
+  .chest.good{border-color:var(--good)} .chest.bad{border-color:var(--bad)}
+  .chest.picked{transform:scale(1.06);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .chest.missed{opacity:.45}
+  .chest.shaking{animation:shake .5s ease-in-out infinite}
+  @keyframes shake{25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+  .chest-result{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+  .chest-result h3{font-size:22px}
+  .chest-result.good h3{color:var(--good)} .chest-result.bad h3{color:var(--bad)}
+  .ptoast{position:fixed;left:50%;top:26px;transform:translateX(-50%);z-index:60;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px 16px;font-weight:700;width:min(420px,92vw);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:toastIn .5s cubic-bezier(.2,1.4,.4,1) both;transition:opacity .5s}
+  .ptoast.bad{border-color:var(--bad)} .ptoast.good{border-color:var(--good)}
+  .tlist{display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding:12px 16px 20px}
+  .tpick{display:flex;align-items:center;gap:12px;background:var(--surface2);border:2px solid transparent;border-radius:14px;padding:10px 14px;font-size:17px;font-weight:600;text-align:left}
+  .tpick:hover{border-color:var(--focus)}
+  .tpick .av{width:36px;height:36px;font-size:22px}
+  .tpick .nm{flex:1} .tpick .sc{color:var(--muted)}
+
   /* lobby */
   .pchip{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;gap:6px;will-change:transform;cursor:pointer}
   .pchip .pin{display:flex;flex-direction:column;align-items:center;gap:6px;animation:pop .7s cubic-bezier(.2,1.6,.4,1) both}
@@ -340,6 +386,7 @@
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
   <symbol id="i-brush" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3l3 3-9 9-3-3z"/><path d="M9 12c-3 0-5 2-5 5 0 1-1 2-2 2 2 2 7 2 9-1 1-2 0-4-2-6z"/></symbol>
@@ -369,6 +416,7 @@
       <div style="flex:1"></div>
       <button class="btn ghost" id="adminBtn"><svg class="i"><use href="#i-edit"/></svg>Edit slides</button>
       <button class="btn" id="hostBtn"><svg class="i"><use href="#i-play"/></svg>Start hosting</button>
+      <span class="resume hidden" id="resumeNote"></span>
     </div>
   </div>
 </section>
@@ -377,6 +425,7 @@
 <section id="admin" class="admin hidden">
   <div class="admin-bar">
     <div class="wrap">
+      <button class="homebtn" id="homeAdmin" title="Home"><svg><use href="#i-home"/></svg></button>
       <h1>Edit slides</h1>
       <span class="saved" id="savedMsg">Saved</span>
       <button class="btn ghost sm" id="importBtn">Import</button>
@@ -404,6 +453,7 @@
       </div>
     </div>
     <div class="host-actions">
+      <button class="homebtn" id="homeHost" title="Home (your session keeps running)" style="width:36px;height:36px;border-radius:10px"><svg><use href="#i-home"/></svg></button>
       <span class="status"><span class="dot" id="hostDot"></span><span id="hostStatus">Connecting</span></span>
       <div class="nav">
         <button class="iconbtn" id="prevBtn" title="Previous (←)"><svg class="i"><use href="#i-left"/></svg></button>
@@ -419,6 +469,7 @@
         <button class="btn ghost sm" id="moreBtn" title="More"><svg class="i"><use href="#i-more"/></svg></button>
         <div class="menu-pop hidden" id="morePop">
           <button id="namesBtn">Hide names</button>
+          <button id="stealBtn" class="hidden">Point steal: on</button>
           <button id="clearBtn">Clear this slide</button>
           <button id="editBtn">Edit slides</button>
           <button id="endBtn" class="danger">End session</button>
@@ -444,12 +495,13 @@
   </div>
   <div class="feed" id="feed"></div>
   <div class="hchat hidden" id="hchat"></div>
+  <div class="toasts" id="toasts"></div>
   <div class="pause-ov hidden" id="pauseOv"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><h2>Paused</h2><p>Scores and timers are frozen. Press Resume or P to carry on.</p></div>
 </section>
 
 <!-- ===== Participant ===== -->
 <section id="join" class="join hidden">
-  <div class="brand rainbow-text">Colour Poll</div>
+  <div class="join-top"><button class="homebtn" id="homeJoin" title="Home"><svg><use href="#i-home"/></svg></button><div class="brand rainbow-text">Colour Poll</div><span style="width:40px"></span></div>
   <div class="panel" id="joinPanel"><p class="msg" id="joinMsg">Connecting…</p></div>
 
   <form class="panel hidden" id="nameForm">
@@ -499,6 +551,16 @@
     <h2 id="doneTitle">Sent!</h2>
     <p class="hint" id="doneHint">Look at the screen, your answer's up there.</p>
     <button class="btn ghost" id="againBtn">Send another</button>
+    <div class="chestbox hidden" id="chestBox">
+      <h3 id="chestTitle">Pick a treasure chest!</h3>
+      <p class="hint" id="chestHint">Two hold power-ups, one holds a forfeit. Choose wisely.</p>
+      <div class="chests" id="chests"></div>
+      <div class="chest-result hidden" id="chestResult"><h3 id="crTitle"></h3><p class="hint" id="crText"></p></div>
+    </div>
+  </div>
+  <div class="sheet hidden" id="targetSheet">
+    <div class="sheet-head" id="targetTitle">Choose a player</div>
+    <div class="tlist" id="targetList"></div>
   </div>
 
   <button class="chatfab hidden" id="chatFab"><svg class="i"><use href="#i-chat"/></svg>Chat <span class="badge" id="chatBadge"></span></button>
@@ -552,6 +614,23 @@ const PALETTE = ['#ff5f6d','#ffc371','#47e5bc','#4facfe','#a66cff','#ff8fd6','#7
 const AVATARS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦉','🦄','🐙'];
 const AV_BG = ['#ffd6a5','#caffbf','#9bf6ff','#bdb2ff','#ffc6ff','#fdffb6','#ffadad','#a0c4ff','#b9fbc0','#f1c0e8'];
 const MAX_POINTS = 100, POINTS_LOST_PER_SECOND = 5;
+// Point steal treasure: 2 good + 1 bad per player per question, shuffled on the host
+const CHEST_GOOD = [
+  { id: 'jackpot',    w: 2, icon: '💰', title: 'Jackpot!',     desc: '+250 points' },
+  { id: 'bonus',      w: 4, icon: '⭐', title: 'Bonus',        desc: '+100 points' },
+  { id: 'double',     w: 2, icon: '🚀', title: 'Double up',    desc: 'Your points are doubled' },
+  { id: 'pickpocket', w: 3, icon: '🧤', title: 'Pickpocket',   desc: 'Steal 150 points from a player', target: 'steal' },
+  { id: 'thief',      w: 1, icon: '🦹', title: 'Point Thief',  desc: "Steal ALL of a player's points", target: 'steal' },
+  { id: 'swap',       w: 2, icon: '🔄', title: 'Swap',         desc: 'Swap scores with any player', target: 'swap' },
+  { id: 'shield',     w: 2, icon: '🛡️', title: 'Shield',       desc: 'Blocks the next steal, swap or forfeit on you' }
+];
+const CHEST_BAD = [
+  { id: 'half',     w: 3, icon: '💀', title: 'Forfeit: Lose half', desc: 'You lose 50% of your points' },
+  { id: 'minus',    w: 3, icon: '💸', title: 'Forfeit: -100',      desc: 'You lose 100 points' },
+  { id: 'gift',     w: 2, icon: '🎁', title: 'Forfeit: Gift',      desc: '100 of your points go to a random player' },
+  { id: 'lastswap', w: 1, icon: '🐌', title: 'Forfeit: Bottom swap', desc: 'Swap scores with whoever is last' }
+];
+const CHEST_SVG = '<svg viewBox="0 0 64 56"><rect x="6" y="24" width="52" height="28" rx="5" fill="#8b5a2b"/><rect x="6" y="36" width="52" height="4" fill="#ffd84d" opacity=".85"/><rect x="6" y="24" width="52" height="5" fill="#6b4220"/><g class="lid"><path d="M6 25v-7a26 12 0 0 1 52 0v7z" fill="#a8702f"/><path d="M6 20h52" stroke="#ffd84d" stroke-width="3" opacity=".85"/></g><rect x="28" y="21" width="8" height="12" rx="2" fill="#ffd84d"/><circle cx="32" cy="27" r="1.6" fill="#6b4220"/></svg>';
 
 const BACKGROUNDS = {
   midnight: { name: 'Midnight', css: '#0d0e1a', fg: 'light' },
@@ -673,7 +752,7 @@ function cleanLobby(l){
 }
 function loadSettings(){
   const s = ls.get(SETTINGS_KEY) || {};
-  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat, lobby: cleanLobby(s.lobby) };
+  return { names: ['off','optional','required'].includes(s.names) ? s.names : 'off', quiz: !!s.quiz, chat: !!s.chat, steal: !!s.steal, lobby: cleanLobby(s.lobby) };
 }
 // What actually gets presented
 function playable(s, quiz){
@@ -727,6 +806,8 @@ $('joinForm').onsubmit = e => {
   if (code.length === 6) nav('code=' + code); else $('codeInput').focus();
 };
 $('hostBtn').onclick = () => nav('host=1');
+['homeAdmin','homeHost','homeJoin'].forEach(id => { $(id).onclick = () => nav(''); });
+if (ss.get('cp_hostCode')) { $('resumeNote').textContent = 'Your session ' + fmtCode(ss.get('cp_hostCode')) + ' is still running. Start hosting to go back to it.'; $('resumeNote').classList.remove('hidden'); }
 $('adminBtn').onclick = () => nav('admin=1');
 
 /* ================= ADMIN ================= */
@@ -765,6 +846,8 @@ function startAdmin(){
                     : 'Turn on to score answers, add timers, and finish with a leaderboard.');
     row('Participant names', segCtl([['off','Off'],['optional','Optional'],['required','Required']], settings.quiz ? 'required' : settings.names, v => { settings.names = v; save(); }, settings.quiz),
       settings.quiz ? 'Always required in quiz mode, so the leaderboard knows who is who.' : 'Ask people for their name when they join, so you can see who said what.');
+    if (settings.quiz) row('Point steal', segCtl([[false,'Off'],[true,'On']], settings.steal, v => { settings.steal = v; save(); }),
+      'After each scored question, players open 1 of 3 treasure chests. Two hold power-ups (steal, swap, jackpot, shield...) and one holds a forfeit, in a random order.');
     row('Chat', segCtl([[false,'Off'],[true,'On']], settings.chat, v => { settings.chat = v; save(); }),
       'Lets people send chat messages from their phones. You can also switch it on or off while presenting.');
   }
@@ -993,7 +1076,7 @@ function startAdmin(){
       deck = slides.slice(0,50).map(cleanSlide);
       if (d.settings) {
         if (['off','optional','required'].includes(d.settings.names)) settings.names = d.settings.names;
-        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat; settings.lobby = cleanLobby(d.settings.lobby);
+        settings.quiz = !!d.settings.quiz; settings.chat = !!d.settings.chat; settings.steal = !!d.settings.steal; settings.lobby = cleanLobby(d.settings.lobby);
       }
       save(); nav('admin=1');
     } catch { alert("That file doesn't look like exported slides."); }
@@ -1029,6 +1112,7 @@ function startHost(){
   const seen = new Set();
   let showNames = namesMode !== 'off' && ss.get('cp_showNames') !== false;
   let slideStart = Date.now(), timerEnd = 0, timeUp = false, timerInt = null, autoNext = null, lastPub = 0;
+  let stealOn = quiz && (ss.get('cp_stealOn') ?? settings.steal);
   let paused = false, pausedAt = 0, timerDraw = null, timerWasRunning = false, autoNextDue = 0, autoNextLeft = 0;
   const persist = () => { ss.set('cp_hostResults', results); ss.set('cp_hostIdx', idx); ss.set('cp_players', players); };
 
@@ -1327,7 +1411,7 @@ function startHost(){
         clearInterval(timerInt); timerInt = null; timeUp = true;
         $('tbar').classList.add('hidden'); $('tbadge').classList.add('hidden');
         if (s.scored) reveal(); else publishState();
-        scheduleNext(s.scored ? 5000 : 1200);
+        scheduleNext(s.scored ? (stealOn ? 15000 : 5000) : 1200);
       }
     };
     timerDraw = draw; draw(); timerInt = setInterval(draw, 250);
@@ -1344,7 +1428,7 @@ function startHost(){
     $('revealBtn').classList.add('hidden');
     if (s.type === 'choice') updateBars(s);
     else { nodes.forEach(markBubble); $('answerBanner').textContent = 'Answer: ' + answerText(s); $('answerBanner').classList.remove('hidden'); }
-    renderFeed(); publishState();
+    renderFeed(); renderTreasureNote(); publishState();
   }
   $('revealBtn').onclick = reveal;
 
@@ -1370,6 +1454,117 @@ function startHost(){
     syncPauseUi(); publishState();
   }
   $('pauseBtn').classList.toggle('hidden', !quiz);
+
+  /* ---- Point steal ---- */
+  $('stealBtn').classList.toggle('hidden', !quiz);
+  const syncSteal = () => { $('stealBtn').textContent = 'Point steal: ' + (stealOn ? 'on' : 'off'); };
+  syncSteal();
+  $('stealBtn').onclick = () => { stealOn = !stealOn; ss.set('cp_stealOn', stealOn); syncSteal(); renderTreasureNote(); publishState(); };
+  function toast(html, kind, av, name, ms = 6500){
+    const t = el('div', 'toast ' + (kind || ''));
+    if (av !== undefined) t.append(avEl(av, name));
+    const sp = el('span'); sp.textContent = html; t.append(sp);
+    $('toasts').append(t);
+    while ($('toasts').children.length > 5) $('toasts').firstElementChild.remove();
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 600); }, ms);
+    return t;
+  }
+  let treasureNote = null;
+  function renderTreasureNote(){
+    const s = cur(), show = stealOn && s.scored && res(s).revealed;
+    if (show && !treasureNote) { treasureNote = el('div', 'toast info'); treasureNote.textContent = 'Treasure time! Open a chest on your phone'; $('toasts').prepend(treasureNote); }
+    if (!show && treasureNote) { treasureNote.remove(); treasureNote = null; }
+  }
+  const pickWeighted = (pool, not) => { const c = pool.filter(x => !not.includes(x.id)); let r = Math.random() * c.reduce((a, x) => a + x.w, 0); for (const x of c) { r -= x.w; if (r <= 0) return x; } return c[c.length - 1]; };
+  function makeChests(){
+    const g1 = pickWeighted(CHEST_GOOD, []), g2 = pickWeighted(CHEST_GOOD, [g1.id]), b = pickWeighted(CHEST_BAD, []);
+    const arr = [{ ...g1, good: true }, { ...g2, good: true }, { ...b, good: false }];
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    return arr.map(({ w, ...x }) => x);
+  }
+  const pTopic = pid => NS + code + '/p/' + pid;
+  function sendTo(pid, obj){ const m = JSON.stringify(obj); clients.forEach(c => c.connected && c.publish(pTopic(pid), m, { qos: 1 })); }
+  const pname = pid => players[pid]?.n || 'Someone';
+  const others = pid => Object.entries(players).filter(([k]) => k !== pid).map(([k, p]) => ({ pid: k, n: p.n, av: p.av, score: p.score }));
+  function useShield(pid){ if (players[pid]?.shield) { players[pid].shield = false; return true; } return false; }
+  // Apply a chest outcome. Returns { text, needTarget }
+  function applyChest(pid, o){
+    const me = players[pid];
+    if (!o.good && useShield(pid)) { toast(`${pname(pid)}'s shield blocked a forfeit!`, 'good', me.av, me.n); return { text: `Your shield saved you from "${o.title}"!` }; }
+    if (o.target) {
+      if (!others(pid).length) { me.score += 100; toast(`${pname(pid)} found a Bonus! +100`, 'good', me.av, me.n); return { text: 'Nobody else to pick, so have 100 points instead.' }; }
+      return { text: o.target === 'swap' ? 'Pick a player to swap scores with.' : 'Pick a player to steal from.', needTarget: o.target };
+    }
+    switch (o.id) {
+      case 'jackpot': me.score += 250; toast(`${pname(pid)} hit the Jackpot! +250`, 'good', me.av, me.n); return { text: '+250 points!' };
+      case 'bonus':   me.score += 100; toast(`${pname(pid)} found a Bonus! +100`, 'good', me.av, me.n); return { text: '+100 points!' };
+      case 'double': { const g = me.score; me.score *= 2; toast(`${pname(pid)} doubled up! +${g}`, 'good', me.av, me.n); return { text: g ? `Doubled! +${g} points.` : 'Doubled... but 0 x 2 is still 0!' }; }
+      case 'shield':  me.shield = true; toast(`${pname(pid)} grabbed a Shield`, 'good', me.av, me.n); return { text: 'You are protected from the next steal, swap or forfeit.' };
+      case 'half':  { const l = Math.floor(me.score / 2); me.score -= l; toast(`${pname(pid)} lost half their points (−${l})`, 'bad', me.av, me.n); return { text: `You lost ${l} points.` }; }
+      case 'minus': { const l = Math.min(100, me.score); me.score -= l; toast(`${pname(pid)} lost ${l} points`, 'bad', me.av, me.n); return { text: `You lost ${l} points.` }; }
+      case 'gift': {
+        const os = others(pid); if (!os.length) return { text: 'Nobody to gift to. Lucky escape!' };
+        const t = os[Math.floor(Math.random() * os.length)], g = Math.min(100, me.score);
+        me.score -= g; players[t.pid].score += g;
+        toast(`${pname(pid)} had to gift ${g} points to ${t.n || 'someone'}`, 'bad', me.av, me.n);
+        sendTo(t.pid, { kind: 'hit', good: true, text: `${pname(pid)} was forced to gift you ${g} points!`, score: players[t.pid].score });
+        return { text: `You gave ${g} points to ${t.n || 'someone'}.` };
+      }
+      case 'lastswap': {
+        const os = others(pid).sort((a, b) => a.score - b.score); const last = os[0];
+        if (!last || last.score >= me.score) return { text: "You're already at the bottom, so nothing changes. Phew!" };
+        const mine = me.score; me.score = last.score; players[last.pid].score = mine;
+        toast(`${pname(pid)} swapped scores with last place ${last.n || ''}`, 'bad', me.av, me.n);
+        sendTo(last.pid, { kind: 'hit', good: true, text: `${pname(pid)} was forced to swap scores with you! You now have ${mine} points.`, score: mine });
+        return { text: `You swapped with ${last.n || 'last place'} and now have ${me.score} points.` };
+      }
+    }
+    return { text: '' };
+  }
+  function applyTarget(pid, o, tpid){
+    const me = players[pid], them = players[tpid];
+    if (useShield(tpid)) {
+      toast(`${them.n || 'Someone'}'s shield blocked ${pname(pid)}!`, 'good', them.av, them.n);
+      sendTo(tpid, { kind: 'hit', good: true, text: `Your shield blocked ${pname(pid)}'s ${o.title}!`, score: them.score });
+      return `${them.n || 'They'} had a shield! Your ${o.title} was blocked.`;
+    }
+    if (o.target === 'swap') {
+      const a = me.score; me.score = them.score; them.score = a;
+      toast(`${pname(pid)} swapped scores with ${them.n || 'someone'}!`, 'good', me.av, me.n);
+      sendTo(tpid, { kind: 'hit', good: false, text: `${pname(pid)} swapped scores with you! You now have ${them.score} points.`, score: them.score });
+      return `Swapped! You now have ${me.score} points.`;
+    }
+    const amt = o.id === 'thief' ? them.score : Math.min(150, them.score);
+    them.score -= amt; me.score += amt;
+    toast(o.id === 'thief' ? `${pname(pid)} stole ALL ${amt} points from ${them.n || 'someone'}!` : `${pname(pid)} stole ${amt} points from ${them.n || 'someone'}!`, 'good', me.av, me.n);
+    sendTo(tpid, { kind: 'hit', good: false, text: `${pname(pid)} stole ${amt} of your points!`, score: them.score });
+    return amt ? `You stole ${amt} points from ${them.n || 'them'}!` : `${them.n || 'They'} had no points to steal. Unlucky!`;
+  }
+  function handleChest(m, pid){
+    if (!stealOn || !players[pid]) return;
+    const si = deck.findIndex(s => s.id === m.slide); if (si < 0) return;
+    const s = deck[si], r = res(s);
+    if (!s.scored || !r.revealed) return;
+    r.chests = r.chests || {};
+    let c = r.chests[pid];
+    if (m.kind === 'chest') {
+      if (!c) {
+        if (si !== idx || paused) return;
+        const pick = Math.min(2, Math.max(0, parseInt(m.pick) || 0));
+        const arr = makeChests(), res1 = applyChest(pid, arr[pick]);
+        c = r.chests[pid] = { arr, pick, text: res1.text, needTarget: res1.needTarget || null, done: !res1.needTarget };
+        persist(); publishState();
+      }
+    } else if (m.kind === 'target') {
+      if (!c || c.done || !c.needTarget) return;
+      const t = typeof m.target === 'string' ? m.target : '';
+      if (!players[t] || t === pid) return;
+      c.text = applyTarget(pid, c.arr[c.pick], t); c.done = true; c.needTarget = null;
+      persist(); publishState();
+    }
+    sendTo(pid, { kind: 'chest', slide: s.id, arr: c.arr, pick: c.pick, text: c.text, needTarget: c.needTarget, done: c.done,
+                  targets: c.needTarget ? others(pid) : undefined, score: players[pid].score });
+  }
   $('pauseBtn').onclick = () => setPaused(!paused);
 
   /* ---- Slides + transitions ---- */
@@ -1410,7 +1605,7 @@ function startHost(){
       setCount(r.answers.length);
     }
     slideStart = Date.now();
-    renderFeed(); persist();
+    renderFeed(); persist(); renderTreasureNote();
     startTimer(s);
     publishState();
   }
@@ -1460,6 +1655,8 @@ function startHost(){
       const tot = {}; Object.keys(r.pts).forEach(pid => tot[pid] = players[pid]?.score ?? 0);
       st.reveal = { answer: answerText(s), pts: r.pts, tot };
     }
+    if (s.scored && r.revealed && stealOn) st.chests = true;
+    if (st.reveal) Object.keys(players).forEach(pid => st.reveal.tot[pid] = players[pid].score);
     if (s.type === 'leaderboard') { const rk = {}; ranking().forEach((p, i) => rk[p.pid] = [i + 1, p.score]); st.ranks = rk; }
     return JSON.stringify(st);
   }
@@ -1481,6 +1678,7 @@ function startHost(){
       const name = cleanName(m.name), av = validAv(m.av), pid = typeof m.pid === 'string' ? m.pid.slice(0,40) : null;
       if (pid && kicked.has(pid)) return;
       if (m.kind === 'hello') { seen.add(m.id); if (upsertPlayer(pid, name, av)) { persist(); updatePlayers(); } return; }
+      if (m.kind === 'chest' || m.kind === 'target') { if (pid) handleChest(m, pid); return; }
       if (m.kind === 'chat') {
         if (!chatOn || typeof m.msg !== 'string') return;
         const text = m.msg.replace(/\s+/g,' ').trim().slice(0,140); if (!text) return;
@@ -1531,7 +1729,7 @@ function startHost(){
   $('endBtn').onclick = () => {
     if (!confirm('End the session? Everyone will be disconnected and results cleared.')) return;
     clients.forEach(c => { if (c.connected) { c.publish(hTopic, '', { retain: true, qos: 1 }); c.publish(cTopic, '', { retain: true, qos: 1 }); } });
-    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked'].forEach(k => ss.del(k));
+    ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked','cp_stealOn'].forEach(k => ss.del(k));
     setTimeout(() => nav(''), 400);
   };
   $('fullBtn').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
@@ -1572,6 +1770,7 @@ function startJoin(code){
   }
   const hello = () => { if (st && !needProfile()) send({ kind: 'hello' }); };
   function showDone(title, hint, again, kind){
+    $('chestBox').classList.add('hidden');
     $('doneTitle').textContent = title; $('doneHint').textContent = hint;
     $('againBtn').classList.toggle('hidden', !again);
     $('doneIcon').className = 'tick' + (kind ? ' ' + kind : '');
@@ -1662,9 +1861,11 @@ function startJoin(code){
     if (slide.scored && st.reveal) {
       const p = st.reveal.pts ? st.reveal.pts[pid] : undefined;
       if (st.reveal.tot && st.reveal.tot[pid] != null) { myScore = st.reveal.tot[pid]; ss.set('cp_score_' + code, myScore); }
-      if (p == null) return showDone("Time's up!", `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
-      if (p > 0) return showDone('Correct!', `+${p} points · ${myScore} total`, false, 'good');
-      return showDone('Not quite', `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
+      if (p == null) showDone("Time's up!", `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
+      else if (p > 0) showDone('Correct!', `+${p} points · ${myScore} total`, false, 'good');
+      else showDone('Not quite', `The answer was ${st.reveal.answer}. You have ${myScore} points.`, false, 'bad');
+      if (st.chests) renderChests();
+      return;
     }
     if (st.timeUp) return showDone("Time's up!", 'Watch the screen. The next slide will appear here automatically.', false, 'wait');
     if (slide.type === 'choice') {
@@ -1688,6 +1889,70 @@ function startJoin(code){
     }
     syncTimer();
   }
+
+  /* ---- Point steal (treasure chests) ---- */
+  const chestKey = 'cp_chest_' + code;
+  const chestMem = ss.get(chestKey) || {};
+  let opening = null;
+  function phoneToast(text, good){
+    const t = el('div', 'ptoast ' + (good ? 'good' : 'bad'), text); document.body.append(t);
+    setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 500); }, 4500);
+  }
+  function chestCard(i, content, cls){
+    const b = el('button', 'chest ' + cls); b.type = 'button';
+    const holder = el('div'); holder.innerHTML = CHEST_SVG; b.append(holder.firstElementChild);
+    if (content) { b.append(el('div', 'ci', content.icon), el('div', 'ct', content.title)); b.title = content.desc; }
+    return b;
+  }
+  function renderChests(){
+    const box = $('chestBox'), wrap = $('chests'); box.classList.remove('hidden'); wrap.textContent = '';
+    const mem = chestMem[slide.id];
+    $('chestResult').classList.add('hidden');
+    if (!mem) {
+      $('chestTitle').textContent = 'Pick a treasure chest!'; $('chestHint').textContent = 'Two hold power-ups, one holds a forfeit. Choose wisely.';
+      [0,1,2].forEach(i => {
+        const b = chestCard(i, null, opening === i ? 'open shaking' : opening != null ? 'missed' : 'idle');
+        b.onclick = () => { if (opening != null) return; if (send({ kind: 'chest', slide: slide.id, pick: i })) { opening = i; renderChests(); setTimeout(() => { if (opening === i && !chestMem[slide.id]) { opening = null; renderChests(); } }, 6000); } };
+        wrap.append(b);
+      });
+      return;
+    }
+    $('chestTitle').textContent = mem.arr[mem.pick].good ? 'Power-up!' : 'Oh no, a forfeit!';
+    $('chestHint').textContent = 'Here is what was in each chest:';
+    mem.arr.forEach((c, i) => wrap.append(chestCard(i, c, 'open ' + (c.good ? 'good' : 'bad') + (i === mem.pick ? ' picked' : ' missed'))));
+    const o = mem.arr[mem.pick];
+    $('chestResult').className = 'chest-result ' + (o.good ? 'good' : 'bad');
+    $('crTitle').textContent = o.icon + ' ' + o.title; $('crText').textContent = (mem.text || o.desc) + ` You have ${myScore} points.`;
+    $('chestResult').classList.remove('hidden');
+  }
+  function showTargets(mem){
+    if (!mem || mem.done || !mem.needTarget || !Array.isArray(mem.targets)) { $('targetSheet').classList.add('hidden'); return; }
+    $('targetTitle').textContent = mem.needTarget === 'swap' ? 'Who do you want to swap scores with?' : 'Who do you want to steal from?';
+    const list = $('targetList'); list.textContent = '';
+    [...mem.targets].sort((a, b) => b.score - a.score).forEach(t => {
+      const b = el('button', 'tpick'); b.type = 'button';
+      b.append(avEl(validAv(t.av), cleanName(t.n)), el('span', 'nm', cleanName(t.n) || 'Player'), el('span', 'sc', (+t.score || 0) + ' pts'));
+      b.onclick = () => { if (send({ kind: 'target', slide: mem.slide, target: String(t.pid) })) $('targetSheet').classList.add('hidden'); };
+      list.append(b);
+    });
+    $('targetSheet').classList.remove('hidden');
+  }
+  function onPrivate(d){
+    if (!d || typeof d !== 'object') return;
+    if (typeof d.score === 'number') { myScore = d.score; ss.set('cp_score_' + code, myScore); }
+    if (d.kind === 'hit') { phoneToast(String(d.text || ''), !!d.good); if (slide && st?.reveal) { renderKey = ''; render(); } return; }
+    if (d.kind === 'chest' && typeof d.slide === 'string' && Array.isArray(d.arr) && d.arr.length === 3) {
+      const prev = chestMem[d.slide];
+      chestMem[d.slide] = { slide: d.slide, arr: d.arr.map(x => ({ icon: String(x.icon || ''), title: String(x.title || ''), desc: String(x.desc || ''), good: !!x.good })),
+        pick: Math.min(2, Math.max(0, +d.pick || 0)), text: String(d.text || ''), needTarget: d.needTarget || null, done: !!d.done, targets: d.targets };
+      ss.set(chestKey, chestMem); opening = null;
+      if (prev && !prev.done && d.done) phoneToast(String(d.text || ''), true);
+      if (slide && slide.id === d.slide && !$('donePanel').classList.contains('hidden')) renderChests();
+      showTargets(chestMem[d.slide]);
+    }
+  }
+  // re-offer a pending target pick after a refresh
+  Object.values(chestMem).forEach(m => { if (m && !m.done && m.needTarget) showTargets(m); });
 
   $('answerInput').oninput = () => {
     const v = $('answerInput').value.trim();
@@ -1733,8 +1998,9 @@ function startJoin(code){
   };
 
   clients = connectAll(
-    c => { c.subscribe(hTopic, { qos: 1 }); c.subscribe(cTopic, { qos: 1 }); hello(); },
+    c => { c.subscribe(hTopic, { qos: 1 }); c.subscribe(cTopic, { qos: 1 }); c.subscribe(NS + code + '/p/' + pid, { qos: 1 }); hello(); },
     (topic, m) => {
+      if (topic === NS + code + '/p/' + pid) { let d; try { d = JSON.parse(m); } catch { return; } onPrivate(d); return; }
       if (topic === cTopic) {
         if (!m) { chatMsgs = []; renderChatList(); return; }
         let d; try { d = JSON.parse(m); } catch { return; }
@@ -1761,7 +2027,9 @@ function startJoin(code){
              left: typeof d.left === 'number' ? d.left : null, timeUp: !!d.timeUp, reveal: d.reveal && typeof d.reveal === 'object' ? d.reveal : null,
              ranks: d.ranks && typeof d.ranks === 'object' ? d.ranks : null, paused: !!d.paused };
       if (firstState) hello();
-      const key = JSON.stringify([slide.id, slide.q, slide.text, slide.type, slide.options, st.names, st.quiz, st.timeUp, !!st.reveal, !!st.ranks, st.paused]);
+      if (st.reveal && st.reveal.tot && st.reveal.tot[pid] != null) { myScore = st.reveal.tot[pid]; ss.set('cp_score_' + code, myScore); }
+      st.chests = !!d.chests;
+      const key = JSON.stringify([slide.id, slide.q, slide.text, slide.type, slide.options, st.names, st.quiz, st.timeUp, !!st.reveal, !!st.ranks, st.paused, st.chests]);
       const onProfile = !$('nameForm').classList.contains('hidden');
       if (key !== renderKey && !onProfile) { renderKey = key; render(); }
       else if (onProfile && !needProfile()) { renderKey = key; render(); }
