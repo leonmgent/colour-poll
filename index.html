@@ -463,8 +463,9 @@
       <button class="homebtn" id="homeAdmin" title="Home"><svg><use href="#i-home"/></svg></button>
       <h1>Edit slides</h1>
       <span class="saved" id="savedMsg">Saved</span>
-      <button class="btn ghost sm" id="importBtn">Import</button>
-      <button class="btn ghost sm" id="exportBtn">Export</button>
+      <button class="btn ghost sm" id="importBtn">Import slides</button>
+      <button class="btn ghost sm hidden" id="adminReportBtn" title="Download a PDF of your last session's results">Export results</button>
+      <button class="btn ghost sm" id="exportBtn">Export slides</button>
       <button class="btn rain sm" id="presentBtn"><svg class="i"><use href="#i-play"/></svg>Present</button>
       <input type="file" id="importFile" accept=".json,application/json" class="hidden">
       <input type="file" id="imageFile" accept="image/*" class="hidden">
@@ -506,6 +507,7 @@
           <button id="namesBtn">Hide names</button>
           <button id="stealBtn" class="hidden">Point steal: on</button>
           <button id="clearBtn">Clear this slide</button>
+          <button id="reportBtn">Export results (PDF)</button>
           <button id="editBtn">Edit slides</button>
           <button id="endBtn" class="danger">End session</button>
         </div>
@@ -817,6 +819,17 @@ function playable(s, quiz){
   if (p.scored) p.max = 1;
   return p;
 }
+// The deck as presented: quiz mode adds a joining screen at the start and a leaderboard at the end
+function buildDeck(settings){
+  const quiz = settings.quiz, deck = loadDeck().map(s => playable(s, quiz));
+  if (quiz) {
+    const L = settings.lobby;
+    deck.unshift({ ...L, id: '__lobby', type: 'lobby', q: L.q.trim(), text: L.text.trim(), qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, max: 1 });
+    const last = deck[deck.length - 1];
+    deck.push({ ...last, id: '__leaderboard', type: 'leaderboard', q: 'Leaderboard', text: '', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: 'zoom' });
+  }
+  return deck;
+}
 async function compressImage(file, maxW = 1920, maxH = 1080){
   const url = URL.createObjectURL(file);
   try {
@@ -841,6 +854,485 @@ function connectAll(onConnect, onMessage, onStatus){
   });
   function report(){ onStatus(clients.filter(c => c.connected).length); }
   return clients;
+}
+
+/* ================= Results report (PDF) ================= */
+const CANVAS_BG = {
+  midnight: { solid: '#0d0e1a' },
+  glow:     { solid: '#0d0e1a', radial: [[.18, .22, 'rgba(79,172,254,.35)', .42], [.82, .75, 'rgba(166,108,255,.38)', .45]] },
+  aurora:   { angle: 120, stops: ['#1a1446','#0b3d5c','#0f5c4a','#3b1a5c'] },
+  lava:     { angle: 120, stops: ['#ff512f','#dd2476','#8e2de2'] },
+  sunset:   { angle: 135, stops: ['#ff5f6d','#ffc371'] },
+  ocean:    { angle: 135, stops: ['#0f2027','#203a43','#2c5364'] },
+  grape:    { angle: 135, stops: ['#41295a','#2f0743'] },
+  forest:   { angle: 135, stops: ['#134e5e','#71b280'] },
+  peach:    { angle: 135, stops: ['#ffecd2','#fcb69f'] },
+  mint:     { angle: 135, stops: ['#d4fc79','#96e6a1'] },
+  sky:      { angle: 135, stops: ['#e0f2ff','#a1c4fd'] },
+  paper:    { solid: '#f5f4ef' }
+};
+const RAINBOW = ['#ff5f6d','#ffc371','#47e5bc','#4facfe','#a66cff'];
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const RF = (size, weight = 600) => `${weight} ${size}px Outfit, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+const TYPE_NAMES = { open: 'Open answer', choice: 'Multiple choice', words: 'Word dump', text: 'Text only', lobby: 'Joining screen', leaderboard: 'Leaderboard' };
+
+function rrect(ctx, x, y, w, h, r){ ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+function wrapLines(ctx, text, maxW){
+  const out = [];
+  String(text || '').split('\n').forEach(par => {
+    let line = '';
+    par.split(/\s+/).forEach(w => {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t;
+    });
+    out.push(line);
+  });
+  return out;
+}
+function textBlock(ctx, text, x, y, maxW, size, weight, color, o = {}){
+  ctx.font = RF(size, weight); ctx.fillStyle = color; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'top';
+  let lines = wrapLines(ctx, text, maxW);
+  if (o.max && lines.length > o.max) { lines = lines.slice(0, o.max); lines[lines.length - 1] += '…'; }
+  const lh = size * (o.lh || 1.22);
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lh));
+  return y + lines.length * lh;
+}
+function fitText(ctx, text, maxW){
+  text = String(text ?? '');
+  if (ctx.measureText(text).width <= maxW) return text;
+  while (text.length > 1 && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+  return text + '…';
+}
+const loadImg = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+function drawImg(ctx, img, x, y, w, h, contain){
+  const s = contain ? Math.min(w / img.width, h / img.height) : Math.max(w / img.width, h / img.height);
+  const iw = img.width * s, ih = img.height * s;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); ctx.restore();
+  return { x: x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih };
+}
+function paintBg(ctx, s, W, H, bgImg){
+  if (bgImg) { drawImg(ctx, bgImg, 0, 0, W, H); ctx.fillStyle = `rgba(0,0,0,${(s.dim || 0) / 100})`; ctx.fillRect(0, 0, W, H); return; }
+  const b = CANVAS_BG[s.bg] || CANVAS_BG.midnight;
+  if (b.solid) { ctx.fillStyle = b.solid; ctx.fillRect(0, 0, W, H); }
+  if (b.stops) {
+    const a = b.angle * Math.PI / 180, dx = Math.sin(a), dy = -Math.cos(a), L = (Math.abs(W * dx) + Math.abs(H * dy)) / 2;
+    const g = ctx.createLinearGradient(W / 2 - dx * L, H / 2 - dy * L, W / 2 + dx * L, H / 2 + dy * L);
+    b.stops.forEach((c, i) => g.addColorStop(i / (b.stops.length - 1), c));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  (b.radial || []).forEach(([fx, fy, c, rad]) => {
+    const R = Math.hypot(W, H) * rad * .7, g = ctx.createRadialGradient(W * fx, H * fy, 0, W * fx, H * fy, R);
+    g.addColorStop(0, c); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  });
+}
+function avatarDot(ctx, av, name, x, y, r){
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = av != null ? AV_BG[av % AV_BG.length] : (name ? hashColour(name).bg : '#c9ccd8'); ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (av != null) { ctx.font = `${Math.round(r * 1.15)}px ${EMOJI_FONT}`; ctx.fillStyle = '#000'; ctx.fillText(AVATARS[av], x, y + r * .08); }
+  else { ctx.font = RF(Math.round(r), 800); ctx.fillStyle = name ? hashColour(name).fg : '#fff'; ctx.fillText((name || '?').charAt(0).toUpperCase(), x, y + 1); }
+}
+const answerKeyCounts = (r) => {
+  const hidden = new Set(r.hidden || []), m = new Map();
+  (r.answers || []).forEach(a => { const k = a.t.toLowerCase(); if (hidden.has(k)) return; const e = m.get(k) || { text: a.t, count: 0, names: [] }; e.count++; if (a.n) e.names.push(a.n); m.set(k, e); });
+  return [...m.values()].sort((a, b) => b.count - a.count);
+};
+
+/* ---- draw one slide as it looked at the end ---- */
+async function renderSlideImage(s, r, players){
+  const W = 1600, H = 900, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  paintBg(ctx, s, W, H, await loadImg(s.image));
+  const fg = FG[s.fg] || FG.light, faint = s.fg === 'dark' ? 'rgba(20,21,31,.7)' : 'rgba(244,244,248,.78)';
+  const qimg = await loadImg(s.qimage);
+  if (s.type === 'text') {
+    ctx.font = RF(96, 800); const tl = wrapLines(ctx, s.q, 1400).slice(0, 3);
+    ctx.font = RF(40, 600); const xl = s.text ? wrapLines(ctx, s.text, 1300).slice(0, 4) : [];
+    const ih = qimg ? 300 : 0, total = tl.length * 110 + (xl.length ? 30 + xl.length * 52 : 0) + (ih ? ih + 30 : 0);
+    let y = (H - total) / 2;
+    y = textBlock(ctx, s.q, W / 2, y, 1400, 96, 800, fg, { align: 'center', max: 3, lh: 1.14 });
+    if (xl.length) y = textBlock(ctx, s.text, W / 2, y + 30, 1300, 40, 600, faint, { align: 'center', max: 4, lh: 1.3 });
+    if (qimg) drawImg(ctx, qimg, (W - 900) / 2, y + 30, 900, ih, true);
+    return c;
+  }
+  let y = textBlock(ctx, s.q, W / 2, 46, 1440, 54, 800, fg, { align: 'center', max: 2, lh: 1.15 });
+  if (s.text && s.type !== 'lobby') y = textBlock(ctx, s.text, W / 2, y + 10, 1300, 28, 600, faint, { align: 'center', max: 2 });
+  else if (s.type === 'lobby' && s.text) y = textBlock(ctx, s.text, W / 2, y + 10, 1300, 28, 600, faint, { align: 'center', max: 2 });
+  if (qimg && s.type !== 'leaderboard' && s.type !== 'lobby') { const d = drawImg(ctx, qimg, (W - 700) / 2, y + 16, 700, 200, true); y = d.y + d.h; }
+  const box = { x: 70, y: y + 30, w: W - 140, h: H - 60 - (y + 30) };
+  const count = (label) => textBlock(ctx, label, W - 50, H - 50, 600, 24, 600, faint, { align: 'right' });
+
+  if (s.type === 'choice') {
+    const votes = r.votes || [], total = votes.reduce((a, b) => a + b, 0), top = Math.max(1, ...votes);
+    const cols = s.options.map((o, i) => colourFor(o, i).bg), right = i => s.scored && s.correct.includes(i);
+    const chart = s.chart || 'bars';
+    if (chart === 'bars') {
+      const n = s.options.length, gap = 40, bw = Math.min(220, (box.w - gap * (n - 1)) / n), sx = box.x + (box.w - (bw * n + gap * (n - 1))) / 2, maxH = box.h - 120;
+      s.options.forEach((o, i) => {
+        const x = sx + i * (bw + gap), h = Math.max(6, votes[i] / top * maxH), by = box.y + box.h - 70 - h;
+        ctx.globalAlpha = s.scored && !right(i) ? .35 : 1;
+        rrect(ctx, x, by, bw, h, 14); ctx.fillStyle = cols[i]; ctx.fill();
+        if (right(i)) { ctx.lineWidth = 6; ctx.strokeStyle = '#3ddc97'; ctx.stroke(); }
+        textBlock(ctx, `${votes[i]}  ${total ? Math.round(votes[i] / total * 100) : 0}%`, x + bw / 2, by - 42, bw + 40, 30, 800, fg, { align: 'center' });
+        textBlock(ctx, (right(i) ? '✓ ' : '') + o, x + bw / 2, box.y + box.h - 58, bw + 20, 24, 700, fg, { align: 'center', max: 2 });
+        ctx.globalAlpha = 1;
+      });
+    } else if (chart === 'hbars') {
+      const n = s.options.length, rowH = Math.min(70, (box.h - 20) / n), lw = 300, vw = 170, tw = box.w - lw - vw - 40;
+      const sy = box.y + (box.h - rowH * n) / 2;
+      s.options.forEach((o, i) => {
+        const yy = sy + i * rowH, bh = rowH * .62;
+        ctx.globalAlpha = s.scored && !right(i) ? .35 : 1;
+        ctx.font = RF(26, 700); ctx.fillStyle = fg; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(fitText(ctx, (right(i) ? '✓ ' : '') + o, lw - 10), box.x + lw, yy + rowH / 2);
+        rrect(ctx, box.x + lw + 20, yy + (rowH - bh) / 2, tw, bh, 12); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+        rrect(ctx, box.x + lw + 20, yy + (rowH - bh) / 2, Math.max(8, tw * votes[i] / top), bh, 12); ctx.fillStyle = cols[i]; ctx.fill();
+        if (right(i)) { ctx.lineWidth = 5; ctx.strokeStyle = '#3ddc97'; ctx.stroke(); }
+        ctx.font = RF(28, 800); ctx.fillStyle = fg; ctx.textAlign = 'left';
+        ctx.fillText(`${votes[i]}  ${total ? Math.round(votes[i] / total * 100) : 0}%`, box.x + lw + tw + 40, yy + rowH / 2);
+        ctx.globalAlpha = 1;
+      });
+    } else {
+      const R = Math.min(box.h / 2 - 10, box.w * .26), cx = box.x + box.w * .33, cy = box.y + box.h / 2;
+      let a0 = -Math.PI / 2;
+      if (!total) { ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fill(); }
+      if (chart === 'donut') { ctx.beginPath(); ctx.arc(cx, cy, R * .8, 0, Math.PI * 2); ctx.lineWidth = R * .4; ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.stroke(); }
+      s.options.forEach((o, i) => {
+        const frac = total ? votes[i] / total : 0; if (!frac) return;
+        const a1 = a0 + frac * Math.PI * 2;
+        ctx.globalAlpha = s.scored && !right(i) ? .35 : 1;
+        if (chart === 'donut') { ctx.beginPath(); ctx.arc(cx, cy, R * .8, a0, a1); ctx.lineWidth = R * .4; ctx.strokeStyle = cols[i]; ctx.stroke(); }
+        else { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath(); ctx.fillStyle = cols[i]; ctx.fill(); }
+        ctx.globalAlpha = 1;
+        if (frac >= .05) {
+          const mid = (a0 + a1) / 2, rl = chart === 'donut' ? R * .8 : R * .62;
+          ctx.font = RF(30, 800); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+          ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 8; ctx.fillText(Math.round(frac * 100) + '%', cx + Math.cos(mid) * rl, cy + Math.sin(mid) * rl); ctx.shadowBlur = 0;
+        }
+        a0 = a1;
+      });
+      if (chart === 'donut') {
+        textBlock(ctx, String(total), cx, cy - 44, 300, 64, 800, fg, { align: 'center' });
+        textBlock(ctx, 'votes', cx, cy + 26, 300, 24, 600, faint, { align: 'center' });
+      }
+      const lx = box.x + box.w * .62, n = s.options.length, lh = Math.min(76, box.h / n);
+      let ly = cy - lh * n / 2;
+      s.options.forEach((o, i) => {
+        ctx.globalAlpha = s.scored && !right(i) ? .4 : 1;
+        rrect(ctx, lx, ly + 8, 26, 26, 6); ctx.fillStyle = cols[i]; ctx.fill();
+        ctx.font = RF(28, 700); ctx.fillStyle = fg; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(fitText(ctx, (right(i) ? '✓ ' : '') + o, 330), lx + 44, ly + 4);
+        ctx.font = RF(28, 800); ctx.textAlign = 'right'; ctx.fillText((total ? Math.round(votes[i] / total * 100) : 0) + '%', lx + 520, ly + 4);
+        ctx.font = RF(18, 600); ctx.fillStyle = faint; ctx.textAlign = 'left'; ctx.fillText(votes[i] + (votes[i] === 1 ? ' vote' : ' votes'), lx + 44, ly + 40);
+        ctx.globalAlpha = 1; ly += lh;
+      });
+    }
+    count(total + (total === 1 ? ' vote' : ' votes'));
+  } else if (s.type === 'open' || s.type === 'words') {
+    const items = answerKeyCounts(r);
+    if (!items.length) textBlock(ctx, 'No answers', W / 2, box.y + box.h / 2 - 20, 600, 32, 600, faint, { align: 'center' });
+    else if (s.type === 'open') {
+      let k = Math.min(95, Math.sqrt(.34 * box.w * box.h / items.reduce((a, it) => a + Math.PI * Math.pow(1 + .6 * Math.sqrt(it.count - 1), 2), 0)));
+      let placed = [];
+      for (let attempt = 0; attempt < 6; attempt++) {
+        placed = []; let skipped = 0;
+        for (const it of items) {
+          const rad = k * (1 + .6 * Math.sqrt(it.count - 1)); let ok = false;
+          for (let t = 0; t < 3000; t++) {
+            const a = t * .31, d = t * .9, x = box.x + box.w / 2 + Math.cos(a) * d * 1.6, y2 = box.y + box.h / 2 + Math.sin(a) * d * .85;
+            if (d > box.w) break;
+            if (x - rad < box.x || x + rad > box.x + box.w || y2 - rad < box.y || y2 + rad > box.y + box.h) continue;
+            if (placed.every(p => Math.hypot(p.x - x, p.y - y2) >= p.r + rad + 8)) { placed.push({ ...it, x, y: y2, r: rad }); ok = true; break; }
+          }
+          if (!ok) skipped++;
+        }
+        if (!skipped) break; k *= .85;
+      }
+      placed.forEach(p => {
+        const col = colourFor(p.text), right = s.scored && s.acceptList.some(a => normAns(a) === normAns(p.text));
+        ctx.globalAlpha = s.scored && !right ? .35 : 1;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = col.bg; ctx.fill();
+        if (right) { ctx.lineWidth = 7; ctx.strokeStyle = '#3ddc97'; ctx.stroke(); }
+        const label = p.text.charAt(0).toUpperCase() + p.text.slice(1), fs = Math.min(p.r * .42, 2 * p.r * .78 / (Math.max(label.length, 3) * .58));
+        ctx.font = RF(fs, 800); ctx.fillStyle = col.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, p.x, p.y - (p.count > 1 ? fs * .25 : 0));
+        if (p.count > 1) { ctx.font = RF(Math.max(12, p.r * .2), 700); ctx.globalAlpha *= .75; ctx.fillText('×' + p.count, p.x, p.y + fs * .7); }
+        ctx.globalAlpha = 1;
+      });
+    } else {
+      let k = Math.min(72, Math.sqrt(.3 * box.w * box.h / items.reduce((a, it) => a + Math.pow(1 + .75 * Math.sqrt(it.count - 1), 2) * (it.text.length * .6 + .6) * 1.25, 0)));
+      let placed = [];
+      for (let attempt = 0; attempt < 6; attempt++) {
+        placed = []; let skipped = 0;
+        for (const it of items) {
+          const fs = k * (1 + .75 * Math.sqrt(it.count - 1)); ctx.font = RF(fs, 800);
+          const w = ctx.measureText(it.text).width + (it.count > 1 ? fs * .6 : 0), h = fs * 1.05; let ok = false;
+          for (let t = 0; t < 4000; t++) {
+            const a = t * .27, d = t * .7, x = box.x + box.w / 2 + Math.cos(a) * d * 1.8, y2 = box.y + box.h / 2 + Math.sin(a) * d * .8;
+            if (d > box.w) break;
+            if (x - w / 2 < box.x || x + w / 2 > box.x + box.w || y2 - h / 2 < box.y || y2 + h / 2 > box.y + box.h) continue;
+            if (placed.every(p => Math.abs(p.x - x) * 2 >= p.w + w + 16 || Math.abs(p.y - y2) * 2 >= p.h + h + 6)) { placed.push({ ...it, x, y: y2, w, h, fs }); ok = true; break; }
+          }
+          if (!ok) skipped++;
+        }
+        if (!skipped) break; k *= .85;
+      }
+      placed.forEach(p => {
+        ctx.font = RF(p.fs, 800); ctx.fillStyle = (toColour(p.text) || hashColour(p.text)).bg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 10;
+        ctx.fillText(p.text, p.x - (p.count > 1 ? p.fs * .3 : 0), p.y); ctx.shadowBlur = 0;
+        if (p.count > 1) { const tw = ctx.measureText(p.text).width; ctx.font = RF(p.fs * .38, 700); ctx.globalAlpha = .7; ctx.textAlign = 'left'; ctx.fillText('×' + p.count, p.x - p.fs * .3 + tw / 2 + 4, p.y - p.fs * .25); ctx.globalAlpha = 1; }
+      });
+    }
+    const n = (r.answers || []).length; count(n + (s.type === 'words' ? (n === 1 ? ' word' : ' words') : (n === 1 ? ' response' : ' responses')));
+  } else if (s.type === 'lobby') {
+    const ps = Object.values(players), per = Math.max(1, Math.min(8, ps.length)), cw = Math.min(box.w / per, 190), ch = 120;
+    box.x += (box.w - cw * per) / 2;
+    const rows = Math.min(Math.ceil(ps.length / per), Math.floor(box.h / ch));
+    const sy = box.y + (box.h - rows * ch) / 2;
+    ps.slice(0, rows * per).forEach((p, i) => {
+      const cx = box.x + (i % per) * cw + cw / 2, cy = sy + Math.floor(i / per) * ch + 36;
+      avatarDot(ctx, p.av, p.n, cx, cy, 34);
+      ctx.font = RF(22, 700); ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(fitText(ctx, p.n || 'Player', cw - 16), cx, cy + 44);
+    });
+    if (ps.length > rows * per) textBlock(ctx, `+${ps.length - rows * per} more`, W / 2, H - 90, 400, 24, 700, faint, { align: 'center' });
+    count(ps.length + (ps.length === 1 ? ' player' : ' players'));
+  } else if (s.type === 'leaderboard') {
+    const rk = Object.values(players).sort((a, b) => b.score - a.score);
+    const pod = [1, 0, 2], hts = [260, 190, 140], cl = ['#ffd84d', '#d9dce8', '#e0a15e'], pw = 230, base = box.y + box.h - 10;
+    const sx = W / 2 - (pw * 3 + 40) / 2;
+    pod.forEach((pos, k) => {
+      const p = rk[pos]; if (!p) return;
+      const x = sx + k * (pw + 20), h = hts[pos];
+      rrect(ctx, x, base - h, pw, h, 16); ctx.fillStyle = cl[pos]; ctx.fill();
+      textBlock(ctx, String(pos + 1), x + pw / 2, base - h + 14, pw, 56, 800, '#10111c', { align: 'center' });
+      avatarDot(ctx, p.av, p.n, x + pw / 2, base - h - 130, 46);
+      textBlock(ctx, fitText((ctx.font = RF(28, 800), ctx), p.n || 'Player', pw), x + pw / 2, base - h - 74, pw, 28, 800, fg, { align: 'center' });
+      textBlock(ctx, p.score + ' pts', x + pw / 2, base - h - 40, pw, 22, 600, faint, { align: 'center' });
+    });
+    if (!rk.length) textBlock(ctx, 'No players', W / 2, box.y + box.h / 2, 600, 32, 600, faint, { align: 'center' });
+  }
+  return c;
+}
+
+/* ---- build the whole PDF ---- */
+function parseDev(d){ const [device, browser] = String(d || '').split(' · '); return { device: device || 'Unknown', browser: browser || 'Unknown' }; }
+function loadScriptOnce(src, test){
+  return new Promise((res, rej) => {
+    if (test()) return res();
+    const sc = document.createElement('script'); sc.src = src; sc.onload = () => test() ? res() : rej(new Error('bad')); sc.onerror = () => rej(new Error('load'));
+    document.head.append(sc);
+  });
+}
+function gatherSession(){
+  const settings = loadSettings();
+  return { settings, deck: buildDeck(settings), code: ss.get('cp_hostCode') || '000000', results: ss.get('cp_hostResults') || {},
+           players: ss.get('cp_players') || {}, chat: ss.get('cp_chat') || [], started: ss.get('cp_sessionStart') };
+}
+async function exportResults(btn){
+  const label = btn.textContent; btn.disabled = true; btn.textContent = 'Making PDF…';
+  try {
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
+    try { await Promise.all([document.fonts.load(RF(40, 800)), document.fonts.load(RF(40, 600)), document.fonts.load(RF(40, 700))]); } catch {}
+    const S = gatherSession(), quiz = S.settings.quiz, players = S.players;
+    const pids = Object.keys(players);
+    const PW = 1754, PH = 1240, M = 80, INK = '#14151f', MUTED = '#6b7089', LINE = '#e3e5ee';
+    const pages = []; let ctx, y, pageTitle = '';
+    const when = t => t ? new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+    const today = new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' });
+    function newPage(title){
+      const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PW, PH);
+      const g = ctx.createLinearGradient(0, 0, PW, 0); RAINBOW.forEach((c, i) => g.addColorStop(i / 4, c)); ctx.fillStyle = g; ctx.fillRect(0, 0, PW, 12);
+      ctx.font = RF(30, 800); const tw = ctx.measureText('GentiMeter').width;
+      const g2 = ctx.createLinearGradient(M, 0, M + tw, 0); RAINBOW.forEach((c, i) => g2.addColorStop(i / 4, c));
+      ctx.fillStyle = g2; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('GentiMeter', M, 40);
+      textBlock(ctx, `Session ${fmtCode(S.code)}  ·  ${today}`, M + tw + 24, 48, 900, 20, 600, MUTED);
+      textBlock(ctx, 'Created by Leon Gent', PW - M, 48, 400, 18, 600, '#b3b7c8', { align: 'right' });
+      pageTitle = title;
+      y = textBlock(ctx, title, M, 100, PW - 2 * M, 44, 800, INK, { max: 2 }) + 24;
+      pages.push(cv);
+    }
+    const room = h => { if (y + h > PH - 70) { newPage(pageTitle.replace(/ \(continued\)$/, '') + ' (continued)'); return true; } return false; };
+    function heading(t){ room(170); y = textBlock(ctx, t, M, y + 10, PW - 2 * M, 28, 800, INK) + 12; }
+    function table(cols, rows){
+      const TW = PW - 2 * M, RH = 46;
+      const head = () => {
+        rrect(ctx, M, y, TW, RH, 10); ctx.fillStyle = '#f1f2f7'; ctx.fill();
+        let x = M; ctx.font = RF(18, 700); ctx.fillStyle = MUTED; ctx.textBaseline = 'middle';
+        cols.forEach(c => { const w = c.w * TW; ctx.textAlign = c.align || 'left'; ctx.fillText(c.label.toUpperCase(), c.align === 'right' ? x + w - 14 : x + 14, y + RH / 2); x += w; });
+        y += RH;
+      };
+      room(RH * 2); head();
+      rows.forEach((row, ri) => {
+        if (room(RH)) head();
+        if (ri % 2) { ctx.fillStyle = '#fafbfd'; ctx.fillRect(M, y, TW, RH); }
+        ctx.fillStyle = LINE; ctx.fillRect(M, y + RH - 1, TW, 1);
+        let x = M;
+        cols.forEach((c, ci) => {
+          const w = c.w * TW, v = row[ci];
+          ctx.textBaseline = 'middle';
+          if (v && typeof v === 'object' && 'name' in v) {
+            avatarDot(ctx, v.av, v.name, x + 30, y + RH / 2, 16);
+            ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText(fitText(ctx, v.name || 'Anonymous', w - 64), x + 54, y + RH / 2);
+          } else {
+            ctx.font = RF(20, c.bold ? 800 : 600); ctx.fillStyle = v && v.color ? v.color : INK; ctx.textAlign = c.align || 'left';
+            const txt = v && typeof v === 'object' ? v.text : v;
+            ctx.fillText(fitText(ctx, txt ?? '', w - 28), c.align === 'right' ? x + w - 14 : x + 14, y + RH / 2);
+          }
+          x += w;
+        });
+        y += RH;
+      });
+      y += 16;
+    }
+    function tiles(list){
+      const n = list.length, gap = 24, tw = (PW - 2 * M - gap * (n - 1)) / n, th = 150;
+      room(th + 20);
+      list.forEach(([num, lab], i) => {
+        const x = M + i * (tw + gap);
+        rrect(ctx, x, y, tw, th, 18); ctx.fillStyle = '#f5f6fa'; ctx.fill();
+        ctx.fillStyle = RAINBOW[i % 5]; rrect(ctx, x, y, 8, th, 4); ctx.fill();
+        textBlock(ctx, String(num), x + 32, y + 26, tw - 50, 60, 800, INK, { max: 1 });
+        textBlock(ctx, lab, x + 32, y + 100, tw - 50, 20, 600, MUTED, { max: 1 });
+      });
+      y += th + 30;
+    }
+    function hbarList(x, w, entries, total){
+      entries.forEach(([name, n], i) => {
+        const bw = w - 330;
+        ctx.font = RF(20, 700); ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(fitText(ctx, name, 200), x, y + 20);
+        rrect(ctx, x + 210, y + 8, bw, 24, 8); ctx.fillStyle = '#eef0f6'; ctx.fill();
+        rrect(ctx, x + 210, y + 8, Math.max(8, bw * n / Math.max(1, total)), 24, 8); ctx.fillStyle = RAINBOW[i % 5]; ctx.fill();
+        ctx.font = RF(20, 800); ctx.fillStyle = INK; ctx.textAlign = 'right';
+        ctx.fillText(`${n}  (${Math.round(n / Math.max(1, total) * 100)}%)`, x + w, y + 20);
+        y += 44;
+      });
+    }
+
+    // per-player tallies
+    const respCount = {}, answersBy = {};
+    S.deck.forEach(s => {
+      const r = S.results[s.id]; if (!r) return;
+      (r.answers || []).forEach(a => { if (a.pid) respCount[a.pid] = (respCount[a.pid] || 0) + 1; });
+      (r.log || []).forEach(a => { if (a.pid) respCount[a.pid] = (respCount[a.pid] || 0) + 1; });
+    });
+    const totalResponses = S.deck.reduce((n, s) => { const r = S.results[s.id]; return n + (r ? (r.answers || []).length + (r.log || r.votes ? (r.votes || []).reduce((a, b) => a + b, 0) : 0) : 0); }, 0);
+    const ranking = pids.map(pid => ({ pid, ...players[pid] })).sort((a, b) => b.score - a.score);
+    const rankOf = {}; ranking.forEach((p, i) => rankOf[p.pid] = i + 1);
+
+    /* page 1: summary */
+    newPage('Session results');
+    const realSlides = S.deck.filter(s => s.type !== 'lobby' && s.type !== 'leaderboard');
+    const tileList = [[pids.length, 'Players joined'], [totalResponses, 'Responses'], [realSlides.length, 'Slides'], [S.chat.length, 'Chat messages']];
+    if (quiz && ranking[0]) tileList.push([ranking[0].n || 'Anonymous', `Winner · ${ranking[0].score} pts`]);
+    tiles(tileList);
+    if (S.started) { y = textBlock(ctx, `Session started at ${new Date(S.started).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. ${quiz ? 'Quiz mode was on.' : ''}`, M, y - 10, PW - 2 * M, 20, 600, MUTED) + 16; }
+    const devs = {}, brs = {};
+    pids.forEach(pid => { const d = parseDev(players[pid].dev); devs[d.device] = (devs[d.device] || 0) + 1; brs[d.browser] = (brs[d.browser] || 0) + 1; });
+    const colW = (PW - 2 * M - 60) / 2, y0 = y;
+    heading('Devices'); const yA = y; hbarList(M, colW, Object.entries(devs).sort((a, b) => b[1] - a[1]).slice(0, 8), pids.length); const yEnd1 = y;
+    y = y0; ctx.save(); textBlock(ctx, 'Browsers', M + colW + 60, y0 + 10, colW, 28, 800, INK); ctx.restore(); y = yA;
+    hbarList(M + colW + 60, colW, Object.entries(brs).sort((a, b) => b[1] - a[1]).slice(0, 8), pids.length);
+    y = Math.max(y, yEnd1) + 10;
+    if (!pids.length) y = textBlock(ctx, 'Nobody joined this session.', M, y, 800, 22, 600, MUTED) + 20;
+    heading('Slides');
+    table([{ label: '#', w: .05 }, { label: 'Slide', w: .55 }, { label: 'Type', w: .2 }, { label: 'Responses', w: .2, align: 'right', bold: true }],
+      S.deck.map((s, i) => { const r = S.results[s.id] || {}; const n = s.type === 'choice' ? (r.votes || []).reduce((a, b) => a + b, 0) : (r.answers || []).length;
+        return [i + 1, s.q || TYPE_NAMES[s.type], TYPE_NAMES[s.type] + (s.scored ? ' (scored)' : ''), ['open', 'choice', 'words'].includes(s.type) ? n : '–']; }));
+
+    /* participants */
+    newPage('Participants');
+    const pcols = [{ label: '#', w: .05 }, { label: 'Player', w: quiz ? .27 : .33 }, { label: 'Device', w: .17 }, { label: 'Browser', w: .15 }, { label: 'Joined at', w: .12 }, { label: 'Responses', w: quiz ? .1 : .18, align: 'right' }];
+    if (quiz) pcols.push({ label: 'Score', w: .08, align: 'right', bold: true }, { label: 'Rank', w: .06, align: 'right' });
+    const plist = quiz ? ranking : pids.map(pid => ({ pid, ...players[pid] })).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    if (!plist.length) y = textBlock(ctx, 'Nobody joined this session.', M, y, 800, 22, 600, MUTED);
+    else table(pcols, plist.map((p, i) => { const d = parseDev(p.dev); const row = [i + 1, { name: p.n || 'Anonymous', av: p.av }, d.device, d.browser, when(p.joinedAt), respCount[p.pid] || 0]; if (quiz) row.push(p.score, '#' + rankOf[p.pid]); return row; }));
+
+    /* one page per slide */
+    for (let i = 0; i < S.deck.length; i++) {
+      const s = S.deck[i], r = S.results[s.id] || {};
+      if (s.type === 'choice') { r.votes = r.votes || s.options.map(() => 0); r.log = r.log || []; }
+      else { r.answers = (r.answers || []).map(a => typeof a === 'string' ? { t: a, n: '' } : a); r.hidden = r.hidden || []; }
+      newPage(`Slide ${i + 1}: ${s.q || TYPE_NAMES[s.type]}`);
+      y -= 14; y = textBlock(ctx, TYPE_NAMES[s.type] + (s.scored ? ' · scored quiz question' : '') + (s.type === 'choice' ? ' · ' + ({ bars: 'bar chart', hbars: 'sideways bars', pie: 'pie chart', donut: 'donut' })[s.chart || 'bars'] : ''), M, y, PW - 2 * M, 20, 600, MUTED) + 20;
+      const img = await renderSlideImage(s, r, players), IW = 1020, IH = IW * 9 / 16, iy = y;
+      ctx.save(); ctx.shadowColor = 'rgba(20,21,31,.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10; rrect(ctx, M, iy, IW, IH, 16); ctx.fillStyle = '#000'; ctx.fill(); ctx.restore();
+      ctx.save(); rrect(ctx, M, iy, IW, IH, 16); ctx.clip(); ctx.drawImage(img, M, iy, IW, IH); ctx.restore();
+      // stats column
+      const sx = M + IW + 50, sw = PW - M - sx; let sy = iy;
+      const stat = (k, v) => { sy = textBlock(ctx, k, sx, sy, sw, 18, 700, MUTED); sy = textBlock(ctx, String(v), sx, sy + 2, sw, 30, 800, INK, { max: 2 }) + 16; };
+      if (s.type === 'choice') {
+        const tot = r.votes.reduce((a, b) => a + b, 0), voters = new Set(r.log.map(x => x.pid).filter(Boolean)).size;
+        stat('Votes', tot); if (pids.length) stat('Players who voted', `${voters || tot} of ${pids.length}`);
+        if (s.scored) {
+          const ok = Object.keys(r.ok || {}).length, answered = Object.keys(r.pts || {}).length;
+          stat('Correct answer', s.correct.map(ci => s.options[ci]).join(' / '));
+          stat('Got it right', `${ok} of ${answered}${answered ? ` (${Math.round(ok / answered * 100)}%)` : ''}`);
+          const best = Object.entries(r.pts || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])[0];
+          if (best) stat('Fastest correct', `${players[best[0]]?.n || 'Someone'} (+${best[1]})`);
+        } else {
+          const topI = r.votes.indexOf(Math.max(...r.votes)); if (tot) stat('Most popular', `${s.options[topI]} (${Math.round(r.votes[topI] / tot * 100)}%)`);
+        }
+      } else if (s.type === 'open' || s.type === 'words') {
+        const items = answerKeyCounts(r), people = new Set(r.answers.map(a => a.pid).filter(Boolean)).size;
+        stat(s.type === 'words' ? 'Words sent' : 'Responses', r.answers.length);
+        if (pids.length) stat('Players who took part', `${people} of ${pids.length}`);
+        stat('Different answers', items.length);
+        if (s.scored) {
+          const ok = Object.keys(r.ok || {}).length, answered = Object.keys(r.pts || {}).length;
+          stat('Correct answer', s.acceptList.join(', '));
+          stat('Got it right', `${ok} of ${answered}${answered ? ` (${Math.round(ok / answered * 100)}%)` : ''}`);
+        } else if (items[0]) stat('Most common', `${items[0].text} (×${items[0].count})`);
+      } else if (s.type === 'lobby') stat('Players joined', pids.length);
+      else if (s.type === 'leaderboard' && ranking[0]) { stat('Winner', `${ranking[0].n || 'Anonymous'} (${ranking[0].score} pts)`); if (ranking[1]) stat('Second', `${ranking[1].n || 'Anonymous'} (${ranking[1].score} pts)`); if (ranking[2]) stat('Third', `${ranking[2].n || 'Anonymous'} (${ranking[2].score} pts)`); }
+      else if (s.type === 'text') stat('Title slide', 'No answers collected');
+      y = Math.max(iy + IH, sy) + 36;
+      // detail tables
+      if (s.type === 'choice') {
+        const tot = r.votes.reduce((a, b) => a + b, 0);
+        heading('Breakdown');
+        table([{ label: 'Option', w: .3 }, { label: 'Votes', w: .1, align: 'right', bold: true }, { label: 'Share', w: .1, align: 'right' }, { label: 'Who voted', w: .5 }],
+          s.options.map((o, oi) => [{ text: (s.scored && s.correct.includes(oi) ? '✓ ' : '') + o, color: s.scored && s.correct.includes(oi) ? '#1a9e66' : INK }, r.votes[oi], (tot ? Math.round(r.votes[oi] / tot * 100) : 0) + '%', r.log.filter(x => x.c === oi).map(x => x.n || 'Anonymous').join(', ') || '–']));
+        if (r.log.length) {
+          heading('Every vote');
+          const cols = [{ label: 'Player', w: .4 }, { label: 'Answer', w: .35 }, { label: 'Time', w: .15 }]; if (s.scored) cols.push({ label: 'Points', w: .1, align: 'right', bold: true });
+          table(cols, r.log.map(x => { const row = [{ name: x.n || 'Anonymous', av: x.av }, s.options[x.c], when(x.at)]; if (s.scored) row.push(x.pid && r.pts ? (r.pts[x.pid] ?? '') : ''); return row; }));
+        }
+      } else if ((s.type === 'open' || s.type === 'words') && r.answers.length) {
+        heading(s.type === 'words' ? 'Every word' : 'Every response');
+        const cols = [{ label: 'Player', w: .4 }, { label: s.type === 'words' ? 'Word' : 'Answer', w: .35 }, { label: 'Time', w: .15 }]; if (s.scored) cols.push({ label: 'Points', w: .1, align: 'right', bold: true });
+        const hidden = new Set(r.hidden);
+        table(cols, r.answers.map(a => { const row = [{ name: a.n || 'Anonymous', av: a.av }, { text: a.t + (hidden.has(a.t.toLowerCase()) ? '  (hidden)' : ''), color: hidden.has(a.t.toLowerCase()) ? MUTED : INK }, when(a.at)]; if (s.scored) row.push(a.pid && r.pts ? (r.pts[a.pid] ?? '') : ''); return row; }));
+      } else if (s.type === 'leaderboard' && ranking.length) {
+        heading('Final scores');
+        table([{ label: 'Rank', w: .1 }, { label: 'Player', w: .6 }, { label: 'Score', w: .3, align: 'right', bold: true }], ranking.map((p, ri) => ['#' + (ri + 1), { name: p.n || 'Anonymous', av: p.av }, p.score]));
+      }
+    }
+
+    /* chat */
+    if (S.chat.length) {
+      newPage('Chat');
+      table([{ label: 'Time', w: .12 }, { label: 'Player', w: .28 }, { label: 'Message', w: .6 }], S.chat.map(m => [when(m.at), { name: m.n || 'Anonymous', av: m.av }, m.m]));
+    }
+
+    // page numbers
+    pages.forEach((cv, i) => { const c2 = cv.getContext('2d'); textBlock(c2, `Page ${i + 1} of ${pages.length}`, PW - M, PH - 50, 300, 18, 600, '#b3b7c8', { align: 'right' }); });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+    pages.forEach((cv, i) => { if (i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg', .9), 'JPEG', 0, 0, 297, 210, undefined, 'FAST'); });
+    pdf.save(`GentiMeter results ${fmtCode(S.code)}.pdf`);
+    btn.textContent = 'Downloaded!';
+    setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 2000);
+  } catch (e) {
+    console.error(e);
+    alert(e && e.message === 'load' ? "Couldn't load the PDF maker. Check your internet connection and try again." : "Sorry, the PDF couldn't be made.");
+    btn.textContent = label; btn.disabled = false;
+  }
 }
 
 /* ================= Router ================= */
@@ -1116,6 +1608,7 @@ function startAdmin(){
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
   $('presentBtn').onclick = () => { save(); nav('host=1&start=1'); };
+  if (ss.get('cp_hostCode')) { $('adminReportBtn').classList.remove('hidden'); $('adminReportBtn').onclick = () => exportResults($('adminReportBtn')); }
   $('exportBtn').onclick = () => {
     const blob = new Blob([JSON.stringify({ settings, slides: deck }, null, 2)], { type: 'application/json' });
     const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'gentimeter-slides.json'; document.body.append(a); a.click(); a.remove();
@@ -1145,15 +1638,9 @@ function startHost(){
   const settings = loadSettings();
   const quiz = settings.quiz;
   const namesMode = quiz ? 'required' : settings.names;
-  const deck = loadDeck().map(s => playable(s, quiz));
-  if (quiz) {
-    const L = settings.lobby;
-    deck.unshift({ ...L, id: '__lobby', type: 'lobby', q: L.q.trim(), text: L.text.trim(), qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, max: 1 });
-    const last = deck[deck.length - 1];
-    deck.push({ ...last, id: '__leaderboard', type: 'leaderboard', q: 'Leaderboard', text: '', qimage: '', options: [], correct: [], acceptList: [], scored: false, timer: 0, transition: 'zoom' });
-  }
+  const deck = buildDeck(settings);
   let code = ss.get('cp_hostCode');
-  if (!code) { code = String(Math.floor(100000 + Math.random()*900000)); ss.set('cp_hostCode', code); }
+  if (!code) { code = String(Math.floor(100000 + Math.random()*900000)); ss.set('cp_hostCode', code); ss.set('cp_sessionStart', Date.now()); }
   const hTopic = NS + code + '/host', rTopic = NS + code + '/r', cTopic = NS + code + '/chat';
   const joinUrl = location.origin + location.pathname.replace(/index\.html$/,'') + '?code=' + code;
   let idx = Math.min(deck.length - 1, Math.max(0, ss.get('cp_hostIdx') || 0));
@@ -1877,10 +2364,11 @@ function startHost(){
   }
   function publishState(){ lastPub = Date.now(); const m = stateMsg(); clients.forEach(c => c.connected && c.publish(hTopic, m, { retain: true, qos: 1 })); }
 
-  function upsertPlayer(pid, name, av){
+  function upsertPlayer(pid, name, av, dev){
     if (typeof pid !== 'string' || !pid || pid.length > 40) return null;
-    const p = players[pid] || (players[pid] = { n: '', av: null, score: 0 });
+    const p = players[pid] || (players[pid] = { n: '', av: null, score: 0, joinedAt: Date.now() });
     if (name) p.n = name; if (av != null) p.av = av;
+    if (typeof dev === 'string' && dev) p.dev = dev.slice(0, 60);
     return p;
   }
 
@@ -1892,12 +2380,12 @@ function startHost(){
       if (!m || typeof m.id !== 'string' || seen.has(m.id)) return;
       const name = cleanName(m.name), av = validAv(m.av), pid = typeof m.pid === 'string' ? m.pid.slice(0,40) : null;
       if (pid && kicked.has(pid)) return;
-      if (m.kind === 'hello') { seen.add(m.id); if (upsertPlayer(pid, name, av)) { persist(); updatePlayers(); } return; }
+      if (m.kind === 'hello') { seen.add(m.id); if (upsertPlayer(pid, name, av, m.dev)) { persist(); updatePlayers(); } return; }
       if (m.kind === 'chest' || m.kind === 'target') { if (pid) handleChest(m, pid); return; }
       if (m.kind === 'chat') {
         if (!chatOn || typeof m.msg !== 'string') return;
         const text = m.msg.replace(/\s+/g,' ').trim().slice(0,140); if (!text) return;
-        seen.add(m.id); chat.push({ id: m.id, n: name, av, m: text, pid }); chat = chat.slice(-60); ss.set('cp_chat', chat);
+        seen.add(m.id); chat.push({ id: m.id, n: name, av, m: text, pid, at: Date.now() }); chat = chat.slice(-500); ss.set('cp_chat', chat);
         renderChat(); publishChat(); return;
       }
       if (paused) return;                                                    // frozen: nothing counts until resume
@@ -1924,13 +2412,13 @@ function startHost(){
       }
       if (s.type === 'words') {
         if (pid && r.answers.filter(a => a.pid === pid).length >= WORD_LIMIT) return;
-        const ans = { t: value, n: name, av, pid }; r.answers.push(ans); persist();
+        const ans = { t: value, n: name, av, pid, at: Date.now() }; r.answers.push(ans); persist();
         if (si === idx) { addWord(ans, true, new Set(r.hidden)); setCount(r.answers.length); renderFeed(); }
       } else if (s.type === 'open') {
-        const ans = { t: value, n: name, av, pid }; r.answers.push(ans); persist();
+        const ans = { t: value, n: name, av, pid, at: Date.now() }; r.answers.push(ans); persist();
         if (si === idx) { addBubble(ans, true, new Set(r.hidden)); setCount(r.answers.length); renderFeed(); }
       } else {
-        r.votes[value]++; r.log.push({ n: name, av, c: value, pid }); persist();
+        r.votes[value]++; r.log.push({ n: name, av, c: value, pid, at: Date.now() }); persist();
         if (si === idx) { updateChart(s, value); renderFeed(); }
       }
       updatePlayers();
@@ -1947,8 +2435,9 @@ function startHost(){
     delete results[s.id]; renderSlide();
   };
   $('editBtn').onclick = () => { persist(); nav('admin=1'); };
+  $('reportBtn').onclick = e => { e.stopPropagation(); persist(); exportResults($('reportBtn')); };
   $('endBtn').onclick = () => {
-    if (!confirm('End the session? Everyone will be disconnected and results cleared.')) return;
+    if (!confirm('End the session? Everyone will be disconnected and the results will be cleared.\n\nWant to keep them? Press Cancel, then use Export results (PDF) in this menu first.')) return;
     clients.forEach(c => { if (c.connected) { c.publish(hTopic, '', { retain: true, qos: 1 }); c.publish(cTopic, '', { retain: true, qos: 1 }); } });
     ['cp_hostCode','cp_hostIdx','cp_hostResults','cp_players','cp_chat','cp_chatOn','cp_kicked','cp_stealOn'].forEach(k => ss.del(k));
     setTimeout(() => nav(''), 400);
@@ -1989,7 +2478,16 @@ function startJoin(code){
     live.forEach(c => c.publish(rTopic, m, { qos: 1 }));
     return true;
   }
-  const hello = () => { if (st && !needProfile()) send({ kind: 'hello' }); };
+  function deviceName(){
+    const ua = navigator.userAgent;
+    const dev = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPad' : /iPhone|iPod/.test(ua) ? 'iPhone'
+      : /Android/.test(ua) ? (/Mobile/.test(ua) ? 'Android phone' : 'Android tablet') : /CrOS/.test(ua) ? 'Chromebook'
+      : /Windows/.test(ua) ? 'Windows PC' : /Macintosh/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux PC' : 'Other';
+    const br = /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera'
+      : /Firefox|FxiOS/.test(ua) ? 'Firefox' : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'Other';
+    return dev + ' · ' + br;
+  }
+  const hello = () => { if (st && !needProfile()) send({ kind: 'hello', dev: deviceName() }); };
   function showDone(title, hint, again, kind){
     $('chestBox').classList.add('hidden');
     $('doneTitle').textContent = title; $('doneHint').textContent = hint;
